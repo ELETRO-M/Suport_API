@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import login
+from .models import login, Cleintes
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,4 +23,22 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+class ClienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cleintes
+        fields = [
+            'id',
+            'name', 
+            'email', 
+            'empresa', 
+            'contact', 
+            'nif', 
+            'status', 
+            'endereco', 
+            'password', 
+            'create_data',
+            'update_data'
+        ]
+        
+        extra_kwargs = {'password': {'write_only': False}}
 

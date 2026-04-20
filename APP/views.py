@@ -1,12 +1,18 @@
 from django.shortcuts import render
 from rest_framework import viewsets,mixins,status
-from .models import login 
-from .serial import UserSerializer, LoginSerializer
+from .models import login, Cleintes
+from .serial import UserSerializer, LoginSerializer, ClienteSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.contrib.auth import get_user_model, authenticate
+from rest_framework.pagination import PageNumberPagination
+
+class numberPage(PageNumberPagination):
+        page_size_query_param = 'page_size'
+        page_size = 100
+        max_page_size = 100
 
 #rota registro
 class UserViewSet(viewsets.ModelViewSet):
@@ -52,5 +58,12 @@ class LoginViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             "username": data['username'],
             "email": data['email'], 
             "perfil": data['perfil']    
-
+#admin senha123
         }, status=status.HTTP_200_OK)
+class ClienteViewSet(viewsets.ModelViewSet):
+    queryset = Cleintes.objects.all()
+    serializer_class = ClienteSerializer
+    permission_classes = [IsAuthenticated]  
+    pagination_class = numberPage
+    ordering_fields = ['create_data']
+    ordering= ['create_data']

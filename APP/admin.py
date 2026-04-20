@@ -1,7 +1,7 @@
 from django.contrib import admin
-from .models import login as User
+from .models import login, Cleintes
 
-@admin.register(User)
+@admin.register(login)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
      'id',
@@ -16,5 +16,20 @@ class UserAdmin(admin.ModelAdmin):
           )
     search_fields = ('email', 'empresa', 'perfil')
 
-
+@admin.register(Cleintes)
+class ClienteAdmin(admin.ModelAdmin):
+    list_display = (
+     'id',
+     'name',
+     'email',
+     'empresa',
+     'contact', 
+     'nif', 
+     'status', 
+     'endereco', 
+     'password', 
+     'create_data',
+     'update_data'
+          )
+    search_fields = ('email', 'empresa', 'status')
 # Register your models here.
