@@ -21,8 +21,12 @@ from APP.urls import router
 urlpatterns = [
     path('admin/', admin.site.urls),
 <<<<<<< HEAD
+<<<<<<< HEAD
     path('auth/', include(router.urls)),
 =======
     path('api/', include(router.urls)),
 >>>>>>> 89caac7 (V1.1 resolvido bugs da auth)
+=======
+    path('API/', include(router.urls)),
+>>>>>>> 4cae4f7771cbd65b2b411e8784a5a1617224aebf
 ]
