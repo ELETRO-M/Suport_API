@@ -1,7 +1,12 @@
 from django.shortcuts import render
 from rest_framework import viewsets,mixins,status
+<<<<<<< HEAD
 from .models import login 
 from .serial import UserSerializer, LoginSerializer
+=======
+from .models import login, Cleintes
+from .serial import UserSerializer, LoginSerializer, ClientesSerializer
+>>>>>>> 89caac7 (V1.1 resolvido bugs da auth)
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -12,12 +17,24 @@ from django.contrib.auth import get_user_model, authenticate
 class UserViewSet(viewsets.ModelViewSet):
     queryset = login.objects.all()
     serializer_class = UserSerializer
+<<<<<<< HEAD
     
     permission_classes = [IsAuthenticated]  # Permitir acesso sem autenticação para registro
     
 
 
 
+=======
+    permission_classes = [IsAuthenticated]  # Permitir acesso sem autenticação para registro
+    
+class ClientesViewSet(viewsets.ModelViewSet):
+    queryset = Cleintes.objects.all()
+    serializer_class = ClientesSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+
+>>>>>>> 89caac7 (V1.1 resolvido bugs da auth)
 # ViewSet para login
 
 class LoginViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):

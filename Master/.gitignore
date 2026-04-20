@@ -4,4 +4,9 @@ db.sqlite3
 *.pyc
 *.pyo
 *.pyd
+<<<<<<< HEAD:Master/.gitignore
 *.db    
+=======
+*.db 
+tests/   
+>>>>>>> 89caac7 (V1.1 resolvido bugs da auth):.gitignore

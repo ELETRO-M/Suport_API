@@ -14,7 +14,14 @@ class login(Base):
     perfil = models.CharField(max_length=100, default='cliente', choices=[('cliente', 'Cliente'), ('admin', 'Admin'), ('Tecnico', 'Tecnico')])
     contact = models.CharField(max_length=20, blank=True, null=True , default='xxxx-xxxx')
     password = models.CharField(max_length=128)
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 89caac7 (V1.1 resolvido bugs da auth)
     def set_password(self, raw_password):
+
+
         self.password = make_password(raw_password)
 
     def check_password(self, raw_password):
@@ -40,7 +47,11 @@ class Cleintes(Base):
     endereco = models.CharField(max_length=200)
     password = models.CharField(max_length=128)
     
+<<<<<<< HEAD
    def set_password(self, raw_password):
+=======
+    def set_password(self, raw_password):
+>>>>>>> 89caac7 (V1.1 resolvido bugs da auth)
         self.password = make_password(raw_password)
 
     def check_password(self, raw_password):
@@ -70,7 +81,11 @@ class contarctos(Base):
         horas= data.total_seconds() / 3600
         horasdisponiveis = horas - time.now().hour
         
+<<<<<<< HEAD
 
+=======
+"""
+>>>>>>> 89caac7 (V1.1 resolvido bugs da auth)
 
        
 

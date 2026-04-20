@@ -19,8 +19,28 @@ class UserSerializer(serializers.ModelSerializer):
           #obs neste momento estou a dixa as hash das senhas visiveis,
           # para facilitar os testes, mas depois vou retirar isso.
           #caso deseje deixa nao visivel, basta passar o write_only para true, e o campo password nao sera impresso.
-        extra_kwargs = {'password': {'write_only': False}}
+        extra_kwargs = {'password': {'write_only': True}}
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+<<<<<<< HEAD
+=======
+class ClientesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cleintes
+        fields = [
+            'id',
+            'name', 
+            'email',
+            'empresa', 
+            'contact', 
+            'nif', 
+            'status', 
+            'endereco', 
+            'password', 
+            'create_data',
+            'update_data'
+          ]
+        extra_kwargs = {'password': {'write_only': True}}
+>>>>>>> 89caac7 (V1.1 resolvido bugs da auth)
 
