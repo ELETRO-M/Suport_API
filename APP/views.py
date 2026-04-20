@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
 
 class numberPage(PageNumberPagination):
         page_size_query_param = 'page_size'
@@ -15,15 +16,48 @@ class numberPage(PageNumberPagination):
         max_page_size = 100
 
 #rota registro
+#auth/register/
+#auth/register/ - POST
+"""
+{
+"username":"",
+"email": ",
+"password":,
+"empresa",
+"perfil":{admin, cliente,tecnico},
+"conctact":opcional
+}
+"""
+#auth/register/?email={email} $?id={id} - GET id ou email 
+#auth/login/{id} - Delete
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = login.objects.all()
     serializer_class = UserSerializer
-    
-    permission_classes = [IsAuthenticated]  # Permitir acesso sem autenticação para registro
-    
+    permission_classes = [IsAuthenticated]
+    ordering_fields = ['create_data']
+    ordering= ['create_data'] 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()  # pega o objeto pelo ID
+        instance.delete()             # apaga do banco
+        
+        return Response(
+            {"message": "User deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT
+    ) 
 
 
+    def get_queryset(self):
+        # Retorna um queryset vazio para evitar acesso a outros usuários
+        
+        queryset = login.objects.all()
+        email = self.request.query_params.get('email')
 
+        if email:
+            queryset = queryset.filter(email=email)
+        
+
+        return queryset
 # ViewSet para login
 
 class LoginViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):

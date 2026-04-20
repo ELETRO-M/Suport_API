@@ -9,5 +9,5 @@ data_fim = datetime.strptime(y, "%Y-%m-%d %H:%M")
 diferenca = data_fim - data_inicio
 
 horas = diferenca.total_seconds() / 3600
-x = datetime.now()-timedelta(hours=horas)
+x = horas-datetime.now().hour
 print(horas,x)
