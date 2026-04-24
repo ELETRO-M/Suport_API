@@ -1,17 +1,10 @@
-.env/
+.env
+.deps/
+.tmp/
+.venv/
 __pycache__/
-db.sqlite3
 *.pyc
-*.pyo
-*.pyd
-<<<<<<< HEAD:Master/.gitignore
-<<<<<<< HEAD:Master/.gitignore
-*.db    
-=======
-*.db 
-tests/   
->>>>>>> 89caac7 (V1.1 resolvido bugs da auth):.gitignore
-=======
-*.db 
-text.py   
->>>>>>> 4cae4f7771cbd65b2b411e8784a5a1617224aebf:.gitignore
+media/
+staticfiles/
+.db
+

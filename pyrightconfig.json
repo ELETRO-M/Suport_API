@@ -1,0 +1,13 @@
+{
+  "include": [
+    "apps",
+    "config",
+    "manage.py"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".venv",
+    ".tmp",
+    "apps/notifications_app"
+  ]
+}
