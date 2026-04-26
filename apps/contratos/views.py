@@ -1,6 +1,7 @@
-from typing import cast
+from typing import Type, cast
+from django.db.models import QuerySet
 
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
@@ -19,44 +20,68 @@ class ContratoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("data_criacao", "data_inicio", "data_fim")
     filterset_fields = ("status", "tipo", "cliente")
 
-    def get_queryset(self):
+    # ✅ serializers por ação
+    serializer_action_classes: dict[str, Type[serializers.Serializer]] = {
+        "list": ContratoListaSerializer,
+        "retrieve": ContratoDetalheSerializer,
+        "create": ContratoEscritaSerializer,
+        "update": ContratoEscritaSerializer,
+        "partial_update": ContratoEscritaSerializer,
+    }
+
+    # ✅ sem erro no Pylance
+    def get_queryset(self) -> QuerySet:
         request = cast(Request, self.request)
-        queryset = Contrato.objects.select_related("cliente").all()
+
+        queryset = Contrato.objects.select_related("cliente")
+
         cliente_id = request.query_params.get("cliente_id")
         if cliente_id:
             queryset = queryset.filter(cliente_id=cliente_id)
+
         if request.user.perfil == Usuario.PerfilChoices.CLIENTE:
             queryset = queryset.filter(cliente=request.user)
+
         return queryset.order_by("-data_criacao")
 
-    def get_serializer_class(self):
-        if self.action in {"create", "update", "partial_update"}:
-            return ContratoEscritaSerializer
-        if self.action == "retrieve":
-            return ContratoDetalheSerializer
-        return ContratoListaSerializer
+    # ✅ sem erro no Pylance
+    def get_serializer_class(self) -> Type[serializers.Serializer]:
+        return self.serializer_action_classes.get(
+            self.action,
+            ContratoListaSerializer
+        )
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-        serializer = self.get_serializer(page or queryset, many=True)
+
         if page is not None:
+            serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
         return resposta_sucesso(data=serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         obj = self.get_object()
-        if request.user.perfil == Usuario.PerfilChoices.CLIENTE and obj.cliente_id != request.user.id:
-            self.permission_denied(request, message="Sem permissão para este recurso.")
+
+        if (
+            request.user.perfil == Usuario.PerfilChoices.CLIENTE
+            and obj.cliente_id != request.user.id
+        ):
+            self.permission_denied(request, message="Sem permissão.")
+
         serializer = self.get_serializer(obj)
         return resposta_sucesso(data=serializer.data)
 
     def create(self, request, *args, **kwargs):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Apenas administradores podem criar contratos.")
+            self.permission_denied(request, message="Apenas admin.")
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
+
         return resposta_sucesso(
             data={
                 "id": str(obj.id),
@@ -69,16 +94,22 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Apenas administradores podem atualizar contratos.")
+            self.permission_denied(request, message="Apenas admin.")
+
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
-        return resposta_sucesso(data={"id": str(obj.id), "status": obj.status})
+
+        return resposta_sucesso(
+            data={"id": str(obj.id), "status": obj.status}
+        )
 
     def destroy(self, request, *args, **kwargs):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Apenas administradores podem deletar contratos.")
+            self.permission_denied(request, message="Apenas admin.")
+
         instance = self.get_object()
         instance.delete()
+
         return resposta_sucesso(message="Contrato deletado com sucesso")

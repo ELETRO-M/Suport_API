@@ -1,5 +1,5 @@
 from django.contrib.auth.base_user import BaseUserManager
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from apps.configuracoes.models import ModeloUUIDComTimestamps
@@ -26,19 +26,19 @@ class GestorUsuario(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("perfil", Usuario.PerfilChoices.ADMIN)
-        extra_fields.setdefault("status", Usuario.StatusChoices.ATIVO)
+        extra_fields.setdefault("status", Usuario.StatusChoices.ACTIVO)
         return self._create_user(email, password, **extra_fields)
 
 
-class Usuario(AbstractBaseUser, ModeloUUIDComTimestamps):
+class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     class PerfilChoices(models.TextChoices):
         ADMIN = "admin", "Admin"
         TECNICO = "tecnico", "Técnico"
         CLIENTE = "cliente", "Cliente"
 
     class StatusChoices(models.TextChoices):
-        ATIVO = "ativo", "Ativo"
-        INATIVO = "inativo", "Inativo"
+        ACTIVO = "activo", "Activo"
+        INACTIVO = "inactivo", "Inactivo"
 
     username = None
     first_name = None
@@ -55,7 +55,7 @@ class Usuario(AbstractBaseUser, ModeloUUIDComTimestamps):
     preferencias = models.JSONField(default=dict, blank=True)
     especialidades = models.JSONField(default=list, blank=True)
     data_contratacao = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ATIVO)
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["nome"]

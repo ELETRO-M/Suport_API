@@ -1,8 +1,9 @@
 from datetime import timedelta
+from typing import Type
 
 from django.db.models import Sum
 from django.utils import timezone
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, status, viewsets,serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
@@ -30,6 +31,17 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
             return []
         return [IsAuthenticated()]
 
+    def get_serializer_class(self):
+        if self.action == "register":
+            return RegistoSerializer
+        if self.action == "login":
+            return InicioSessaoSerializer
+        if self.action == "refresh":
+            from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+            return TokenRefreshSerializer
+        from rest_framework import serializers
+        return serializers.Serializer
+
     @action(detail=False, methods=["post"], url_path="register")
     def register(self, request):
         serializer = RegistoSerializer(data=request.data)
@@ -52,7 +64,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
     def logout(self, request):
         return resposta_sucesso(message="Logout realizado com sucesso")
 
-    @action(detail=False, methods=["post"], url_path="refresh")
+    @action(detail=False, methods=["post"], url_path="refresh", authentication_classes=[])
     def refresh(self, request):
         serializer = TokenRefreshSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -73,7 +85,7 @@ class PerfilViewSet(
     permission_classes = [IsAuthenticated]
     queryset = Usuario.objects.all()
 
-    def get_serializer_class(self):
+    def get_serializer_class (self) ->type[serializers.Serializer]:
         if self.action == "password":
             return AlterarSenhaSerializer
         if self.action == "list":

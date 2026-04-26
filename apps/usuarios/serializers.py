@@ -54,8 +54,8 @@ class InicioSessaoSerializer(serializers.Serializer):
         )
         if not utilizador:
             raise serializers.ValidationError("Credenciais inválidas.")
-        if utilizador.status != Usuario.StatusChoices.ATIVO:
-            raise serializers.ValidationError("Utilizador inativo.")
+        if utilizador.status != Usuario.StatusChoices.ACTIVO:
+            raise serializers.ValidationError("Esta conta está inactiva.")
         attrs["user"] = utilizador
         return attrs
 
