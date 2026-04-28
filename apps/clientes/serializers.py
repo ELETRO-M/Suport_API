@@ -22,7 +22,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
         )
 
     def get_contratos_ativos(self, obj):
-        return obj.contratos.filter(status="ativo").count()
+        return obj.contratos.filter(status=Contrato.StatusChoices.ACTIVO).count()
 
 
 class ClienteDetalheSerializer(ClienteListaSerializer):

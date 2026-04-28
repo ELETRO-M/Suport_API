@@ -20,7 +20,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("data_criacao", "data_inicio", "data_fim")
     filterset_fields = ("status", "tipo", "cliente")
 
-    # ✅ serializers por ação
+    
     serializer_action_classes: dict[str, Type[serializers.Serializer]] = {
         "list": ContratoListaSerializer,
         "retrieve": ContratoDetalheSerializer,
@@ -29,7 +29,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         "partial_update": ContratoEscritaSerializer,
     }
 
-    # ✅ sem erro no Pylance
+    
     def get_queryset(self) -> QuerySet:
         request = cast(Request, self.request)
 
@@ -44,7 +44,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by("-data_criacao")
 
-    # ✅ sem erro no Pylance
+
     def get_serializer_class(self) -> Type[serializers.Serializer]:
         return self.serializer_action_classes.get(
             self.action,

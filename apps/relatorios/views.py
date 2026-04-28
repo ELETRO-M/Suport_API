@@ -20,7 +20,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             self.permission_denied(request, message="Sem permissão para este recurso.")
         data = {
             "total_clientes": Usuario.objects.filter(perfil=Usuario.PerfilChoices.CLIENTE).count(),
-            "total_contratos_ativos": Contrato.objects.filter(status="ativo").count(),
+            "total_contratos_ativos": Contrato.objects.filter(status="activo").count(),
             "total_intervencoes": Intervencao.objects.count(),
             "intervencoes_abertas": Intervencao.objects.filter(status="aberto").count(),
             "intervencoes_em_andamento": Intervencao.objects.filter(status="em_andamento").count(),
@@ -29,7 +29,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "intervencoes_concluidas": Intervencao.objects.filter(status="concluido").count(),
             "total_horas_trabalhadas": HoraTrabalho.objects.aggregate(total=Sum("horas"))["total"] or 0,
             "receita_total": Contrato.objects.aggregate(total=Sum("valor_total"))["total"] or 0,
-            "tecnicos_ativos": Usuario.objects.filter(perfil=Usuario.PerfilChoices.TECNICO, status="ativo").count(),
+            "tecnicos_ativos": Usuario.objects.filter(perfil=Usuario.PerfilChoices.TECNICO, status="activo").count(),
             "grafico_intervencoes_mes": [],
             "grafico_horas_tecnico": [],
             "top_clientes": [],
@@ -58,7 +58,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
     def dashboard_cliente(self, request: Request):
         if request.user.perfil != Usuario.PerfilChoices.CLIENTE:
             self.permission_denied(request, message="Sem permissão para este recurso.")
-        contratos = Contrato.objects.filter(cliente=request.user, status="ativo")
+        contratos = Contrato.objects.filter(cliente=request.user, status="activo")
         total_horas_contratadas = sum((item.horas_contratadas for item in contratos), 0)
         total_horas_utilizadas = sum((item.horas_utilizadas for item in contratos), 0)
         total_horas_disponiveis = sum((item.horas_disponiveis for item in contratos), 0)
