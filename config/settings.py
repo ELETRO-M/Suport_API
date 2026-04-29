@@ -1,5 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
+import dj_database_url, os
 
 from decouple import config
 
@@ -63,17 +64,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
-
 DATABASES = {
-    "default": {
-        "ENGINE": config("DB_ENGINE", default="django.db.backends.postgresql"),
-        "NAME": config("DB_NAME", default="suport_db"),
-        "USER": config("DB_USER", default="postgres"),
-        "PASSWORD": config("DB_PASSWORD", default="postgres"),
-        "HOST": config("DB_HOST", default="127.0.0.1"),
-        "PORT": config("DB_PORT", default="5432"),
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+DATABASES["defaut"]=dj_database_url.parse("postgresql://suporte_adm:SJmpdWMYXXcH4PIhMDzYE4AsIRsj3ryn@dpg-d7oilbreo5us73ar13ag-a.ohio-postgres.render.com/suporte_db")
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

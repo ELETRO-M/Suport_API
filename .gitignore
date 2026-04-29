@@ -7,4 +7,6 @@ __pycache__/
 media/
 staticfiles/
 .db
+db.sqlite 
+docker-compose.yml  
 

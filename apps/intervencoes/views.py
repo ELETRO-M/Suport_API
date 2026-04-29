@@ -64,7 +64,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(cliente=utilizador)
         return queryset.order_by("-data_abertura")
 
-    def get_serializer_class(self):
+    def get_serializer_class(self):#escolha de serialazers
         if self.action == "retrieve":
             return IntervencaoDetalheSerializer
         if self.action == "create":
