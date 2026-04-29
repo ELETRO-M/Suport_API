@@ -65,15 +65,10 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
-    'default':{
-       'ENGINE': config('Database'),
-       'NAME' :config('Name'),
-       'USER':config('User'),
-       'PASSWORD':config('Password'),
-       'HOST':config('Host'),
-       'PORT':config('port')
-    }
+    
+    'default': dj_database_url.config(default=config('Host'))
 }
+
 
 
 
