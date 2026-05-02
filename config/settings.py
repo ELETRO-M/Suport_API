@@ -123,4 +123,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API de gestão.",
     "VERSION": "1.0.0",
     "SWAGGER_UI_FAVICON_HREF": "data:,",
+    'SERVERS': [
+        {'url': config("DOMAIN_URL"),'default':config("DOMAIN_URL")=="http://localhost:8000"},
+    ]
 }
