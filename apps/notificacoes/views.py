@@ -4,12 +4,12 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-
+from drf_spectacular.utils import extend_schema
 from apps.configuracoes.responses import resposta_sucesso
 from apps.notificacoes.models import Notificacao
 from apps.notificacoes.serializers import NotificacaoSerializer
 
-
+@extend_schema(tags=["Notificações"])
 class NotificacaoViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = NotificacaoSerializer

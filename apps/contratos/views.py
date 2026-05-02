@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 from rest_framework import status, viewsets, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from apps.usuarios.models import Usuario
 from apps.configuracoes.responses import resposta_sucesso
@@ -14,7 +15,7 @@ from apps.contratos.serializers import (
     ContratoListaSerializer,
 )
 
-
+@extend_schema(tags=["Contratos"])
 class ContratoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     ordering_fields = ("data_criacao", "data_inicio", "data_fim")
@@ -31,6 +32,9 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
     
     def get_queryset(self) -> QuerySet:
+        if getattr(self, "swagger_fake_view", False):
+            return Contrato.objects.none()
+
         request = cast(Request, self.request)
 
         queryset = Contrato.objects.select_related("cliente")
@@ -39,7 +43,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         if cliente_id:
             queryset = queryset.filter(cliente_id=cliente_id)
 
-        if request.user.perfil == Usuario.PerfilChoices.CLIENTE:
+        if request.user.is_authenticated and request.user.perfil == Usuario.PerfilChoices.CLIENTE:
             queryset = queryset.filter(cliente=request.user)
 
         return queryset.order_by("-data_criacao")
@@ -93,11 +97,13 @@ class ContratoViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas admin.")
 
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
 

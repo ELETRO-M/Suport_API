@@ -7,7 +7,7 @@ from rest_framework import parsers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-
+from drf_spectacular.utils import extend_schema
 from apps.usuarios.models import Usuario
 from apps.configuracoes.responses import resposta_sucesso
 from apps.intervencoes.models import (
@@ -30,7 +30,7 @@ from apps.intervencoes.serializers import (
 )
 from apps.notificacoes.models import Notificacao
 
-
+@extend_schema(tags=["Intervenções"])
 class IntervencaoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     parser_classes = [parsers.JSONParser, parsers.MultiPartParser, parsers.FormParser]
@@ -204,7 +204,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             status_code=status.HTTP_201_CREATED,
         )
 
-
+@extend_schema(tags=["Intervenções"])
 class HoraTrabalhoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 

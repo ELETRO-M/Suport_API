@@ -8,8 +8,8 @@ from apps.clientes.serializers import (
     ClienteEscritaSerializer,
     ClienteListaSerializer,
 )
-
-
+from drf_spectacular.utils import extend_schema
+@extend_schema(tags=["Clientes"])
 class ClienteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     search_fields = ("nome", "email", "empresa", "nif")
@@ -17,9 +17,14 @@ class ClienteViewSet(viewsets.ModelViewSet):
     filterset_fields = ("status",)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Usuario.objects.none()
+            
         queryset = Usuario.objects.filter(perfil=Usuario.PerfilChoices.CLIENTE).order_by("nome")
-        if self.request.user.perfil == Usuario.PerfilChoices.CLIENTE:
+        
+        if self.request.user.is_authenticated and self.request.user.perfil == Usuario.PerfilChoices.CLIENTE:
             queryset = queryset.filter(id=self.request.user.id)
+            
         return queryset
 
     def get_serializer_class(self):
@@ -56,10 +61,13 @@ class ClienteViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas administradores podem atualizar clientes.")
+            
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
         return resposta_sucesso(data={"id": str(obj.id), "nome": obj.nome, "email": obj.email})

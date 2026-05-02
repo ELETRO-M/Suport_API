@@ -6,7 +6,8 @@ from apps.configuracoes.responses import resposta_sucesso
 from apps.sistema.models import ConfiguracaoSistema
 from apps.sistema.serializers import ConfiguracaoSistemaSerializer
 
-
+from drf_spectacular.utils import extend_schema
+@extend_schema(tags=["Configurações"])
 class ConfiguracaoSistemaViewSet(
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,

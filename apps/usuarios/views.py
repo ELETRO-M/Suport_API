@@ -7,7 +7,7 @@ from rest_framework import mixins, status, viewsets,serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-
+from drf_spectacular.utils import extend_schema
 from apps.usuarios.models import Usuario
 from apps.usuarios.serializers import (
     AlterarSenhaSerializer,
@@ -22,7 +22,7 @@ from apps.usuarios.serializers import (
 )
 from apps.configuracoes.responses import resposta_sucesso
 
-
+@extend_schema(tags=["Autenticação"])
 class AutenticacaoViewSet(viewsets.GenericViewSet):
     queryset = Usuario.objects.all()
 
@@ -76,7 +76,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         return resposta_sucesso(message="Email de recuperação enviado")
 
-
+@extend_schema(tags=["Perfis"])
 class PerfilViewSet(
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
@@ -110,7 +110,7 @@ class PerfilViewSet(
         request.user.save(update_fields=["password"])
         return resposta_sucesso(message="Password alterada com sucesso")
 
-
+@extend_schema(tags=["Tecnicos"])
 class TecnicoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     search_fields = ("nome", "email", "especialidades")

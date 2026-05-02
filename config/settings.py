@@ -119,7 +119,8 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "CLACS Suporte API",
+    "TITLE": "Suporte API",
     "DESCRIPTION": "API de gestão.",
     "VERSION": "1.0.0",
+    "SWAGGER_UI_FAVICON_HREF": "data:,",
 }

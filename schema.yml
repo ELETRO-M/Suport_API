@@ -1,0 +1,2734 @@
+openapi: 3.0.3
+info:
+  title: CLACS Suporte API
+  version: 1.0.0
+  description: API de gestão.
+paths:
+  /api/schema/:
+    get:
+      operationId: api_schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/login:
+    post:
+      operationId: api_v1_auth_login_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InicioSessao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InicioSessao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InicioSessao'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InicioSessao'
+          description: ''
+  /api/v1/auth/logout:
+    post:
+      operationId: api_v1_auth_logout_create
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/refresh:
+    post:
+      operationId: api_v1_auth_refresh_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/register:
+    post:
+      operationId: api_v1_auth_register_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Registo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Registo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registo'
+          description: ''
+  /api/v1/auth/reset-password:
+    post:
+      operationId: api_v1_auth_reset_password_create
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes:
+    get:
+      operationId: api_v1_clientes_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClienteListaList'
+          description: ''
+    post:
+      operationId: api_v1_clientes_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClienteEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClienteEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteEscrita'
+          description: ''
+  /api/v1/clientes/{id}:
+    get:
+      operationId: api_v1_clientes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDetalhe'
+          description: ''
+    put:
+      operationId: api_v1_clientes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClienteEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClienteEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteEscrita'
+          description: ''
+    patch:
+      operationId: api_v1_clientes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClienteEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClienteEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClienteEscrita'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteEscrita'
+          description: ''
+    delete:
+      operationId: api_v1_clientes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/configuracoes:
+    get:
+      operationId: api_v1_configuracoes_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConfiguracaoSistemaList'
+          description: ''
+    put:
+      operationId: api_v1_configuracoes_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfiguracaoSistema'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConfiguracaoSistema'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConfiguracaoSistema'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracaoSistema'
+          description: ''
+  /api/v1/contratos:
+    get:
+      operationId: api_v1_contratos_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContratoListaList'
+          description: ''
+    post:
+      operationId: api_v1_contratos_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContratoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContratoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContratoEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratoEscrita'
+          description: ''
+  /api/v1/contratos/{id}:
+    get:
+      operationId: api_v1_contratos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratoDetalhe'
+          description: ''
+    put:
+      operationId: api_v1_contratos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContratoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContratoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContratoEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratoEscrita'
+          description: ''
+    patch:
+      operationId: api_v1_contratos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContratoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContratoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContratoEscrita'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratoEscrita'
+          description: ''
+    delete:
+      operationId: api_v1_contratos_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/horas:
+    get:
+      operationId: api_v1_horas_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHoraTrabalhoListaList'
+          description: ''
+    post:
+      operationId: api_v1_horas_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoraTrabalhoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HoraTrabalhoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HoraTrabalhoEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoraTrabalhoEscrita'
+          description: ''
+  /api/v1/horas/{id}:
+    get:
+      operationId: api_v1_horas_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoraTrabalhoLista'
+          description: ''
+    put:
+      operationId: api_v1_horas_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+          description: ''
+    patch:
+      operationId: api_v1_horas_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacao'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+          description: ''
+    delete:
+      operationId: api_v1_horas_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/intervencoes:
+    get:
+      operationId: api_v1_intervencoes_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIntervencaoListaList'
+          description: ''
+    post:
+      operationId: api_v1_intervencoes_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntervencaoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntervencaoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntervencaoEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntervencaoEscrita'
+          description: ''
+  /api/v1/intervencoes/{id}:
+    get:
+      operationId: api_v1_intervencoes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntervencaoDetalhe'
+          description: ''
+    put:
+      operationId: api_v1_intervencoes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntervencaoAtualizacao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntervencaoAtualizacao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntervencaoAtualizacao'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntervencaoAtualizacao'
+          description: ''
+    patch:
+      operationId: api_v1_intervencoes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIntervencaoAtualizacao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIntervencaoAtualizacao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIntervencaoAtualizacao'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntervencaoAtualizacao'
+          description: ''
+    delete:
+      operationId: api_v1_intervencoes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/intervencoes/{id}/anexos:
+    post:
+      operationId: api_v1_intervencoes_anexos_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntervencaoLista'
+          description: ''
+  /api/v1/intervencoes/{id}/atribuir:
+    post:
+      operationId: api_v1_intervencoes_atribuir_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntervencaoLista'
+          description: ''
+  /api/v1/intervencoes/{id}/comentarios:
+    post:
+      operationId: api_v1_intervencoes_comentarios_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntervencaoLista'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntervencaoLista'
+          description: ''
+  /api/v1/notificacoes:
+    get:
+      operationId: api_v1_notificacoes_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificacaoList'
+          description: ''
+  /api/v1/notificacoes/{id}:
+    get:
+      operationId: api_v1_notificacoes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notificacao'
+          description: ''
+  /api/v1/notificacoes/{id}/lida:
+    put:
+      operationId: api_v1_notificacoes_lida_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notificacao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notificacao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notificacao'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notificacao'
+          description: ''
+  /api/v1/notificacoes/marcar-todas-lidas:
+    put:
+      operationId: api_v1_notificacoes_marcar_todas_lidas_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notificacao'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notificacao'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notificacao'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notificacao'
+          description: ''
+  /api/v1/perfil:
+    get:
+      operationId: api_v1_perfil_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPerfilPainelList'
+          description: ''
+    put:
+      operationId: api_v1_perfil_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Perfil'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Perfil'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Perfil'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Perfil'
+          description: ''
+  /api/v1/perfil/password:
+    put:
+      operationId: api_v1_perfil_password_update
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlterarSenha'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlterarSenha'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlterarSenha'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlterarSenha'
+          description: ''
+  /api/v1/relatorios/dashboard-admin:
+    get:
+      operationId: api_v1_relatorios_dashboard_admin_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/relatorios/dashboard-cliente:
+    get:
+      operationId: api_v1_relatorios_dashboard_cliente_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/relatorios/dashboard-tecnico:
+    get:
+      operationId: api_v1_relatorios_dashboard_tecnico_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/relatorios/financeiro:
+    get:
+      operationId: api_v1_relatorios_financeiro_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/relatorios/horas:
+    get:
+      operationId: api_v1_relatorios_horas_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/relatorios/intervencoes:
+    get:
+      operationId: api_v1_relatorios_intervencoes_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tecnicos:
+    get:
+      operationId: api_v1_tecnicos_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTecnicoListaList'
+          description: ''
+    post:
+      operationId: api_v1_tecnicos_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TecnicoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TecnicoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TecnicoEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TecnicoEscrita'
+          description: ''
+  /api/v1/tecnicos/{id}:
+    get:
+      operationId: api_v1_tecnicos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TecnicoDetalhe'
+          description: ''
+    put:
+      operationId: api_v1_tecnicos_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TecnicoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TecnicoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TecnicoEscrita'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TecnicoEscrita'
+          description: ''
+    patch:
+      operationId: api_v1_tecnicos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTecnicoEscrita'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTecnicoEscrita'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTecnicoEscrita'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TecnicoEscrita'
+          description: ''
+    delete:
+      operationId: api_v1_tecnicos_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    AlterarSenha:
+      type: object
+      properties:
+        password_atual:
+          type: string
+          writeOnly: true
+        password_nova:
+          type: string
+          writeOnly: true
+      required:
+      - password_atual
+      - password_nova
+    AnexoIntervencao:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome_arquivo:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        tamanho:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        descricao:
+          type: string
+          maxLength: 255
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - data_criacao
+      - id
+      - nome_arquivo
+      - url
+    ClienteDetalhe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+        contratos_ativos:
+          type: string
+          readOnly: true
+        contratos:
+          type: string
+          readOnly: true
+        intervencoes:
+          type: string
+          readOnly: true
+      required:
+      - contratos
+      - contratos_ativos
+      - data_criacao
+      - email
+      - id
+      - intervencoes
+      - nome
+    ClienteEscrita:
+      type: object
+      properties:
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+      required:
+      - email
+      - nome
+    ClienteLista:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+        contratos_ativos:
+          type: string
+          readOnly: true
+      required:
+      - contratos_ativos
+      - data_criacao
+      - email
+      - id
+      - nome
+    ComentarioIntervencao:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        intervencao:
+          type: string
+          format: uuid
+          readOnly: true
+        usuario_nome:
+          type: string
+          readOnly: true
+        texto:
+          type: string
+        visivel_cliente:
+          type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - data_criacao
+      - id
+      - intervencao
+      - texto
+      - usuario_nome
+    ConfiguracaoSistema:
+      type: object
+      properties:
+        moeda:
+          type: string
+          maxLength: 10
+        fuso_horario:
+          type: string
+          maxLength: 100
+        email_notificacoes:
+          type: boolean
+        prazo_padrao_intervencao:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        taxa_hora_padrao:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+    ContratoDetalhe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        cliente_id:
+          type: string
+          format: uuid
+          readOnly: true
+        cliente_nome:
+          type: string
+          readOnly: true
+        tipo:
+          $ref: '#/components/schemas/Tipo58fEnum'
+        horas_contratadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        horas_utilizadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        horas_disponiveis:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        valor_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/StatusAe3Enum'
+        observacoes:
+          type: string
+        cliente:
+          type: string
+          readOnly: true
+        valor_hora:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        intervencoes:
+          type: string
+          readOnly: true
+      required:
+      - cliente
+      - cliente_id
+      - cliente_nome
+      - data_fim
+      - data_inicio
+      - horas_disponiveis
+      - id
+      - intervencoes
+      - tipo
+      - valor_total
+    ContratoEscrita:
+      type: object
+      properties:
+        cliente_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        tipo:
+          $ref: '#/components/schemas/Tipo58fEnum'
+        horas_contratadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/StatusAe3Enum'
+        observacoes:
+          type: string
+      required:
+      - cliente_id
+      - data_fim
+      - data_inicio
+      - tipo
+      - valor_total
+    ContratoLista:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        cliente_id:
+          type: string
+          format: uuid
+          readOnly: true
+        cliente_nome:
+          type: string
+          readOnly: true
+        tipo:
+          $ref: '#/components/schemas/Tipo58fEnum'
+        horas_contratadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        horas_utilizadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        horas_disponiveis:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        valor_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/StatusAe3Enum'
+        observacoes:
+          type: string
+      required:
+      - cliente_id
+      - cliente_nome
+      - data_fim
+      - data_inicio
+      - horas_disponiveis
+      - id
+      - tipo
+      - valor_total
+    HistoricoEstadoIntervencao:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusB1cEnum'
+        alterado_por_nome:
+          type: string
+          readOnly: true
+        nota:
+          type: string
+          maxLength: 255
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alterado_por_nome
+      - data_criacao
+      - id
+      - status
+    HoraTrabalhoAtualizacao:
+      type: object
+      properties:
+        horas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        descricao:
+          type: string
+      required:
+      - descricao
+      - horas
+    HoraTrabalhoEscrita:
+      type: object
+      properties:
+        intervencao_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        tecnico_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        horas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        data_trabalho:
+          type: string
+          format: date
+        descricao:
+          type: string
+        tipo:
+          $ref: '#/components/schemas/Tipo23bEnum'
+      required:
+      - data_trabalho
+      - descricao
+      - horas
+      - intervencao_id
+      - tipo
+    HoraTrabalhoLista:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        intervencao:
+          type: string
+          readOnly: true
+        tecnico:
+          type: string
+          readOnly: true
+        horas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        data_trabalho:
+          type: string
+          format: date
+        descricao:
+          type: string
+        tipo:
+          $ref: '#/components/schemas/Tipo23bEnum'
+      required:
+      - data_trabalho
+      - descricao
+      - horas
+      - id
+      - intervencao
+      - tecnico
+      - tipo
+    InicioSessao:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    IntervencaoAtualizacao:
+      type: object
+      properties:
+        titulo:
+          type: string
+          maxLength: 255
+        descricao:
+          type: string
+        tecnico_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusB1cEnum'
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+      required:
+      - descricao
+      - prioridade
+      - titulo
+    IntervencaoDetalhe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        numero:
+          type: string
+          maxLength: 30
+        titulo:
+          type: string
+          maxLength: 255
+        descricao:
+          type: string
+        cliente_id:
+          type: string
+          format: uuid
+          readOnly: true
+        cliente_nome:
+          type: string
+          readOnly: true
+        tecnico_id:
+          type: string
+          format: uuid
+          readOnly: true
+        tecnico_nome:
+          type: string
+          readOnly: true
+        contrato_id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusB1cEnum'
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        horas_trabalhadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        data_abertura:
+          type: string
+          format: date-time
+        data_conclusao:
+          type: string
+          format: date-time
+          nullable: true
+        anexos:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnexoIntervencao'
+          readOnly: true
+        cliente:
+          type: string
+          readOnly: true
+        tecnico:
+          type: string
+          readOnly: true
+        contrato:
+          type: string
+          readOnly: true
+        historico_status:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoricoEstadoIntervencao'
+          readOnly: true
+        comentarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComentarioIntervencao'
+          readOnly: true
+      required:
+      - anexos
+      - cliente
+      - cliente_id
+      - cliente_nome
+      - comentarios
+      - contrato
+      - contrato_id
+      - descricao
+      - historico_status
+      - id
+      - prioridade
+      - tecnico
+      - tecnico_id
+      - tecnico_nome
+      - titulo
+    IntervencaoEscrita:
+      type: object
+      properties:
+        titulo:
+          type: string
+          maxLength: 255
+        descricao:
+          type: string
+        cliente_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        contrato_id:
+          type: string
+          format: uuid
+          writeOnly: true
+          nullable: true
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        anexos:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
+      required:
+      - cliente_id
+      - descricao
+      - prioridade
+      - titulo
+    IntervencaoLista:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        numero:
+          type: string
+          maxLength: 30
+        titulo:
+          type: string
+          maxLength: 255
+        descricao:
+          type: string
+        cliente_id:
+          type: string
+          format: uuid
+          readOnly: true
+        cliente_nome:
+          type: string
+          readOnly: true
+        tecnico_id:
+          type: string
+          format: uuid
+          readOnly: true
+        tecnico_nome:
+          type: string
+          readOnly: true
+        contrato_id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusB1cEnum'
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+        horas_trabalhadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        data_abertura:
+          type: string
+          format: date-time
+        data_conclusao:
+          type: string
+          format: date-time
+          nullable: true
+        anexos:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnexoIntervencao'
+          readOnly: true
+      required:
+      - anexos
+      - cliente_id
+      - cliente_nome
+      - contrato_id
+      - descricao
+      - id
+      - prioridade
+      - tecnico_id
+      - tecnico_nome
+      - titulo
+    Notificacao:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        tipo:
+          type: string
+          maxLength: 100
+        titulo:
+          type: string
+          maxLength: 255
+        mensagem:
+          type: string
+        link:
+          type: string
+          maxLength: 255
+        lida:
+          type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - data_criacao
+      - id
+      - mensagem
+      - tipo
+      - titulo
+    PaginatedClienteListaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClienteLista'
+    PaginatedConfiguracaoSistemaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfiguracaoSistema'
+    PaginatedContratoListaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContratoLista'
+    PaginatedHoraTrabalhoListaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoraTrabalhoLista'
+    PaginatedIntervencaoListaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntervencaoLista'
+    PaginatedNotificacaoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notificacao'
+    PaginatedPerfilPainelList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerfilPainel'
+    PaginatedTecnicoListaList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TecnicoLista'
+    PatchedClienteEscrita:
+      type: object
+      properties:
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+    PatchedContratoEscrita:
+      type: object
+      properties:
+        cliente_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        tipo:
+          $ref: '#/components/schemas/Tipo58fEnum'
+        horas_contratadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/StatusAe3Enum'
+        observacoes:
+          type: string
+    PatchedHoraTrabalhoAtualizacao:
+      type: object
+      properties:
+        horas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        descricao:
+          type: string
+    PatchedIntervencaoAtualizacao:
+      type: object
+      properties:
+        titulo:
+          type: string
+          maxLength: 255
+        descricao:
+          type: string
+        tecnico_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusB1cEnum'
+        prioridade:
+          $ref: '#/components/schemas/PrioridadeEnum'
+    PatchedTecnicoEscrita:
+      type: object
+      properties:
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        password:
+          type: string
+          writeOnly: true
+        especialidades: {}
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+    Perfil:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          readOnly: true
+        perfil:
+          allOf:
+          - $ref: '#/components/schemas/PerfilEnum'
+          readOnly: true
+        telefone:
+          type: string
+          maxLength: 50
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 200
+        preferencias: {}
+      required:
+      - email
+      - id
+      - nome
+      - perfil
+    PerfilEnum:
+      enum:
+      - admin
+      - tecnico
+      - cliente
+      type: string
+      description: |-
+        * `admin` - Admin
+        * `tecnico` - Técnico
+        * `cliente` - Cliente
+    PerfilPainel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        perfil:
+          $ref: '#/components/schemas/PerfilEnum'
+        telefone:
+          type: string
+          maxLength: 50
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 200
+        preferencias: {}
+        contratos_ativos:
+          type: string
+          readOnly: true
+        intervencoes_abertas:
+          type: string
+          readOnly: true
+      required:
+      - contratos_ativos
+      - email
+      - id
+      - intervencoes_abertas
+      - nome
+      - perfil
+    PrioridadeEnum:
+      enum:
+      - baixa
+      - media
+      - alta
+      - urgente
+      type: string
+      description: |-
+        * `baixa` - Baixa
+        * `media` - Média
+        * `alta` - Alta
+        * `urgente` - Urgente
+    Registo:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        perfil:
+          $ref: '#/components/schemas/PerfilEnum'
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+      required:
+      - email
+      - nome
+      - password
+      - perfil
+    Status8efEnum:
+      enum:
+      - activo
+      - inactivo
+      type: string
+      description: |-
+        * `activo` - Activo
+        * `inactivo` - Inactivo
+    StatusAe3Enum:
+      enum:
+      - activo
+      - expirado
+      - cancelado
+      type: string
+      description: |-
+        * `activo` - Activo
+        * `expirado` - Expirado
+        * `cancelado` - Cancelado
+    StatusB1cEnum:
+      enum:
+      - aberto
+      - em_andamento
+      - resolvido
+      - fechado
+      - concluido
+      type: string
+      description: |-
+        * `aberto` - Aberto
+        * `em_andamento` - Em andamento
+        * `resolvido` - Resolvido
+        * `fechado` - Fechado
+        * `concluido` - Concluído
+    TecnicoDetalhe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        especialidades: {}
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+        intervencoes_ativas:
+          type: string
+          readOnly: true
+        total_horas_mes:
+          type: string
+          readOnly: true
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        historico_intervencoes:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - historico_intervencoes
+      - id
+      - intervencoes_ativas
+      - nome
+      - total_horas_mes
+    TecnicoEscrita:
+      type: object
+      properties:
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        password:
+          type: string
+          writeOnly: true
+        especialidades: {}
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+      required:
+      - email
+      - nome
+    TecnicoLista:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        especialidades: {}
+        status:
+          $ref: '#/components/schemas/Status8efEnum'
+        intervencoes_ativas:
+          type: string
+          readOnly: true
+        total_horas_mes:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - id
+      - intervencoes_ativas
+      - nome
+      - total_horas_mes
+    Tipo23bEnum:
+      enum:
+      - presencial
+      - remoto
+      type: string
+      description: |-
+        * `presencial` - Presencial
+        * `remoto` - Remoto
+    Tipo58fEnum:
+      enum:
+      - horas
+      - mensal
+      - anual
+      type: string
+      description: |-
+        * `horas` - Horas
+        * `mensal` - Mensal
+        * `anual` - Anual
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

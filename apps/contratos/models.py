@@ -13,7 +13,7 @@ class Contrato(ModeloUUIDComTimestamps):
         ANUAL = "anual", "Anual"
 
     class StatusChoices(models.TextChoices):
-        ATIVO = "ativo", "Ativo"
+        ACTIVO = "activo", "Activo"
         EXPIRADO = "expirado", "Expirado"
         CANCELADO = "cancelado", "Cancelado"
 
@@ -30,7 +30,7 @@ class Contrato(ModeloUUIDComTimestamps):
     valor_hora = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     data_inicio = models.DateField()
     data_fim = models.DateField()
-    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ATIVO)
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
     observacoes = models.TextField(blank=True)
 
     class Meta:
