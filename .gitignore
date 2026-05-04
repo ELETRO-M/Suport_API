@@ -7,6 +7,6 @@ __pycache__/
 media/
 staticfiles/
 .db
-sqlite3
+db.sqlite 
 docker-compose.yml  
 
