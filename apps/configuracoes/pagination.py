@@ -10,13 +10,14 @@ class PaginacaoPadraoResultados(PageNumberPagination):
     def get_paginated_response(self, data):
         return Response(
             {
-                "success": True,
-                "data": data,
+             
+               
                 "pagination": {
                     "total": self.page.paginator.count,
                     "page": self.page.number,
                     "limit": self.get_page_size(self.request),
                     "total_pages": self.page.paginator.num_pages,
                 },
+                 "data": data
             }
         )

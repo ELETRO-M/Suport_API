@@ -13,15 +13,13 @@ from apps.usuarios.serializers import (
     AlterarSenhaSerializer,
     InicioSessaoSerializer,
     PerfilPainelSerializer,
-    PerfilSerializer,
-    RedefinirSenhaSerializer,
+    UsuarioSerializer,
     RegistoSerializer,
     TecnicoDetalheSerializer,
     TecnicoEscritaSerializer,
     TecnicoListaSerializer,
 )
 from apps.configuracoes.responses import resposta_sucesso
-
 @extend_schema(tags=["Autenticação"])
 class AutenticacaoViewSet(viewsets.GenericViewSet):
     queryset = Usuario.objects.all()
@@ -32,6 +30,8 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         return [IsAuthenticated()]
 
     def get_serializer_class(self):
+        if self.action == "lista":
+            return UsuarioSerializer
         if self.action == "register":
             return RegistoSerializer
         if self.action == "login":
@@ -39,11 +39,53 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         if self.action == "refresh":
             from rest_framework_simplejwt.serializers import TokenRefreshSerializer
             return TokenRefreshSerializer
+        if self.action == "lista":
+            return UsuarioSerializer
         from rest_framework import serializers
         return serializers.Serializer
+    @action(detail=False, methods=["get","put"], url_path="register/",permission_classes=[IsAuthenticated])
+    def lista(self, request, *args, **kwargs):
+        queryset=Usuario.all_objects.all()
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Sem permissão para este recurso.")
+        if request.method == "PUT":
+            
+            return self.update(request, *args, **kwargs)
+        
+        if request.method=="GET":
+            queryset = self.filter_queryset(queryset)
+            page = self.paginate_queryset(queryset)
 
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                paginated_data = self.get_paginated_response(serializer.data).data
+                
+                return resposta_sucesso(data=paginated_data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            return resposta_sucesso(data=serializer.data)
+
+        
+#_________________________________________________________________________________________________________________
+    @action(detail=True, methods=["delete"], url_path="register")
+    def delete_usuario(self, request, *args, **kwargs):
+
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            raise PermissionDenied("Permissão Negada.")
+
+        usuario = self.get_object()
+
+        if usuario.is_deleted:
+            return resposta_sucesso(message="Usuário já deletado")
+
+        usuario.delete()
+
+        return resposta_sucesso(message="Usuário deletado com sucesso")
+#__________________________________________________________________________________________________________
     @action(detail=False, methods=["post"], url_path="register")
     def register(self, request):
+        if request.user.perfil == Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Sem permissão para este recurso.")
         serializer = RegistoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         utilizador = serializer.save()
@@ -173,5 +215,5 @@ class TecnicoViewSet(viewsets.ModelViewSet):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas administradores podem remover técnicos.")
         instance = self.get_object()
-        instance.delete()
+        self.perform_destroy(instance)
         return resposta_sucesso(message="Técnico deletado com sucesso")

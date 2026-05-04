@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.usuarios.models import Usuario
+from apps.contratos.models import Contrato
 
 
 class ClienteListaSerializer(serializers.ModelSerializer):
@@ -22,7 +23,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
         )
 
     def get_contratos_ativos(self, obj):
-        return obj.contratos.filter(status=contratos.StatusChoices.ACTIVO).count()
+        return obj.contratos.alive().filter(status=Contrato.StatusChoices.ACTIVO).count()
 
 
 class ClienteDetalheSerializer(ClienteListaSerializer):
@@ -40,7 +41,7 @@ class ClienteDetalheSerializer(ClienteListaSerializer):
                 "status": item.status,
                 "horas_disponiveis": item.horas_disponiveis,
             }
-            for item in obj.contratos.order_by("-data_criacao")[:20]
+            for item in obj.contratos.alive().order_by("-data_criacao")[:20]
         ]
 
     def get_intervencoes(self, obj):

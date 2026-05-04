@@ -8,7 +8,9 @@ from apps.usuarios.models import Usuario
 class UsuarioAdmin(UserAdmin):
     model = Usuario
     ordering = ("email",)
-    list_display = ("email", "nome", "perfil", "status", "is_staff", "is_superuser")
+    def get_queryset(self, request):
+        return Usuario.all_objects.all()
+    list_display = ("email", "nome", "perfil", "status","is_deleted", "is_staff", "is_superuser")
     list_filter = ("perfil", "status", "is_staff", "is_superuser")
     search_fields = ("email", "nome", "telefone", "empresa")
 
@@ -29,3 +31,5 @@ class UsuarioAdmin(UserAdmin):
         ),
     )
     readonly_fields = ("data_criacao", "data_actualizacao", "last_login")
+    def get_queryset(self, request):
+        return Usuario.all_objects.all()

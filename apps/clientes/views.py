@@ -76,5 +76,5 @@ class ClienteViewSet(viewsets.ModelViewSet):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas administradores podem deletar clientes.")
         instance = self.get_object()
-        instance.delete()
+        self.perform_destroy(instance)
         return resposta_sucesso(message="Cliente deletado com sucesso")

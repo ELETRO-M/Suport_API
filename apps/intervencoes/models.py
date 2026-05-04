@@ -4,11 +4,10 @@ from django.db import models
 from django.utils import timezone
 
 from apps.usuarios.models import Usuario
-from apps.configuracoes.models import ModeloUUIDComTimestamps
+from apps.configuracoes.models import ModeloUUIDComTimestamps,SoftDeleteModel
 from apps.contratos.models import Contrato
 
-
-class Intervencao(ModeloUUIDComTimestamps):
+class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
     class StatusChoices(models.TextChoices):
         ABERTO = "aberto", "Aberto"
         EM_ANDAMENTO = "em_andamento", "Em andamento"
@@ -46,6 +45,7 @@ class Intervencao(ModeloUUIDComTimestamps):
         null=True,
         blank=True,
     )
+    
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ABERTO)
     prioridade = models.CharField(max_length=20, choices=PrioridadeChoices.choices)
     horas_trabalhadas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
@@ -56,7 +56,7 @@ class Intervencao(ModeloUUIDComTimestamps):
         ordering = ("-data_abertura",)
 
     def __str__(self):
-        return f"{self.numero} - {self.titulo}"
+        return f"{self.numero} - {self  .titulo}"
 
     def save(self, *args, **kwargs):
         if not self.numero:
@@ -75,14 +75,14 @@ class HistoricoEstadoIntervencao(ModeloUUIDComTimestamps):
     nota = models.CharField(max_length=255, blank=True)
 
 
-class ComentarioIntervencao(ModeloUUIDComTimestamps):
+class ComentarioIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     intervencao = models.ForeignKey(Intervencao, related_name="comentarios", on_delete=models.CASCADE)
     usuario = models.ForeignKey(Usuario, related_name="comentarios_intervencao", on_delete=models.CASCADE)
     texto = models.TextField()
     visivel_cliente = models.BooleanField(default=True)
 
 
-class AnexoIntervencao(ModeloUUIDComTimestamps):
+class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     intervencao = models.ForeignKey(Intervencao, related_name="anexos", on_delete=models.CASCADE)
     utilizador = models.ForeignKey(Usuario, related_name="anexos_intervencao", on_delete=models.SET_NULL, null=True)
     arquivo = models.FileField(upload_to="intervencoes/anexos/")

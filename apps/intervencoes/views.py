@@ -264,7 +264,7 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if request.user.perfil == Usuario.PerfilChoices.TECNICO:
+        if request.user.perfil == Usuario.PerfilChoices.TECNICO or request.user.perfil == Usuario.PerfilChoices.ADMIN:
             if instance.tecnico_id != request.user.id:
                 self.permission_denied(request, message="Só pode apagar as próprias horas.")
             if timezone.now() - instance.data_criacao > timedelta(hours=24):

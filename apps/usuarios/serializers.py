@@ -25,6 +25,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
             "especialidades",
             "data_contratacao",
             "status",
+            "is_deleted",
             "data_criacao",
         )
         read_only_fields = ("id", "perfil", "data_criacao")

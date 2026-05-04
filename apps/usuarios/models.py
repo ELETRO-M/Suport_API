@@ -28,6 +28,26 @@ class GestorUsuario(BaseUserManager):
         extra_fields.setdefault("perfil", Usuario.PerfilChoices.ADMIN)
         extra_fields.setdefault("status", Usuario.StatusChoices.ACTIVO)
         return self._create_user(email, password, **extra_fields)
+    use_in_migrations = True
+
+    def get_queryset(self):
+        return UsuarioQuerySet(self.model, using=self._db).filter(is_deleted=False)
+
+    def all_with_deleted(self):
+        return UsuarioQuerySet(self.model, using=self._db)
+
+    def only_deleted(self):
+        return self.all_with_deleted().deleted()
+
+class UsuarioQuerySet(models.QuerySet):
+    def delete(self):
+        return super().update(is_deleted=True)
+
+    def alive(self):
+        return self.filter(is_deleted=False)
+
+    def deleted(self):
+        return self.filter(is_deleted=True)
 
 
 class Usuario(AbstractUser, ModeloUUIDComTimestamps):
@@ -52,6 +72,8 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     nif = models.CharField(max_length=50, blank=True)
     endereco = models.TextField(blank=True)
     avatar_url = models.URLField(blank=True)
+    is_deleted=models.BooleanField(default=False)
+
     preferencias = models.JSONField(default=dict, blank=True)
     especialidades = models.JSONField(default=list, blank=True)
     data_contratacao = models.DateField(null=True, blank=True)
@@ -61,6 +83,13 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     REQUIRED_FIELDS = ["nome"]
 
     objects=GestorUsuario()
+    all_objects = models.Manager() 
+
+    def delete(self, *args, **kwargs):
+        self.is_deleted = True
+        self.status="inactivo"      
+        self.save(update_fields=["is_deleted","status"])
+
 
     def __str__(self):
         return f"{self.nome} <{self.email}>"

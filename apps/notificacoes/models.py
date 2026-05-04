@@ -8,6 +8,7 @@ class Notificacao(ModeloUUIDComTimestamps):
     utilizador = models.ForeignKey(Usuario, related_name="notificacoes", on_delete=models.CASCADE)
     tipo = models.CharField(max_length=100)
     titulo = models.CharField(max_length=255)
+    delete=models.BooleanField(default=True)
     mensagem = models.TextField()
     link = models.CharField(max_length=255, blank=True)
     lida = models.BooleanField(default=False)

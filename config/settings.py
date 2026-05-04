@@ -67,7 +67,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     
-    'default': dj_database_url.config(default=config('Host'))
+    'default': dj_database_url.config('Host', default="sqlite:///db.sqlite3")
 }
 
 
@@ -124,6 +124,6 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SWAGGER_UI_FAVICON_HREF": "data:,",
     'SERVERS': [
-        {'url': config("DOMAIN_URL"),'default':config("DOMAIN_URL")=="http://localhost:8000"},
+        {'url': config("DOMAIN_URL", default="http://localhost:8000")},
     ]
 }
