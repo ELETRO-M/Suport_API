@@ -5,7 +5,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
-from apps.usuarios.views import AutenticacaoViewSet, PerfilViewSet, TecnicoViewSet
+from apps.usuarios.views import AutenticacaoViewSet, PerfilViewSet, TecnicoViewSet, RecuperarConta, reset_password_confirm
 from apps.contratos.views import ContratoViewSet
 from apps.clientes.views import ClienteViewSet
 from apps.intervencoes.views import HoraTrabalhoViewSet, IntervencaoViewSet
@@ -23,6 +23,8 @@ router.register(r"horas", HoraTrabalhoViewSet, basename="horas")
 router.register(r"tecnicos", TecnicoViewSet, basename="tecnicos")
 router.register(r"relatorios", RelatorioViewSet, basename="relatorios")
 router.register(r"notificacoes", NotificacaoViewSet, basename="notificacoes")
+router.register(r"recuperar", RecuperarConta, basename="recuperar")
+router.register(r'reset-password', reset_password_confirm, basename='restpassword' )
 
 urlpatterns = [
     path("admin/", admin.site.urls),

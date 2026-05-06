@@ -31,7 +31,6 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
     valor_total = models.DecimalField(max_digits=14, decimal_places=2)
     valor_hora = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     data_inicio = models.DateField()
-    delete=models.BooleanField(default=False)
     data_fim = models.DateField()
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
     observacoes = models.TextField(blank=True)

@@ -1,8 +1,13 @@
-from datetime import timedelta
-from typing import Type
 
+from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse
+from django.conf import settings
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mail
 from django.db.models import Sum
 from django.utils import timezone
+from rest_framework.response import Response
 from rest_framework import mixins, status, viewsets,serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -18,6 +23,8 @@ from apps.usuarios.serializers import (
     TecnicoDetalheSerializer,
     TecnicoEscritaSerializer,
     TecnicoListaSerializer,
+    RecuperaSerializer,
+    ResetSenhaSerializer
 )
 from apps.configuracoes.responses import resposta_sucesso
 @extend_schema(tags=["Autenticação"])
@@ -43,27 +50,23 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
             return UsuarioSerializer
         from rest_framework import serializers
         return serializers.Serializer
-    @action(detail=False, methods=["get","put"], url_path="register/",permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["get"], url_path="register",permission_classes=[IsAuthenticated])
     def lista(self, request, *args, **kwargs):
         queryset=Usuario.all_objects.all()
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Sem permissão para este recurso.")
-        if request.method == "PUT":
-            
-            return self.update(request, *args, **kwargs)
         
-        if request.method=="GET":
-            queryset = self.filter_queryset(queryset)
-            page = self.paginate_queryset(queryset)
+        queryset = self.filter_queryset(queryset)
+        page = self.paginate_queryset(queryset)
 
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                paginated_data = self.get_paginated_response(serializer.data).data
-                
-                return resposta_sucesso(data=paginated_data)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            paginated_data = self.get_paginated_response(serializer.data).data
+            
+            return resposta_sucesso(data=paginated_data)
 
-            serializer = self.get_serializer(queryset, many=True)
-            return resposta_sucesso(data=serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return resposta_sucesso(data=serializer.data)
 
         
 #_________________________________________________________________________________________________________________
@@ -82,13 +85,31 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         return resposta_sucesso(message="Usuário deletado com sucesso")
 #__________________________________________________________________________________________________________
-    @action(detail=False, methods=["post"], url_path="register")
+    @action(detail=False, methods=["post"], url_path="register/",permission_classes=[IsAuthenticated])
     def register(self, request):
-        if request.user.perfil == Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Sem permissão para este recurso.")
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            raise PermissionDenied("Permissão Negada.")
+
         serializer = RegistoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         utilizador = serializer.save()
+        run=send_mail(
+            subject=f"Seja bem-vindo ao API de Gestão de Serviços.",
+            message=(f"Olá,{utilizador.nome} \nSeja bem-vindo(a) ao nosso sistema!\n\n"
+            "O seu cadastro foi realizado com sucesso e já pode começar a utilizar todas as funcionalidades disponíveis."
+            "Aqui estão alguns dados importantes:\n\n"
+            "1- Utilize o seu email e senha para acessar a plataforma\n"
+            "2- Mantenha os seus dados sempre atualizados\n"
+            "3- Em caso de dúvidas, entre em contacto com o nosso suporte Estamos felizes por tê-lo(a) connosco e esperamos que tenha uma excelente experiência.\n\n"
+            "Atenciosamente,"
+            ),
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[utilizador.email],
+        )
+        if not run:
+            utilizador.delete()
+            raise serializers.ValidationError({"email": "Email de confirmação não enviado."})
+      
         data = {
             "usuario_id": str(utilizador.id),
             "email": utilizador.email,
@@ -116,7 +137,12 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
     def reset_password(self, request):
         serializer = RedefinirSenhaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return resposta_sucesso(message="Email de recuperação enviado")
+        return resposta_sucesso(message="Recuperado com sucesso")
+    @action(detail=True, methods=["post"], url_path="recuperar")
+    def perfil(self, request, *args, **kwargs):
+        usuario = self.get_object()
+        serializer = self.get_serializer(usuario)
+        return resposta_sucesso(data=serializer.data)
 
 @extend_schema(tags=["Perfis"])
 class PerfilViewSet(
@@ -217,3 +243,62 @@ class TecnicoViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return resposta_sucesso(message="Técnico deletado com sucesso")
+
+
+
+@extend_schema(tags=['Recuperação'])
+class RecuperarConta(viewsets.GenericViewSet):
+
+    permission_classes=[]
+    authentication_classes=[]
+    queryset = Usuario.all_objects.all()
+    serializer_class=RecuperaSerializer
+
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        utilizador = serializer.validated_data["user"]
+        if not utilizador:
+            return resposta_erro("Utilizador não encontrado", status_code=status.HTTP_404_NOT_FOUND)
+        
+        uid = urlsafe_base64_encode(force_bytes(utilizador.pk))
+        token=default_token_generator.make_token(utilizador)
+
+    
+
+        link = f"{settings.SITE_URL}{reverse('restpassword-list')}?uid={uid}"
+
+        send_mail(
+            subject="Recuperação de Senha - API Gestão de Serviços",
+            message=(
+                f"Olá, {utilizador.nome}\n\n"
+                "Recebemos um pedido para redefinir a senha da sua conta.\n"
+                "Para redefinir a sua senha, clique no link abaixo:\n"
+                f"Token: {token}\n"
+                f"Link: {link}\n"
+            ),
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[utilizador.email], 
+        )
+
+        utilizador.recuperar()
+        utilizador.save()
+
+
+        return Response(
+            {"detail": "Enviámos um email para recuperar a conta"},
+            status=status.HTTP_200_OK
+        )
+@extend_schema(tags=['Recuperação'])
+class reset_password_confirm(viewsets.GenericViewSet):
+    permission_classes=[]
+    authentication_classes=[]
+    queryset = Usuario.all_objects.all()
+    serializer_class=ResetSenhaSerializer
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return resposta_sucesso(message="Senha resetada com sucesso")

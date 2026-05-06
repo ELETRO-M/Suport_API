@@ -2,6 +2,9 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
 
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
@@ -75,9 +78,19 @@ class InicioSessaoSerializer(serializers.Serializer):
         }
 
 
-class RedefinirSenhaSerializer(serializers.Serializer):
+class RecuperaSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
+    def validate(self, attrs):
+        email = attrs.get("email")
+
+        try:
+            utilizador = Usuario.all_objects.get(email=email)
+        except Usuario.DoesNotExist:
+            raise serializers.ValidationError("Conta não existe.")
+
+        attrs["user"] = utilizador
+        return attrs
 
 class PerfilSerializer(serializers.ModelSerializer):
     class Meta:
@@ -94,6 +107,38 @@ class PerfilSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "email", "perfil")
 
 
+class ResetSenhaSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        request = self.context["request"]
+
+        uid = request.query_params.get("uid")
+        token = request.query_params.get("token")
+
+        if not uid or not token:
+            raise serializers.ValidationError("Link inválido.")
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uid))
+            user = Usuario.all_objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, Usuario.DoesNotExist):
+            raise serializers.ValidationError("Link inválido.")
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError("Token inválido ou expirado.")
+
+        from django.contrib.auth.password_validation import validate_password
+        validate_password(attrs["new_password"], user)
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data["user"]
+        user.set_password(self.validated_data["new_password"])
+        user.save()
+        return user
 class AlterarSenhaSerializer(serializers.Serializer):
     password_atual = serializers.CharField(write_only=True)
     password_nova = serializers.CharField(write_only=True, validators=[validate_password])

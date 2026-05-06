@@ -28,8 +28,10 @@ class GestorUsuario(BaseUserManager):
         extra_fields.setdefault("perfil", Usuario.PerfilChoices.ADMIN)
         extra_fields.setdefault("status", Usuario.StatusChoices.ACTIVO)
         return self._create_user(email, password, **extra_fields)
-    use_in_migrations = True
+    
 
+
+        
     def get_queryset(self):
         return UsuarioQuerySet(self.model, using=self._db).filter(is_deleted=False)
 
@@ -42,6 +44,8 @@ class GestorUsuario(BaseUserManager):
 class UsuarioQuerySet(models.QuerySet):
     def delete(self):
         return super().update(is_deleted=True)
+    def hard_delete(self):
+        return super().delete()     
 
     def alive(self):
         return self.filter(is_deleted=False)
@@ -83,13 +87,18 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     REQUIRED_FIELDS = ["nome"]
 
     objects=GestorUsuario()
-    all_objects = models.Manager() 
+    all_objects = UsuarioQuerySet.as_manager()
+    def recuperar(self):
+        self.is_deleted = False
+        self.status="activo"      
+        self.save(update_fields=["is_deleted","status"])
 
     def delete(self, *args, **kwargs):
         self.is_deleted = True
         self.status="inactivo"      
         self.save(update_fields=["is_deleted","status"])
-
+    def hard_delete(self):
+        return super().delete()
 
     def __str__(self):
         return f"{self.nome} <{self.email}>"

@@ -7,7 +7,7 @@ Projeto Django + Django REST Framework criado a partir do documento `routes_supo
 - Django
 - Django REST Framework
 - JWT com `simplejwt`
-- SQLite
+- PostgreSQL
 
 ## Estrutura principal
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from django.db import IntegrityError
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
 
@@ -23,7 +23,13 @@ class ClienteListaSerializer(serializers.ModelSerializer):
         )
 
     def get_contratos_ativos(self, obj):
-        return obj.contratos.alive().filter(status=Contrato.StatusChoices.ACTIVO).count()
+        return Contrato.objects.filter(
+            cliente=obj,
+            is_deleted=False,
+            status=Contrato.StatusChoices.ACTIVO
+        ).count()
+    
+   
 
 
 class ClienteDetalheSerializer(ClienteListaSerializer):
@@ -73,12 +79,18 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        password = validated_data.pop("password")
-        return Usuario.objects.create_user(
-            password=password,
-            perfil=Usuario.PerfilChoices.CLIENTE,
-            **validated_data,
-        )
+        try:
+            password = validated_data.pop("password")
+            return Usuario.objects.create_user(
+                password=password,
+                perfil=Usuario.PerfilChoices.CLIENTE,
+                **validated_data,
+            )
+        except IntegrityError:
+            raise serializers.ValidationError({
+                "email": "Este email já foi registado tenta recuperar a conta em:http://localhost:3000/recuperar-password"
+            })
+       
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
@@ -88,3 +100,8 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+    
+    def validate_email(self, value):
+        if Usuario.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Este email já está em uso.")
+        return value

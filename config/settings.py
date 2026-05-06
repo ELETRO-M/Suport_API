@@ -8,8 +8,8 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY")
-DEBUG = config("DEBUG")
-ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS").split(",") 
+DEBUG = config("DEBUG", cast=bool)
+ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", default="*").split(",") 
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -66,7 +66,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
-      "default": dj_database_url.config()
+      "default": dj_database_url.config(default='sqlite:///db.sqlite3')
 }
 
 
@@ -82,7 +82,10 @@ LANGUAGE_CODE = "pt-pt"
 TIME_ZONE = "Africa/Luanda"
 USE_I18N = True
 USE_TZ = True
+SITE_URL = config("DOMAIN_URL", default="http://localhost:8000")
+STATICFILES_DIRS = []
 
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 MEDIA_URL = "/media/"
@@ -113,6 +116,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(config("ACCESS_TOKEN_LIFETIME_MINUTES"))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(config("REFRESH_TOKEN_LIFETIME_DAYS"))),
+    "PASSWORD_RESET_TIMEOUT": 900,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "ROTATE_REFRESH_TOKENS": True,
 }
@@ -126,3 +130,14 @@ SPECTACULAR_SETTINGS = {
         {'url': config("DOMAIN_URL", default="http://localhost:8000")},
     ]
 }
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+    EMAIL_HOST= config("EMAIL_HOST")
+    EMAIL_PORT = config("EMAIL_PORT")
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS")
+
+    EMAIL_HOST_USER = config("EMAIL_EMPRESA")
+    EMAIL_HOST_PASSWORD = config("PASSWORD_EMAIL")
