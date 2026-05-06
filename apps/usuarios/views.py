@@ -44,12 +44,12 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         if self.action == "login":
             return InicioSessaoSerializer
         if self.action == "refresh":
-            from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+
             return TokenRefreshSerializer
         if self.action == "lista":
             return UsuarioSerializer
-        from rest_framework import serializers
-        return serializers.Serializer
+        if self.action =='reset-password':
+         return AlterarSenhaSerializer
     @action(detail=False, methods=["get"], url_path="register",permission_classes=[IsAuthenticated])
     def lista(self, request, *args, **kwargs):
         queryset=Usuario.all_objects.all()
@@ -85,7 +85,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         return resposta_sucesso(message="Usuário deletado com sucesso")
 #__________________________________________________________________________________________________________
-    @action(detail=False, methods=["post"], url_path="register/",permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["post"], url_path="register",permission_classes=[IsAuthenticated])
     def register(self, request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             raise PermissionDenied("Permissão Negada.")
@@ -117,7 +117,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         }
         return resposta_sucesso(data=data, status_code=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=["post"], url_path="login")
+    @action(detail=False, methods=["post"], url_path="login", authentication_classes=[], permission_classes=[])
     def login(self, request):
         serializer = InicioSessaoSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -135,14 +135,13 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"], url_path="reset-password")
     def reset_password(self, request):
+        if request.user.uid != self.get_object().uid:
+            raise PermissionDenied("Permissão negada.")
         serializer = RedefinirSenhaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return resposta_sucesso(message="Recuperado com sucesso")
-    @action(detail=True, methods=["post"], url_path="recuperar")
-    def perfil(self, request, *args, **kwargs):
-        usuario = self.get_object()
-        serializer = self.get_serializer(usuario)
-        return resposta_sucesso(data=serializer.data)
+    
+   
 
 @extend_schema(tags=["Perfis"])
 class PerfilViewSet(

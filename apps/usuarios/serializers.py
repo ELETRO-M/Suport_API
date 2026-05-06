@@ -85,7 +85,7 @@ class RecuperaSerializer(serializers.Serializer):
         email = attrs.get("email")
 
         try:
-            utilizador = Usuario.all_objects.get(email=email)
+            utilizador = Usuario.objects.get(email=email)
         except Usuario.DoesNotExist:
             raise serializers.ValidationError("Conta não existe.")
 
