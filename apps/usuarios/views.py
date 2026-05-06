@@ -85,7 +85,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         return resposta_sucesso(message="Usuário deletado com sucesso")
 #__________________________________________________________________________________________________________
-    @action(detail=False, methods=["post"], url_path="register",permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["post"], url_path="register/",permission_classes=[IsAuthenticated])
     def register(self, request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             raise PermissionDenied("Permissão Negada.")
