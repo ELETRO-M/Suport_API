@@ -16,8 +16,10 @@ class UsuarioAdmin(UserAdmin):
         "nome",
         "perfil",
         "status",
-        "is_staff",
+        "is_deleted",
         "is_superuser",
+        "data_criacao",
+        "data_actualizacao"
     )
 
     list_filter = (

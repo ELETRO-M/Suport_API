@@ -96,7 +96,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         run=send_mail(
             subject=f"Seja bem-vindo ao API de Gestão de Serviços.",
             message=(f"Olá,{utilizador.nome} \nSeja bem-vindo(a) ao nosso sistema!\n\n"
-            "O seu cadastro foi realizado com sucesso e já pode começar a utilizar todas as funcionalidades disponíveis."
+            "O seu cadastro foi realizado com sucesso e já pode começar a utilizar todas as funcionalidades disponíveis.\n"
             "Aqui estão alguns dados importantes:\n\n"
             "1- Utilize o seu email e senha para acessar a plataforma\n"
             "2- Mantenha os seus dados sempre atualizados\n"
