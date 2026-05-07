@@ -19,7 +19,7 @@ from apps.contratos.serializers import (
 class ContratoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     ordering_fields = ("data_criacao", "data_inicio", "data_fim")
-    filterset_fields = ("status", "tipo", "cliente")
+    filterset_fields = ("status", "tipo_contrato", "tipo_de_pagamento", "cliente")
 
     
     serializer_action_classes: dict[str, Type[serializers.Serializer]] = {
@@ -79,8 +79,8 @@ class ContratoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(data=serializer.data)
 
     def create(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Apenas admin.")
+        if request.user.perfil != Usuario.PerfilChoices.CLIENTE:
+            self.permission_denied(request, message="Apenas Clientes podem criar contratos.")
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -90,7 +90,8 @@ class ContratoViewSet(viewsets.ModelViewSet):
             data={
                 "id": str(obj.id),
                 "cliente_id": str(obj.cliente_id),
-                "tipo": obj.tipo,
+                "tipo_contrato": obj.tipo_contrato,
+                "tipo_de_pagamento": obj.tipo_de_pagamento,
                 "status": obj.status,
             },
             status_code=status.HTTP_201_CREATED,
@@ -99,7 +100,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN or request.user.uid !=Usuario.uid :
             self.permission_denied(request, message="Apenas admin.")
 
         instance = self.get_object()
@@ -112,7 +113,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN or request.user.uid !=Usuario.uid :
             self.permission_denied(request, message="Apenas admin.")
 
         instance = self.get_object()

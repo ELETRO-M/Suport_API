@@ -63,8 +63,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Apenas administradores podem atualizar clientes.")
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN or (request.user.uid !=Usuario.uid and request.user.perfil != Usuario.PerfilChoices.CLIENTE):
+            self.permission_denied(request, message="Alteração de perfil não permitida.")
             
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -73,8 +73,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(data={"id": str(obj.id), "nome": obj.nome, "email": obj.email})
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Apenas administradores podem deletar clientes.")
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN or (request.user.uid !=Usuario.uid and request.user.perfil != Usuario.PerfilChoices.CLIENTE):
+            self.permission_denied(request, message="Delete de perfil não permitido.")
         instance = self.get_object()
         self.perform_destroy(instance)
         return resposta_sucesso(message="Cliente deletado com sucesso")

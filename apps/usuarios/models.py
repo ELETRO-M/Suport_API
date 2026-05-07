@@ -1,6 +1,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.validators import MinLengthValidator
 
 from apps.configuracoes.models import ModeloUUIDComTimestamps
 
@@ -69,6 +70,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     last_name = None
 
     email = models.EmailField(unique=True)
+    ip_servidor= models.CharField(max_length=50, validators=[MinLengthValidator(7)], blank=True)
     nome = models.CharField(max_length=255)
     perfil = models.CharField(max_length=20, choices=PerfilChoices.choices)
     telefone = models.CharField(max_length=50, blank=True)
@@ -88,6 +90,52 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
 
     objects=GestorUsuario()
     all_objects = UsuarioQuerySet.as_manager()
+    def clean(self):
+        if self.perfil == self.PerfilChoices.CLIENTE:
+            if not self.empresa:
+                raise ValidationError({
+                    "empresa": "Obrigatório para clientes.",
+                    })
+            if not self.ip_servidor:
+                raise ValidationError({
+                    "ip_servidor": "Obrigatório para clientes.",
+                    })
+            if not self.nif:
+                raise ValidationError({
+                    "nif": "Obrigatório para clientes.",
+                    })
+            if not self.telefone:
+                raise ValidationError({
+                    "telefone": "Obrigatório para clientes.",
+                    })
+#____________________________________________________________________________________
+
+        if self.perfil == self.PerfilChoices.TECNICO:
+            if not self.especialidades:
+                raise ValidationError({
+                    "especialidades": "Obrigatório para técnicos.",
+                    })
+            if not self.data_contratacao:
+                raise ValidationError({
+                    "data_contratacao": "Obrigatório para técnicos.",
+                    })
+            if not self.empresa:
+                raise ValidationError({
+                    "empresa": "Obrigatório para técnicos.",
+                    })
+            if not self.telefone:
+                raise ValidationError({
+                    "telefone": "Obrigatório para técnicos.",
+                    })
+            if not self.endereco:
+                raise ValidationError({
+                    "endereco": "Obrigatório para técnicos.",
+                    })
+#____________________________________________________________________________________
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def recuperar(self):
         self.is_deleted = False
         self.status="activo"      

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
 
 
@@ -14,7 +14,8 @@ class ContratoListaSerializer(serializers.ModelSerializer):
             "id",
             "cliente_id",
             "cliente_nome",
-            "tipo",
+            "tipo_contrato",
+            "tipo_de_pagamento",
             "horas_contratadas",
             "horas_utilizadas",
             "horas_disponiveis",
@@ -59,8 +60,10 @@ class ContratoEscritaSerializer(serializers.ModelSerializer):
         model = Contrato
         fields = (
             "cliente_id",
-            "tipo",
+            "tipo_contrato",
+            "tipo_de_pagamento",
             "horas_contratadas",
+            "horas_utilizadas",
             "valor_total",
             "data_inicio",
             "data_fim",
@@ -69,7 +72,7 @@ class ContratoEscritaSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        from apps.usuarios.models import Usuario
+        
 
         try:
             attrs["cliente"] = Usuario.objects.get(id=attrs.pop("cliente_id"), perfil=Usuario.PerfilChoices.CLIENTE)

@@ -72,6 +72,7 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
             "email",
             "telefone",
             "empresa",
+            "ip_sevidor",
             "nif",
             "endereco",
             "password",
