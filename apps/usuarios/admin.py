@@ -9,7 +9,7 @@ class UsuarioAdmin(UserAdmin):
     ordering = ("email",)
 
     def get_queryset(self, request):
-        return Usuario.all_objects.all()  # ❗ ignora soft delete completamente
+        return Usuario.all_objects.all() 
 
     list_display = (
         "email",
