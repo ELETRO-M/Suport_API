@@ -98,7 +98,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         return resposta_sucesso(message="Usuário deletado com sucesso")
 #__________________________________________________________________________________________________________
-    @action(detail=False, methods=["post"], url_path="register", permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["post"], url_path="register/", permission_classes=[IsAuthenticated])
     def register(self, request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             raise PermissionDenied("Permissão Negada.")
@@ -267,7 +267,7 @@ class RecuperarConta(viewsets.GenericViewSet):
 
     permission_classes=[]
     authentication_classes=[]
-    queryset = Usuario.all_objects.all()
+    queryset = Usuario.all_objects.filter(is_deleted=True)
     serializer_class=RecuperaSerializer
 
 
@@ -285,6 +285,9 @@ class RecuperarConta(viewsets.GenericViewSet):
         link = f"{settings.SITE_URL}{reverse('restpassword-list')}?uid={uid}&token={token}"
 
         try:
+            if not utilizador.email:
+                return resposta_erro("Email não encontrado", status_code=status.HTTP_404_NOT_FOUND)
+
             send_mail(
                 subject="Recuperação de Senha - API Gestão de Serviços",
                 message=(
@@ -303,8 +306,6 @@ class RecuperarConta(viewsets.GenericViewSet):
             ) from exc
 
         utilizador.recuperar()
-        utilizador.save()
-
 
         return Response(
             {"detail": "Enviámos um email para recuperar a conta"},

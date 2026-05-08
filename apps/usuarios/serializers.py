@@ -42,7 +42,53 @@ class RegistoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ("email", "password", "nome", "perfil", "telefone", "empresa")
+        fields = (
+            "email",
+            "password",
+            "nome",
+            "perfil",
+            "telefone",
+            "empresa",
+            "postos",
+            "ip_servidor",
+            "nif",
+            "endereco",
+            "especialidades",
+            "data_contratacao",
+            "status",
+        )
+        extra_kwargs = {
+            "telefone": {"required": False},
+            "empresa": {"required": False},
+            "postos": {"required": False},
+            "ip_servidor": {"required": False},
+            "nif": {"required": False},
+            "endereco": {"required": False},
+            "especialidades": {"required": False},
+            "data_contratacao": {"required": False},
+            "status": {"required": False},
+        }
+
+    def validate(self, attrs):
+        perfil = attrs.get("perfil")
+
+        if perfil == Usuario.PerfilChoices.CLIENTE:
+            required_fields = ("telefone", "empresa", "postos", "ip_servidor", "nif")
+        elif perfil == Usuario.PerfilChoices.TECNICO:
+            required_fields = ("telefone", "empresa", "endereco", "especialidades", "data_contratacao")
+        else:
+            required_fields = ()
+
+        errors = {}
+        for field in required_fields:
+            value = attrs.get(field)
+            if value in (None, "", [], {}):
+                errors[field] = "Este campo é obrigatório para este perfil."
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return attrs
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -88,9 +134,9 @@ class RecuperaSerializer(serializers.Serializer):
         email = attrs.get("email")
 
         try:
-            utilizador = Usuario.objects.get(email=email)
+            utilizador = Usuario.all_objects.get(email=email, is_deleted=True)
         except Usuario.DoesNotExist:
-            raise serializers.ValidationError("Conta não existe.")
+            raise serializers.ValidationError("Conta apagada não existe para este email.")
 
         attrs["user"] = utilizador
         return attrs
