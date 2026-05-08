@@ -1,10 +1,11 @@
 
 from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.core.mail import BadHeaderError
 from django.urls import reverse
 from django.conf import settings
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.core.mail import send_mail
 from django.db.models import Sum
 from django.utils import timezone
 from rest_framework.response import Response
@@ -60,7 +61,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         return UsuarioSerializer
         
 
-    @action(detail=False, methods=["get"], url_path="lista", permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["get"], url_path="register", permission_classes=[IsAuthenticated])
     def lista(self, request, *args, **kwargs):
         queryset=Usuario.all_objects.all()  
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
@@ -279,22 +280,25 @@ class RecuperarConta(viewsets.GenericViewSet):
         uid = urlsafe_base64_encode(force_bytes(utilizador.pk))
         token=default_token_generator.make_token(utilizador)
 
-    
+        link = f"{settings.SITE_URL}{reverse('restpassword-list')}?uid={uid}&token={token}"
 
-        link = f"{settings.SITE_URL}{reverse('restpassword-list')}?uid={uid}"
-
-        send_mail(
-            subject="Recuperação de Senha - API Gestão de Serviços",
-            message=(
-                f"Olá, {utilizador.nome}\n\n"
-                "Recebemos um pedido para redefinir a senha da sua conta.\n"
-                "Para redefinir a sua senha, clique no link abaixo:\n"
-                f"Token: {token}\n"
-                f"Link: {link}\n"
-            ),
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[utilizador.email], 
-        )
+        try:
+            send_mail(
+                subject="Recuperação de Senha - API Gestão de Serviços",
+                message=(
+                    f"Olá, {utilizador.nome}\n\n"
+                    "Recebemos um pedido para redefinir a senha da sua conta.\n"
+                    "Para redefinir a sua senha, clique no link abaixo:\n"
+                    f"Link: {link}\n"
+                ),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER),
+                recipient_list=[utilizador.email],
+                fail_silently=False,
+            )
+        except (OSError, BadHeaderError) as exc:
+            raise serializers.ValidationError(
+                {"email": f"Falha ao enviar o email de recuperação: {exc}"}
+            ) from exc
 
         utilizador.recuperar()
         utilizador.save()
@@ -312,6 +316,7 @@ class reset_password_confirm(viewsets.GenericViewSet):
     serializer_class=ResetSenhaSerializer
 
     def create(self, request):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        serializer.save()
         return resposta_sucesso(message="Senha resetada com sucesso")
