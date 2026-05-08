@@ -1,5 +1,9 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
+from django.http import HttpResponseRedirect
+from django.urls import path, reverse
+from django.utils.html import format_html
+
 from apps.usuarios.models import Usuario
 
 
@@ -7,6 +11,7 @@ from apps.usuarios.models import Usuario
 class UsuarioAdmin(UserAdmin):
     model = Usuario
     ordering = ("email",)
+    actions = ("restaurar_usuarios",)
 
     def get_queryset(self, request):
         return Usuario.all_objects.all() 
@@ -17,6 +22,7 @@ class UsuarioAdmin(UserAdmin):
         "perfil",
         "status",
         "is_deleted",
+        "restaurar_link",
         "is_superuser",
         "data_criacao",
         "data_actualizacao"
@@ -33,7 +39,7 @@ class UsuarioAdmin(UserAdmin):
         "email",
         "nome",
         "telefone",
-        "empresa__nome",
+        "empresa",
     )
 
     fieldsets = (
@@ -85,6 +91,13 @@ class UsuarioAdmin(UserAdmin):
                     "nome",
                     "perfil",
                     "status",
+                    "telefone",
+                    "empresa",
+                    "ip_servidor",
+                    "nif",
+                    "endereco",
+                    "especialidades",
+                    "data_contratacao",
                     "password1",
                     "password2",
                     "is_staff",
@@ -96,7 +109,48 @@ class UsuarioAdmin(UserAdmin):
 
     readonly_fields = ("data_criacao", "data_actualizacao", "last_login")
 
-    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "<path:object_id>/restaurar/",
+                self.admin_site.admin_view(self.restaurar_view),
+                name="usuarios_usuario_restaurar",
+            ),
+        ]
+        return custom_urls + urls
+
+    @admin.action(description="Restaurar usuários selecionados")
+    def restaurar_usuarios(self, request, queryset):
+        restaurados = 0
+        for usuario in queryset.filter(is_deleted=True):
+            usuario.recuperar()
+            restaurados += 1
+        self.message_user(
+            request,
+            f"{restaurados} usuário(s) restaurado(s) com sucesso.",
+            level=messages.SUCCESS,
+        )
+
+    def restaurar_link(self, obj):
+        if not obj.is_deleted:
+            return "-"
+        url = reverse("admin:usuarios_usuario_restaurar", args=[obj.pk])
+        return format_html('<a class="button" href="{}">Restaurar</a>', url)
+    restaurar_link.short_description = "Restaurar"
+
+    def restaurar_view(self, request, object_id):
+        usuario = self.get_object(request, object_id)
+        if usuario is None:
+            self.message_user(request, "Usuário não encontrado.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse("admin:usuarios_usuario_changelist"))
+        if not usuario.is_deleted:
+            self.message_user(request, "Este usuário já está activo.", level=messages.INFO)
+            return HttpResponseRedirect(reverse("admin:usuarios_usuario_change", args=[usuario.pk]))
+
+        usuario.recuperar()
+        self.message_user(request, "Usuário restaurado com sucesso.", level=messages.SUCCESS)
+        return HttpResponseRedirect(reverse("admin:usuarios_usuario_change", args=[usuario.pk]))
 
     def delete_model(self, request, obj):
         

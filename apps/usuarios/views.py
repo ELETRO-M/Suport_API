@@ -60,9 +60,9 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         return UsuarioSerializer
         
 
-    @action(detail=False, methods=["get"], url_path="register")
+    @action(detail=False, methods=["get"], url_path="lista", permission_classes=[IsAuthenticated])
     def lista(self, request, *args, **kwargs):
-        queryset=Usuario.all_objects.all()
+        queryset=Usuario.all_objects.all()  
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Sem permissão para este recurso.")
         
@@ -80,7 +80,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         
 #_________________________________________________________________________________________________________________
-    @action(detail=True, methods=["delete"], url_path="register", authentication_classes=[IsAuthenticated])
+    @action(detail=True, methods=["delete"], url_path="register", permission_classes=[IsAuthenticated])
     def delete_usuario(self, request, *args, **kwargs):
 
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
