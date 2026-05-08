@@ -135,9 +135,12 @@ if DEBUG:
 else:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-    EMAIL_HOST= config("EMAIL_HOST")
-    EMAIL_PORT = config("EMAIL_PORT")
-    EMAIL_USE_TLS = config("EMAIL_USE_TLS")
+    EMAIL_HOST = config("EMAIL_HOST")
+    EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
+    EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)
+    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=30)
 
-    EMAIL_HOST_USER = config("EMAIL_EMPRESA")
-    EMAIL_HOST_PASSWORD = config("PASSWORD_EMAIL")
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default=config("EMAIL_EMPRESA", default=""))
+    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default=config("PASSWORD_EMAIL", default=""))
+    DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
