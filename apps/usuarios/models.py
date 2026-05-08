@@ -30,7 +30,10 @@ class GestorUsuario(BaseUserManager):
         extra_fields.setdefault("perfil", Usuario.PerfilChoices.ADMIN)
         extra_fields.setdefault("status", Usuario.StatusChoices.ACTIVO)
         return self._create_user(email, password, **extra_fields)
+    
 
+
+        
     def get_queryset(self):
         return UsuarioQuerySet(self.model, using=self._db).filter(is_deleted=False)
 
@@ -40,13 +43,11 @@ class GestorUsuario(BaseUserManager):
     def only_deleted(self):
         return self.all_with_deleted().deleted()
 
-
 class UsuarioQuerySet(models.QuerySet):
     def delete(self):
         return super().update(is_deleted=True)
-
     def hard_delete(self):
-        return super().delete()
+        return super().delete()     
 
     def alive(self):
         return self.filter(is_deleted=False)
@@ -71,6 +72,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
 
     email = models.EmailField(unique=True)
     ip_servidor = models.CharField(max_length=50, validators=[MinLengthValidator(7)], blank=True)
+    
     nome = models.CharField(max_length=255)
     perfil = models.CharField(max_length=20, choices=PerfilChoices.choices)
     telefone = models.CharField(max_length=50, blank=True)
@@ -78,7 +80,8 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     nif = models.CharField(max_length=50, blank=True)
     endereco = models.TextField(blank=True)
     avatar_url = models.URLField(blank=True)
-    is_deleted = models.BooleanField(default=False)
+    is_deleted=models.BooleanField(default=False)
+    postos=models.JSONField(default=dict,blank=True)
 
     preferencias = models.JSONField(default=dict, blank=True)
     especialidades = models.JSONField(default=list, blank=True)
@@ -88,67 +91,67 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["nome"]
 
-    objects = GestorUsuario()
+    objects=GestorUsuario()
     all_objects = UsuarioQuerySet.as_manager()
-
-    class Meta:
-        ordering = ["email"]
-
     def clean(self):
         if self.perfil == self.PerfilChoices.CLIENTE:
             if not self.empresa:
                 raise ValidationError({
                     "empresa": "Obrigatório para clientes.",
-                })
+                    })
             if not self.ip_servidor:
                 raise ValidationError({
                     "ip_servidor": "Obrigatório para clientes.",
-                })
+                    })
             if not self.nif:
                 raise ValidationError({
                     "nif": "Obrigatório para clientes.",
-                })
+                    })
             if not self.telefone:
                 raise ValidationError({
                     "telefone": "Obrigatório para clientes.",
-                })
-        # ────────────────────────────────────────────────────────────
+                    })
+            if not self.posto:
+                raise ValidationError({
+                    "posto": "Obrigatório para clientes.",
+                    })
+#____________________________________________________________________________________
+
         if self.perfil == self.PerfilChoices.TECNICO:
             if not self.especialidades:
                 raise ValidationError({
                     "especialidades": "Obrigatório para técnicos.",
-                })
+                    })
             if not self.data_contratacao:
                 raise ValidationError({
                     "data_contratacao": "Obrigatório para técnicos.",
-                })
+                    })
             if not self.empresa:
                 raise ValidationError({
                     "empresa": "Obrigatório para técnicos.",
-                })
+                    })
             if not self.telefone:
                 raise ValidationError({
                     "telefone": "Obrigatório para técnicos.",
-                })
+                    })
             if not self.endereco:
                 raise ValidationError({
                     "endereco": "Obrigatório para técnicos.",
-                })
-
+                    })
+#____________________________________________________________________________________
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
 
     def recuperar(self):
         self.is_deleted = False
-        self.status = "activo"
-        self.save(update_fields=["is_deleted", "status"])
+        self.status="activo"      
+        self.save(update_fields=["is_deleted","status"])
 
     def delete(self, *args, **kwargs):
         self.is_deleted = True
-        self.status = "inactivo"
-        self.save(update_fields=["is_deleted", "status"])
-
+        self.status="inactivo"      
+        self.save(update_fields=["is_deleted","status"])
     def hard_delete(self):
         return super().delete()
 

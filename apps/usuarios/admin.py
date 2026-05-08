@@ -93,6 +93,7 @@ class UsuarioAdmin(UserAdmin):
                     "status",
                     "telefone",
                     "empresa",
+                    "postos",
                     "ip_servidor",
                     "nif",
                     "endereco",
