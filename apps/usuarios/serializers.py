@@ -130,16 +130,15 @@ class InicioSessaoSerializer(serializers.Serializer):
 class RecuperaSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
+
     def validate(self, attrs):
         email = attrs.get("email")
 
-        try:
-            utilizador = Usuario.all_objects.get(email=email, is_deleted=True)
-        except Usuario.DoesNotExist:
-            raise serializers.ValidationError("Conta apagada não existe para este email.")
+        utilizador = Usuario.all_objects.filter(email=email).first()
 
         attrs["user"] = utilizador
         return attrs
+
 
 class PerfilSerializer(serializers.ModelSerializer):
     class Meta:
@@ -179,17 +178,19 @@ class ResetSenhaSerializer(serializers.Serializer):
         if not default_token_generator.check_token(user, token):
             raise serializers.ValidationError("Token inválido ou expirado.")
 
-        from django.contrib.auth.password_validation import validate_password
         validate_password(attrs["new_password"], user)
 
         attrs["user"] = user
         return attrs
 
-    def save(self):
+    def save(self, **kwargs):
         user = self.validated_data["user"]
         user.set_password(self.validated_data["new_password"])
+        user.recuperar()
         user.save()
         return user
+
+
 class AlterarSenhaSerializer(serializers.Serializer):
     password_atual = serializers.CharField(write_only=True)
     password_nova = serializers.CharField(write_only=True, validators=[validate_password])

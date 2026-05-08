@@ -265,11 +265,10 @@ class TecnicoViewSet(viewsets.ModelViewSet):
 @extend_schema(tags=['Recuperação'])
 class RecuperarConta(viewsets.GenericViewSet):
 
-    permission_classes=[]
-    authentication_classes=[]
-    queryset = Usuario.all_objects.filter(is_deleted=True)
-    serializer_class=RecuperaSerializer
-
+    permission_classes = []
+    authentication_classes = []
+    queryset = Usuario.all_objects.all()
+    serializer_class = RecuperaSerializer
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -277,35 +276,38 @@ class RecuperarConta(viewsets.GenericViewSet):
 
         utilizador = serializer.validated_data["user"]
         if not utilizador:
-            return resposta_erro("Utilizador não encontrado", status_code=status.HTTP_404_NOT_FOUND)
-        
+            return Response(
+                {"detail": "Se o email existir, enviaremos um link de recuperação."},
+                status=status.HTTP_200_OK
+            )
+
         uid = urlsafe_base64_encode(force_bytes(utilizador.pk))
-        token=default_token_generator.make_token(utilizador)
+        token = default_token_generator.make_token(utilizador)
 
-        link = f"{settings.SITE_URL}{reverse('restpassword-list')}?uid={uid}&token={token}"
+        link = (
+            f"{settings.SITE_URL}"
+            f"{reverse('restpassword-list')}?uid={uid}&token={token}"
+        )
 
-        try:
-            if not utilizador.email:
-                return resposta_erro("Email não encontrado", status_code=status.HTTP_404_NOT_FOUND)
-
-            send_mail(
+        
+        send_mail(
                 subject="Recuperação de Senha - API Gestão de Serviços",
                 message=(
                     f"Olá, {utilizador.nome}\n\n"
-                    "Recebemos um pedido para redefinir a senha da sua conta.\n"
-                    "Para redefinir a sua senha, clique no link abaixo:\n"
-                    f"Link: {link}\n"
+                    "Recebemos um pedido para redefinir a senha da sua conta.\n\n"
+                    "Clique no link abaixo:\n\n"
+                    f"{link}"
                 ),
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER),
+                from_email=getattr(
+                    settings,
+                    "DEFAULT_FROM_EMAIL",
+                    settings.EMAIL_HOST_USER
+                ),
                 recipient_list=[utilizador.email],
                 fail_silently=False,
             )
-        except (OSError, SMTPException, BadHeaderError, ImproperlyConfigured, ValueError) as exc:
-            raise serializers.ValidationError(
-                {"email": f"Falha ao enviar o email de recuperação: {exc}"}
-            ) from exc
 
-        utilizador.recuperar()
+    
 
         return Response(
             {"detail": "Enviámos um email para recuperar a conta"},
