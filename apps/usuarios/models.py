@@ -111,9 +111,9 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                 raise ValidationError({
                     "telefone": "Obrigatório para clientes.",
                     })
-            if not self.posto:
+            if not self.postos:
                 raise ValidationError({
-                    "posto": "Obrigatório para clientes.",
+                    "postos": "Obrigatório para clientes.",
                     })
 #____________________________________________________________________________________
 
@@ -145,13 +145,19 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
 
     def recuperar(self):
         self.is_deleted = False
-        self.status="activo"      
-        self.save(update_fields=["is_deleted","status"])
+        self.status = self.StatusChoices.ACTIVO
+        type(self).all_objects.filter(pk=self.pk).update(
+            is_deleted=False,
+            status=self.StatusChoices.ACTIVO,
+        )
 
     def delete(self, *args, **kwargs):
         self.is_deleted = True
-        self.status="inactivo"      
-        self.save(update_fields=["is_deleted","status"])
+        self.status = self.StatusChoices.INACTIVO
+        type(self).all_objects.filter(pk=self.pk).update(
+            is_deleted=True,
+            status=self.StatusChoices.INACTIVO,
+        )
     def hard_delete(self):
         return super().delete()
 
