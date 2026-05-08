@@ -15,6 +15,8 @@ class NotificacaoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NotificacaoSerializer
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Notificacao.objects.none()
         request = cast(Request, self.request)
         queryset = Notificacao.objects.filter(utilizador=request.user)
         lidas = request.query_params.get("lidas")

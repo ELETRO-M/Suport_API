@@ -1,5 +1,5 @@
 from django.db.models import Avg, Count, Sum
-from rest_framework import viewsets
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -10,10 +10,16 @@ from apps.configuracoes.responses import resposta_sucesso
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import HoraTrabalho, Intervencao
 
+
+class RelatorioSerializer(serializers.Serializer):
+    pass
+
+
 @extend_schema(tags=["Admin"])
 class RelatorioViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Intervencao.objects.none()
+    serializer_class = RelatorioSerializer
 
     @action(detail=False, methods=["get"], url_path="dashboard-admin")
     def dashboard_admin(self, request: Request):

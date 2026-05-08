@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import IntegrityError
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
+from django.conf import settings
 
 
 class ClienteListaSerializer(serializers.ModelSerializer):
@@ -15,6 +16,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
             "email",
             "telefone",
             "empresa",
+            "ip_servidor",
             "nif",
             "endereco",
             "status",
@@ -43,7 +45,7 @@ class ClienteDetalheSerializer(ClienteListaSerializer):
         return [
             {
                 "id": str(item.id),
-                "tipo": item.tipo,
+                "tipo": item.tipo_contrato,
                 "status": item.status,
                 "horas_disponiveis": item.horas_disponiveis,
             }
@@ -72,7 +74,7 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
             "email",
             "telefone",
             "empresa",
-            "ip_sevidor",
+            "ip_servidor",
             "nif",
             "endereco",
             "password",
@@ -89,7 +91,7 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
             )
         except IntegrityError:
             raise serializers.ValidationError({
-                "email": "Este email já foi registado tenta recuperar a conta em:http://localhost:3000/recuperar-password"
+                "email": f"Este email já foi registado. Tente recuperar a conta em: {settings.SITE_URL}/api/v1/recuperar"
             })
        
 

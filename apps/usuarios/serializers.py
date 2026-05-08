@@ -5,6 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
+from drf_spectacular.utils import extend_schema_field
 
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
@@ -166,7 +167,7 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
             "intervencoes_ativas",
             "total_horas_mes",
         )
-
+    @extend_schema_field(serializers.IntegerField())
     def get_intervencoes_ativas(self, obj):
         return Intervencao.objects.filter(
             tecnico=obj,
@@ -232,6 +233,8 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
 
 
 class PerfilPainelSerializer(serializers.ModelSerializer):
+    from drf_spectacular.utils import extend_schema_field
+    from rest_framework import serializers
     contratos_ativos = serializers.SerializerMethodField()
     intervencoes_abertas = serializers.SerializerMethodField()
 
@@ -249,11 +252,13 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
             "intervencoes_abertas",
         )
 
+    @extend_schema_field(serializers.IntegerField())
     def get_contratos_ativos(self, obj):
         if obj.perfil != Usuario.PerfilChoices.CLIENTE:
             return 0
         return Contrato.objects.filter(cliente=obj, status="ativo").count()
-
+    
+    @extend_schema_field(serializers.IntegerField())
     def get_intervencoes_abertas(self, obj):
         if obj.perfil == Usuario.PerfilChoices.CLIENTE:
             return Intervencao.objects.filter(cliente=obj, status__in=["aberto", "em_andamento"]).count()

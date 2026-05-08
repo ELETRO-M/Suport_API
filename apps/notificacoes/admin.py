@@ -9,3 +9,9 @@ class NotificacaoAdmin(admin.ModelAdmin):
     list_filter = ("tipo", "lida", "data_criacao")
     search_fields = ("utilizador__nome", "utilizador__email", "titulo", "mensagem")
     autocomplete_fields = ("utilizador",)
+    
+    def get_queryset(self, request):
+        return Notificacao.all_objects.all()
+
+    def delete_model(self, request, obj):
+        obj.all_objects.filter(pk=obj.pk).hard_delete()

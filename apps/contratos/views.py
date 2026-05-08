@@ -68,19 +68,15 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         obj = self.get_object()
-
-        if (
-            request.user.perfil == Usuario.PerfilChoices.CLIENTE
-            and obj.cliente_id != request.user.id
-        ):
+        if request.user.perfil == Usuario.PerfilChoices.CLIENTE and obj.cliente_id != request.user.id:
             self.permission_denied(request, message="Sem permissão.")
 
         serializer = self.get_serializer(obj)
         return resposta_sucesso(data=serializer.data)
 
     def create(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.CLIENTE:
-            self.permission_denied(request, message="Apenas Clientes podem criar contratos.")
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Permissão negada para este recurso.")
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -99,11 +95,12 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN or request.user.uid !=Usuario.uid :
-            self.permission_denied(request, message="Apenas admin.")
-
         instance = self.get_object()
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN and (
+            request.user.perfil != Usuario.PerfilChoices.CLIENTE or instance.cliente_id != request.user.id
+        ):
+            self.permission_denied(request, message="Permissão negada para este recurso.")
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
@@ -113,10 +110,12 @@ class ContratoViewSet(viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN or request.user.uid !=Usuario.uid :
-            self.permission_denied(request, message="Apenas admin.")
-
         instance = self.get_object()
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN and (
+            request.user.perfil != Usuario.PerfilChoices.CLIENTE or instance.cliente_id != request.user.id
+        ):
+            self.permission_denied(request, message="Permissão negada para este recurso.")
+
         instance.delete()
 
         return resposta_sucesso(message="Contrato deletado com sucesso")

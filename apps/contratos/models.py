@@ -1,9 +1,11 @@
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from apps.usuarios.models import Usuario
-from apps.configuracoes.models import ModeloUUIDComTimestamps, SoftDeleteModel
+from apps.configuracoes.models import ModeloUUIDComTimestamps, SoftDeleteModel, SoftDeleteQuerySet
 
 
 
@@ -114,17 +116,18 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
                     })
     class Meta:
         ordering = ("-data_criacao",)
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+
+    all_objects = SoftDeleteQuerySet.as_manager()
+
     def __str__(self):
-        return f"{self.cliente.nome} - {self.tipo}"
+        return f"{self.cliente.nome} - {self.tipo_contrato}"
 
     @property
     def horas_disponiveis(self):
         return max(self.horas_contratadas - self.horas_utilizadas, Decimal("0.00"))
 
     def save(self, *args, **kwargs):
-        if self.tipo == self.TipoChoices.HORAS and self.horas_contratadas:
+        if self.tipo_de_pagamento == self.TipoPagamento.HORAS and self.horas_contratadas:
             self.valor_hora = self.valor_total / self.horas_contratadas
+        self.full_clean()
         super().save(*args, **kwargs)

@@ -37,6 +37,8 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("data_abertura", "data_conclusao")
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Intervencao.objects.none()
         request = cast(Request, self.request)
         queryset = Intervencao.objects.select_related("cliente", "tecnico", "contrato").prefetch_related(
             "historico_status",
@@ -209,6 +211,8 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return HoraTrabalho.objects.none()
         request = cast(Request, self.request)
         queryset = HoraTrabalho.objects.select_related("intervencao", "tecnico")
         params = request.query_params

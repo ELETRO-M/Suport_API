@@ -10,6 +10,7 @@ from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import mixins, status, viewsets,serializers
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from drf_spectacular.utils import extend_schema
@@ -18,6 +19,7 @@ from apps.usuarios.serializers import (
     AlterarSenhaSerializer,
     InicioSessaoSerializer,
     PerfilPainelSerializer,
+    PerfilSerializer,
     UsuarioSerializer,
     RegistoSerializer,
     TecnicoDetalheSerializer,
@@ -26,7 +28,7 @@ from apps.usuarios.serializers import (
     RecuperaSerializer,
     ResetSenhaSerializer
 )
-from apps.configuracoes.responses import resposta_sucesso
+from apps.configuracoes.responses import resposta_erro, resposta_sucesso
 @extend_schema(tags=["Autenticação"])
 class AutenticacaoViewSet(viewsets.GenericViewSet):
     queryset = Usuario.objects.all()
@@ -37,20 +39,28 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         return [IsAuthenticated()]
 
     def get_serializer_class(self):
+    
+
         if self.action == "lista":
             return UsuarioSerializer
+
         if self.action == "register":
             return RegistoSerializer
+
         if self.action == "login":
             return InicioSessaoSerializer
-        if self.action == "refresh":
 
+        if self.action == "refresh":
             return TokenRefreshSerializer
-        if self.action == "lista":
-            return UsuarioSerializer
-        if self.action =='reset-password':
-         return AlterarSenhaSerializer
-    @action(detail=False, methods=["get"], url_path="register",permission_classes=[IsAuthenticated])
+
+        if self.action == "reset_password":
+            return AlterarSenhaSerializer
+
+        
+        return UsuarioSerializer
+        
+
+    @action(detail=False, methods=["get"], url_path="register")
     def lista(self, request, *args, **kwargs):
         queryset=Usuario.all_objects.all()
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
@@ -70,7 +80,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         
 #_________________________________________________________________________________________________________________
-    @action(detail=True, methods=["delete"], url_path="register")
+    @action(detail=True, methods=["delete"], url_path="register", authentication_classes=[IsAuthenticated])
     def delete_usuario(self, request, *args, **kwargs):
 
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
@@ -85,7 +95,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         return resposta_sucesso(message="Usuário deletado com sucesso")
 #__________________________________________________________________________________________________________
-    @action(detail=False, methods=["post"], url_path="register/",permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["post"], url_path="register", permission_classes=[IsAuthenticated])
     def register(self, request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             raise PermissionDenied("Permissão Negada.")
@@ -135,10 +145,12 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"], url_path="reset-password")
     def reset_password(self, request):
-        if request.user.uid != self.get_object().uid:
+        if not request.user.is_authenticated:
             raise PermissionDenied("Permissão negada.")
-        serializer = RedefinirSenhaSerializer(data=request.data)
+        serializer = AlterarSenhaSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data["password_nova"])
+        request.user.save(update_fields=["password"])
         return resposta_sucesso(message="Recuperado com sucesso")
     
    
@@ -185,6 +197,8 @@ class TecnicoViewSet(viewsets.ModelViewSet):
     filterset_fields = ("status",)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Usuario.objects.none()
         queryset = (
             Usuario.objects.filter(perfil=Usuario.PerfilChoices.TECNICO)
             .annotate(total_horas_mes=Sum("horas_registadas__horas"))

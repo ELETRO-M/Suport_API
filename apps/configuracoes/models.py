@@ -17,6 +17,7 @@ class SoftDeleteQuerySet(models.QuerySet):
 
     def alive(self):
         return self.filter(is_deleted=False)
+    
 
 
 class SoftDeleteManager(models.Manager):
