@@ -143,4 +143,4 @@ else:
 
     EMAIL_HOST_USER = config("EMAIL_HOST_USER", default=config("EMAIL_EMPRESA", default=""))
     EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default=config("PASSWORD_EMAIL", default=""))
-    DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
+    DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default= config("EMAIL_EMPRESA"))
