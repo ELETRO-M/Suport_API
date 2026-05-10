@@ -71,6 +71,9 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         "create": IntervencaoEscritaSerializer,
         "update": IntervencaoAtualizacaoSerializer,
         "partial_update": IntervencaoAtualizacaoSerializer,
+        "atribuir": AtribuirTecnicoSerializer,
+        "comentarios": AdicionarComentarioSerializer,
+        "anexos": CarregarAnexoSerializer,
     }
 
     def get_serializer_class(self):

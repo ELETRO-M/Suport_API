@@ -124,7 +124,6 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
 
 class IntervencaoEscritaSerializer(serializers.ModelSerializer):
     cliente_id = serializers.UUIDField(write_only=True)
-    tecnico_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     contrato_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     anexos = serializers.ListField(child=serializers.FileField(), required=False, write_only=True)
 
@@ -134,7 +133,6 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
             "titulo",
             "descricao",
             "cliente_id",
-            "tecnico_id",
             "contrato_id",
             "prioridade",
             "anexos",
@@ -146,13 +144,6 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
         except Usuario.DoesNotExist as exc:
             raise serializers.ValidationError({"cliente_id": "Cliente não encontrado."}) from exc
 
-        tecnico_id = attrs.pop("tecnico_id", None)
-        if tecnico_id:
-            try:
-                attrs["tecnico"] = Usuario.objects.get(id=tecnico_id, perfil=Usuario.PerfilChoices.TECNICO)
-            except Usuario.DoesNotExist as exc:
-                raise serializers.ValidationError({"tecnico_id": "Técnico não encontrado."}) from exc
-
         contrato_id = attrs.pop("contrato_id", None)
         if contrato_id:
             try:
@@ -160,7 +151,6 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
             except Contrato.DoesNotExist as exc:
                 raise serializers.ValidationError({"contrato_id": "Contrato não encontrado para este cliente."}) from exc
         return attrs
-
 
     def create(self, validated_data):
         anexos = validated_data.pop("anexos", [])
