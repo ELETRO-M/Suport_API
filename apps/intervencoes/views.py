@@ -95,6 +95,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(obj, context={"request": request})
         return resposta_sucesso(data=serializer.data)
 
+    @extend_schema(request={"multipart/form-data": IntervencaoEscritaSerializer})
     def create(self, request, *args, **kwargs):
         if request.user.perfil not in {Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.CLIENTE}:
             self.permission_denied(request, message="Sem permissão para criar intervenções.")
