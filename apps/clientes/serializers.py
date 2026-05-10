@@ -8,11 +8,7 @@ from drf_spectacular.utils import extend_schema_field
 
 class ClienteListaSerializer(serializers.ModelSerializer):
     contratos_ativos = serializers.SerializerMethodField()
-    postos = serializers.DictField(
-        child=serializers.DictField(child=serializers.CharField()),
-        required=False,
-        allow_empty=True,
-    )
+    postos = serializers.JSONField(required=False, allow_null=True, default=dict)
 
     class Meta:
         model = Usuario
