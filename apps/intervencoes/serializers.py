@@ -123,9 +123,10 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
 
 
 class IntervencaoEscritaSerializer(serializers.ModelSerializer):
-    cliente_id = serializers.UUIDField(write_only=True)
+    cliente_id = serializers.UUIDField(write_only=True, required=False)
     contrato_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
-    anexos = serializers.ListField(child=serializers.FileField(), required=False, write_only=True)
+    # Changed to FileField so Swagger UI renders the upload button correctly
+    anexos = serializers.FileField(required=False, write_only=True)
 
     class Meta:
         model = Intervencao
@@ -139,10 +140,18 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        try:
-            attrs["cliente"] = Usuario.objects.get(id=attrs.pop("cliente_id"), perfil=Usuario.PerfilChoices.CLIENTE)
-        except Usuario.DoesNotExist as exc:
-            raise serializers.ValidationError({"cliente_id": "Cliente não encontrado."}) from exc
+        request = self.context.get("request")
+        cliente_id = attrs.pop("cliente_id", None)
+
+        if request and request.user.perfil == Usuario.PerfilChoices.CLIENTE:
+            attrs["cliente"] = request.user
+        else:
+            if not cliente_id:
+                raise serializers.ValidationError({"cliente_id": "Este campo é obrigatório para administradores."})
+            try:
+                attrs["cliente"] = Usuario.objects.get(id=cliente_id, perfil=Usuario.PerfilChoices.CLIENTE)
+            except Usuario.DoesNotExist as exc:
+                raise serializers.ValidationError({"cliente_id": "Cliente não encontrado."}) from exc
 
         contrato_id = attrs.pop("contrato_id", None)
         if contrato_id:
@@ -153,14 +162,21 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        anexos = validated_data.pop("anexos", [])
+        # Remove the single dummy file from validated_data
+        validated_data.pop("anexos", None)
         intervencao = Intervencao.objects.create(**validated_data)
-        for arquivo in anexos:
-            AnexoIntervencao.objects.create(
-                intervencao=intervencao,
-                utilizador=self.context["request"].user,
-                arquivo=arquivo,
-            )
+        
+        # Get all uploaded files from the raw request (supports multiple files!)
+        request = self.context.get("request")
+        if request and request.FILES:
+            ficheiros = request.FILES.getlist("anexos")
+            for arquivo in ficheiros:
+                AnexoIntervencao.objects.create(
+                    intervencao=intervencao,
+                    utilizador=request.user,
+                    arquivo=arquivo,
+                )
+        
         HistoricoEstadoIntervencao.objects.create(
             intervencao=intervencao,
             status=intervencao.status,
