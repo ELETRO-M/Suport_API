@@ -159,7 +159,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "receita_total": contratos.aggregate(total=Sum("valor_total"))["total"] or 0,
             "receita_mes": 0,
             "por_cliente": list(contratos.values("cliente__nome").annotate(total=Sum("valor_total"))),
-            "por_contrato": list(contratos.values("tipo").annotate(total=Sum("valor_total"))),
+            "por_contrato": list(contratos.values("tipo_contrato").annotate(total=Sum("valor_total"))),
             "contratos_vencendo": [
                 {
                     "id": str(item.id),
