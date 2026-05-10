@@ -66,14 +66,18 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(cliente=utilizador)
         return queryset.order_by("-data_abertura")
 
-    def get_serializer_class(self):#escolha de serialazers
-        if self.action == "retrieve":
-            return IntervencaoDetalheSerializer
-        if self.action == "create":
-            return IntervencaoEscritaSerializer
-        if self.action in {"update", "partial_update"}:
-            return IntervencaoAtualizacaoSerializer
-        return IntervencaoListaSerializer
+    serializer_action_classes = {
+        "retrieve": IntervencaoDetalheSerializer,
+        "create": IntervencaoEscritaSerializer,
+        "update": IntervencaoAtualizacaoSerializer,
+        "partial_update": IntervencaoAtualizacaoSerializer,
+    }
+
+    def get_serializer_class(self):
+        return self.serializer_action_classes.get(
+            self.action,
+            IntervencaoListaSerializer
+        )
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())

@@ -45,7 +45,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard-tecnico")
     def dashboard_tecnico(self, request: Request):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+        if request.user.perfil not in [Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.TECNICO]:
             self.permission_denied(request, message="Sem permissão para este recurso.")
         data = {
             "intervencoes_atribuidas": Intervencao.objects.filter(tecnico=request.user).count(),
@@ -63,7 +63,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard-cliente")
     def dashboard_cliente(self, request: Request):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+        if request.user.perfil not in [Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.CLIENTE]:
             self.permission_denied(request, message="Sem permissão para este recurso.")
         contratos = Contrato.objects.filter(cliente=request.user, status="activo")
         total_horas_contratadas = sum((item.horas_contratadas for item in contratos), 0)
