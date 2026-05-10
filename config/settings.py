@@ -13,7 +13,7 @@ ALLOWED_HOSTS = config(
     "DJANGO_ALLOWED_HOSTS",
     default="*",
     cast=lambda v: [item.strip() for item in v.split(",") if item.strip()],
-)
+) + ["suport-api-1.onrender.com", "localhost", "127.0.0.1"]
 CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
@@ -107,12 +107,18 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": config("CLOUDINARY_API_SECRET", default="wJH5akhlGNv1Ltg-OURGSpTODTQ"),
 }
 
+_STATIC_BACKEND = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"
+    if DEBUG
+    else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
+
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": _STATIC_BACKEND,
     },
 }
 
