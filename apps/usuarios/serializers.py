@@ -73,7 +73,7 @@ class RegistoSerializer(serializers.ModelSerializer):
         perfil = attrs.get("perfil")
 
         if perfil == Usuario.PerfilChoices.CLIENTE:
-            required_fields = ("telefone", "empresa", "postos", "ip_servidor", "nif")
+            required_fields = ("telefone", "empresa", "ip_servidor", "nif")
         elif perfil == Usuario.PerfilChoices.TECNICO:
             required_fields = ("telefone", "empresa", "endereco", "especialidades", "data_contratacao")
         else:
@@ -225,6 +225,7 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
             status__in=["aberto", "em_andamento", "resolvido"],
         ).count()
 
+    @extend_schema_field(serializers.IntegerField())
     def get_total_horas_mes(self, obj):
         return getattr(obj, "total_horas_mes", 0) or 0
 
@@ -238,6 +239,7 @@ class TecnicoDetalheSerializer(TecnicoListaSerializer):
             "historico_intervencoes",
         )
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_historico_intervencoes(self, obj):
         return [
             {

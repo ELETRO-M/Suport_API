@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
@@ -19,9 +20,11 @@ class AnexoIntervencaoSerializer(serializers.ModelSerializer):
         model = AnexoIntervencao
         fields = ("id", "nome_arquivo", "url", "tamanho", "descricao", "data_criacao")
 
+    @extend_schema_field(serializers.CharField())
     def get_nome_arquivo(self, obj):
         return obj.arquivo.name.split("/")[-1]
 
+    @extend_schema_field(serializers.URLField())
     def get_url(self, obj):
         request = self.context.get("request")
         if request:
@@ -92,6 +95,7 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
             "comentarios",
         )
 
+    @extend_schema_field(serializers.DictField())
     def get_cliente(self, obj):
         return {
             "id": str(obj.cliente.id),
@@ -99,6 +103,7 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
             "empresa": obj.cliente.empresa,
         }
 
+    @extend_schema_field(serializers.DictField(allow_null=True))
     def get_tecnico(self, obj):
         if not obj.tecnico:
             return None
@@ -107,6 +112,7 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
             "nome": obj.tecnico.nome,
         }
 
+    @extend_schema_field(serializers.DictField(allow_null=True))
     def get_contrato(self, obj):
         if not obj.contrato:
             return None
@@ -233,6 +239,7 @@ class HoraTrabalhoListaSerializer(serializers.ModelSerializer):
             "tipo",
         )
 
+    @extend_schema_field(serializers.DictField())
     def get_intervencao(self, obj):
         return {
             "id": str(obj.intervencao.id),
@@ -240,6 +247,7 @@ class HoraTrabalhoListaSerializer(serializers.ModelSerializer):
             "titulo": obj.intervencao.titulo,
         }
 
+    @extend_schema_field(serializers.DictField())
     def get_tecnico(self, obj):
         return {
             "id": str(obj.tecnico.id),

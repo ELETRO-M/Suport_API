@@ -2,172 +2,43 @@ openapi: 3.0.3
 info:
   title: CLACS Suporte API
   version: 1.0.0
-  description: API de gestão.
+  description: API de gestão de suporte técnico.
 paths:
-  /api/schema/:
-    get:
-      operationId: api_schema_retrieve
-      description: |-
-        OpenApi3 schema for this API. Format can be selected via content negotiation.
-
-        - YAML: application/vnd.oai.openapi
-        - JSON: application/vnd.oai.openapi+json
+  /api/v1/auth/{id}/register:
+    delete:
+      operationId: api_v1_auth_register_destroy
       parameters:
-      - in: query
-        name: format
+      - in: path
+        name: id
         schema:
           type: string
-          enum:
-          - json
-          - yaml
-      - in: query
-        name: lang
-        schema:
-          type: string
-          enum:
-          - af
-          - ar
-          - ar-dz
-          - ast
-          - az
-          - be
-          - bg
-          - bn
-          - br
-          - bs
-          - ca
-          - ckb
-          - cs
-          - cy
-          - da
-          - de
-          - dsb
-          - el
-          - en
-          - en-au
-          - en-gb
-          - eo
-          - es
-          - es-ar
-          - es-co
-          - es-mx
-          - es-ni
-          - es-ve
-          - et
-          - eu
-          - fa
-          - fi
-          - fr
-          - fy
-          - ga
-          - gd
-          - gl
-          - he
-          - hi
-          - hr
-          - hsb
-          - hu
-          - hy
-          - ia
-          - id
-          - ig
-          - io
-          - is
-          - it
-          - ja
-          - ka
-          - kab
-          - kk
-          - km
-          - kn
-          - ko
-          - ky
-          - lb
-          - lt
-          - lv
-          - mk
-          - ml
-          - mn
-          - mr
-          - ms
-          - my
-          - nb
-          - ne
-          - nl
-          - nn
-          - os
-          - pa
-          - pl
-          - pt
-          - pt-br
-          - ro
-          - ru
-          - sk
-          - sl
-          - sq
-          - sr
-          - sr-latn
-          - sv
-          - sw
-          - ta
-          - te
-          - tg
-          - th
-          - tk
-          - tr
-          - tt
-          - udm
-          - ug
-          - uk
-          - ur
-          - uz
-          - vi
-          - zh-hans
-          - zh-hant
+          format: uuid
+        description: A UUID string identifying this utilizador.
+        required: true
       tags:
-      - api
+      - Autenticação
       security:
       - jwtAuth: []
-      - {}
       responses:
-        '200':
-          content:
-            application/vnd.oai.openapi:
-              schema:
-                type: object
-                additionalProperties: {}
-            application/yaml:
-              schema:
-                type: object
-                additionalProperties: {}
-            application/vnd.oai.openapi+json:
-              schema:
-                type: object
-                additionalProperties: {}
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
+        '204':
+          description: No response body
   /api/v1/auth/login:
     post:
       operationId: api_v1_auth_login_create
       tags:
-      - api
+      - Autenticação
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InicioSessao'
+              $ref: '#/components/schemas/InicioSessaoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/InicioSessao'
+              $ref: '#/components/schemas/InicioSessaoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/InicioSessao'
+              $ref: '#/components/schemas/InicioSessaoRequest'
         required: true
-      security:
-      - jwtAuth: []
       responses:
         '200':
           content:
@@ -179,28 +50,44 @@ paths:
     post:
       operationId: api_v1_auth_logout_create
       tags:
-      - api
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/v1/auth/refresh:
-    post:
-      operationId: api_v1_auth_refresh_create
-      tags:
-      - api
+      - Autenticação
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/UsuarioRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/UsuarioRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/UsuarioRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+          description: ''
+  /api/v1/auth/refresh:
+    post:
+      operationId: api_v1_auth_refresh_create
+      tags:
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
         required: true
       responses:
         '200':
@@ -210,21 +97,35 @@ paths:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
   /api/v1/auth/register:
+    get:
+      operationId: api_v1_auth_register_retrieve
+      tags:
+      - Autenticação
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+          description: ''
+  /api/v1/auth/register/:
     post:
       operationId: api_v1_auth_register_create
       tags:
-      - api
+      - Autenticação
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Registo'
+              $ref: '#/components/schemas/RegistoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Registo'
+              $ref: '#/components/schemas/RegistoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Registo'
+              $ref: '#/components/schemas/RegistoRequest'
         required: true
       security:
       - jwtAuth: []
@@ -239,7 +140,19 @@ paths:
     post:
       operationId: api_v1_auth_reset_password_create
       tags:
-      - api
+      - Autenticação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlterarSenhaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlterarSenhaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlterarSenhaRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -273,8 +186,18 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - activo
+          - inactivo
+        description: |-
+          * `activo` - Activo
+          * `inactivo` - Inactivo
       tags:
-      - api
+      - Clientes
       security:
       - jwtAuth: []
       responses:
@@ -287,18 +210,18 @@ paths:
     post:
       operationId: api_v1_clientes_create
       tags:
-      - api
+      - Clientes
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClienteEscrita'
+              $ref: '#/components/schemas/ClienteEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ClienteEscrita'
+              $ref: '#/components/schemas/ClienteEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ClienteEscrita'
+              $ref: '#/components/schemas/ClienteEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -317,9 +240,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Clientes
       security:
       - jwtAuth: []
       responses:
@@ -336,20 +261,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Clientes
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClienteEscrita'
+              $ref: '#/components/schemas/ClienteEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ClienteEscrita'
+              $ref: '#/components/schemas/ClienteEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ClienteEscrita'
+              $ref: '#/components/schemas/ClienteEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -367,20 +294,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Clientes
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedClienteEscrita'
+              $ref: '#/components/schemas/PatchedClienteEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedClienteEscrita'
+              $ref: '#/components/schemas/PatchedClienteEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedClienteEscrita'
+              $ref: '#/components/schemas/PatchedClienteEscritaRequest'
       security:
       - jwtAuth: []
       responses:
@@ -397,9 +326,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Clientes
       security:
       - jwtAuth: []
       responses:
@@ -434,7 +365,7 @@ paths:
         schema:
           type: string
       tags:
-      - api
+      - Configurações
       security:
       - jwtAuth: []
       responses:
@@ -447,18 +378,18 @@ paths:
     put:
       operationId: api_v1_configuracoes_update
       tags:
-      - api
+      - Configurações
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConfiguracaoSistema'
+              $ref: '#/components/schemas/ConfiguracaoSistemaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ConfiguracaoSistema'
+              $ref: '#/components/schemas/ConfiguracaoSistemaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ConfiguracaoSistema'
+              $ref: '#/components/schemas/ConfiguracaoSistemaRequest'
       security:
       - jwtAuth: []
       responses:
@@ -472,6 +403,11 @@ paths:
     get:
       operationId: api_v1_contratos_list
       parameters:
+      - in: query
+        name: cliente
+        schema:
+          type: string
+          format: uuid
       - name: limit
         required: false
         in: query
@@ -496,8 +432,54 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - activo
+          - cancelado
+          - expirado
+        description: |-
+          * `activo` - Activo
+          * `expirado` - Expirado
+          * `cancelado` - Cancelado
+      - in: query
+        name: tipo_contrato
+        schema:
+          type: string
+          enum:
+          - anual
+          - assistencia tecnica
+          - instalação
+          - manutencao corretiva
+          - manutencao preventiva
+          - outros
+          - servico avulso
+          - suporte
+        description: |-
+          * `assistencia tecnica` - Assistência Técnica
+          * `suporte` - Suporte
+          * `instalação` - Instalação
+          * `manutencao preventiva` - Manutenção Preventiva
+          * `manutencao corretiva` - Manutenção Corretiva
+          * `servico avulso` - Serviço Avulso
+          * `outros` - Outros
+          * `anual` - Anual
+      - in: query
+        name: tipo_de_pagamento
+        schema:
+          type: string
+          enum:
+          - anual
+          - horas
+          - mensal
+        description: |-
+          * `horas` - Horas
+          * `mensal` - Mensal
+          * `anual` - Anual
       tags:
-      - api
+      - Contratos
       security:
       - jwtAuth: []
       responses:
@@ -510,18 +492,18 @@ paths:
     post:
       operationId: api_v1_contratos_create
       tags:
-      - api
+      - Contratos
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ContratoEscrita'
+              $ref: '#/components/schemas/ContratoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ContratoEscrita'
+              $ref: '#/components/schemas/ContratoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ContratoEscrita'
+              $ref: '#/components/schemas/ContratoEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -540,9 +522,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this contrato.
         required: true
       tags:
-      - api
+      - Contratos
       security:
       - jwtAuth: []
       responses:
@@ -559,20 +543,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this contrato.
         required: true
       tags:
-      - api
+      - Contratos
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ContratoEscrita'
+              $ref: '#/components/schemas/ContratoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ContratoEscrita'
+              $ref: '#/components/schemas/ContratoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ContratoEscrita'
+              $ref: '#/components/schemas/ContratoEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -590,20 +576,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this contrato.
         required: true
       tags:
-      - api
+      - Contratos
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedContratoEscrita'
+              $ref: '#/components/schemas/PatchedContratoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedContratoEscrita'
+              $ref: '#/components/schemas/PatchedContratoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedContratoEscrita'
+              $ref: '#/components/schemas/PatchedContratoEscritaRequest'
       security:
       - jwtAuth: []
       responses:
@@ -620,9 +608,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this contrato.
         required: true
       tags:
-      - api
+      - Contratos
       security:
       - jwtAuth: []
       responses:
@@ -657,7 +647,7 @@ paths:
         schema:
           type: string
       tags:
-      - api
+      - Intervenções
       security:
       - jwtAuth: []
       responses:
@@ -670,18 +660,18 @@ paths:
     post:
       operationId: api_v1_horas_create
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoEscrita'
+              $ref: '#/components/schemas/HoraTrabalhoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoEscrita'
+              $ref: '#/components/schemas/HoraTrabalhoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoEscrita'
+              $ref: '#/components/schemas/HoraTrabalhoEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -700,9 +690,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this hora trabalho.
         required: true
       tags:
-      - api
+      - Intervenções
       security:
       - jwtAuth: []
       responses:
@@ -719,20 +711,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this hora trabalho.
         required: true
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+              $ref: '#/components/schemas/HoraTrabalhoAtualizacaoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+              $ref: '#/components/schemas/HoraTrabalhoAtualizacaoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+              $ref: '#/components/schemas/HoraTrabalhoAtualizacaoRequest'
         required: true
       security:
       - jwtAuth: []
@@ -750,20 +744,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this hora trabalho.
         required: true
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacao'
+              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacaoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacao'
+              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacaoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacao'
+              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacaoRequest'
       security:
       - jwtAuth: []
       responses:
@@ -780,9 +776,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this hora trabalho.
         required: true
       tags:
-      - api
+      - Intervenções
       security:
       - jwtAuth: []
       responses:
@@ -817,7 +815,7 @@ paths:
         schema:
           type: string
       tags:
-      - api
+      - Intervenções
       security:
       - jwtAuth: []
       responses:
@@ -830,18 +828,18 @@ paths:
     post:
       operationId: api_v1_intervencoes_create
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntervencaoEscrita'
+              $ref: '#/components/schemas/IntervencaoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoEscrita'
+              $ref: '#/components/schemas/IntervencaoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IntervencaoEscrita'
+              $ref: '#/components/schemas/IntervencaoEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -860,9 +858,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this intervencao.
         required: true
       tags:
-      - api
+      - Intervenções
       security:
       - jwtAuth: []
       responses:
@@ -879,20 +879,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this intervencao.
         required: true
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntervencaoAtualizacao'
+              $ref: '#/components/schemas/IntervencaoAtualizacaoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoAtualizacao'
+              $ref: '#/components/schemas/IntervencaoAtualizacaoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IntervencaoAtualizacao'
+              $ref: '#/components/schemas/IntervencaoAtualizacaoRequest'
         required: true
       security:
       - jwtAuth: []
@@ -910,20 +912,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this intervencao.
         required: true
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedIntervencaoAtualizacao'
+              $ref: '#/components/schemas/PatchedIntervencaoAtualizacaoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedIntervencaoAtualizacao'
+              $ref: '#/components/schemas/PatchedIntervencaoAtualizacaoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedIntervencaoAtualizacao'
+              $ref: '#/components/schemas/PatchedIntervencaoAtualizacaoRequest'
       security:
       - jwtAuth: []
       responses:
@@ -940,9 +944,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this intervencao.
         required: true
       tags:
-      - api
+      - Intervenções
       security:
       - jwtAuth: []
       responses:
@@ -956,20 +962,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this intervencao.
         required: true
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -988,20 +996,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this intervencao.
         required: true
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1020,20 +1030,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this intervencao.
         required: true
       tags:
-      - api
+      - Intervenções
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IntervencaoLista'
+              $ref: '#/components/schemas/IntervencaoListaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1073,7 +1085,7 @@ paths:
         schema:
           type: string
       tags:
-      - api
+      - Notificações
       security:
       - jwtAuth: []
       responses:
@@ -1091,9 +1103,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this notificacao.
         required: true
       tags:
-      - api
+      - Notificações
       security:
       - jwtAuth: []
       responses:
@@ -1111,20 +1125,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this notificacao.
         required: true
       tags:
-      - api
+      - Notificações
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notificacao'
+              $ref: '#/components/schemas/NotificacaoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Notificacao'
+              $ref: '#/components/schemas/NotificacaoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Notificacao'
+              $ref: '#/components/schemas/NotificacaoRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1139,18 +1155,18 @@ paths:
     put:
       operationId: api_v1_notificacoes_marcar_todas_lidas_update
       tags:
-      - api
+      - Notificações
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notificacao'
+              $ref: '#/components/schemas/NotificacaoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Notificacao'
+              $ref: '#/components/schemas/NotificacaoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Notificacao'
+              $ref: '#/components/schemas/NotificacaoRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1190,7 +1206,7 @@ paths:
         schema:
           type: string
       tags:
-      - api
+      - Perfis
       security:
       - jwtAuth: []
       responses:
@@ -1203,18 +1219,18 @@ paths:
     put:
       operationId: api_v1_perfil_update
       tags:
-      - api
+      - Perfis
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Perfil'
+              $ref: '#/components/schemas/PerfilRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Perfil'
+              $ref: '#/components/schemas/PerfilRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Perfil'
+              $ref: '#/components/schemas/PerfilRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1229,33 +1245,53 @@ paths:
     put:
       operationId: api_v1_perfil_password_update
       tags:
-      - api
+      - Perfis
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AlterarSenha'
+              $ref: '#/components/schemas/AlterarSenhaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AlterarSenha'
+              $ref: '#/components/schemas/AlterarSenhaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AlterarSenha'
+              $ref: '#/components/schemas/AlterarSenhaRequest'
         required: true
       security:
       - jwtAuth: []
       responses:
         '200':
+          description: No response body
+  /api/v1/recuperar:
+    post:
+      operationId: api_v1_recuperar_create
+      tags:
+      - Recuperação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecuperaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecuperaRequest'
+        required: true
+      responses:
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AlterarSenha'
+                $ref: '#/components/schemas/Recupera'
           description: ''
   /api/v1/relatorios/dashboard-admin:
     get:
       operationId: api_v1_relatorios_dashboard_admin_retrieve
       tags:
-      - api
+      - Admin
       security:
       - jwtAuth: []
       responses:
@@ -1265,7 +1301,7 @@ paths:
     get:
       operationId: api_v1_relatorios_dashboard_cliente_retrieve
       tags:
-      - api
+      - Admin
       security:
       - jwtAuth: []
       responses:
@@ -1275,7 +1311,7 @@ paths:
     get:
       operationId: api_v1_relatorios_dashboard_tecnico_retrieve
       tags:
-      - api
+      - Admin
       security:
       - jwtAuth: []
       responses:
@@ -1285,7 +1321,7 @@ paths:
     get:
       operationId: api_v1_relatorios_financeiro_retrieve
       tags:
-      - api
+      - Admin
       security:
       - jwtAuth: []
       responses:
@@ -1295,7 +1331,7 @@ paths:
     get:
       operationId: api_v1_relatorios_horas_retrieve
       tags:
-      - api
+      - Admin
       security:
       - jwtAuth: []
       responses:
@@ -1305,11 +1341,31 @@ paths:
     get:
       operationId: api_v1_relatorios_intervencoes_retrieve
       tags:
-      - api
+      - Admin
       security:
       - jwtAuth: []
       responses:
         '200':
+          description: No response body
+  /api/v1/reset-password:
+    post:
+      operationId: api_v1_reset_password_create
+      tags:
+      - Recuperação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetSenhaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetSenhaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetSenhaRequest'
+        required: true
+      responses:
+        '201':
           description: No response body
   /api/v1/tecnicos:
     get:
@@ -1339,8 +1395,18 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - activo
+          - inactivo
+        description: |-
+          * `activo` - Activo
+          * `inactivo` - Inactivo
       tags:
-      - api
+      - Tecnicos
       security:
       - jwtAuth: []
       responses:
@@ -1353,18 +1419,18 @@ paths:
     post:
       operationId: api_v1_tecnicos_create
       tags:
-      - api
+      - Tecnicos
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TecnicoEscrita'
+              $ref: '#/components/schemas/TecnicoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TecnicoEscrita'
+              $ref: '#/components/schemas/TecnicoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TecnicoEscrita'
+              $ref: '#/components/schemas/TecnicoEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1383,9 +1449,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Tecnicos
       security:
       - jwtAuth: []
       responses:
@@ -1402,20 +1470,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Tecnicos
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TecnicoEscrita'
+              $ref: '#/components/schemas/TecnicoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TecnicoEscrita'
+              $ref: '#/components/schemas/TecnicoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TecnicoEscrita'
+              $ref: '#/components/schemas/TecnicoEscritaRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1433,20 +1503,22 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Tecnicos
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedTecnicoEscrita'
+              $ref: '#/components/schemas/PatchedTecnicoEscritaRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedTecnicoEscrita'
+              $ref: '#/components/schemas/PatchedTecnicoEscritaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedTecnicoEscrita'
+              $ref: '#/components/schemas/PatchedTecnicoEscritaRequest'
       security:
       - jwtAuth: []
       responses:
@@ -1463,9 +1535,11 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this utilizador.
         required: true
       tags:
-      - api
+      - Tecnicos
       security:
       - jwtAuth: []
       responses:
@@ -1473,15 +1547,17 @@ paths:
           description: No response body
 components:
   schemas:
-    AlterarSenha:
+    AlterarSenhaRequest:
       type: object
       properties:
         password_atual:
           type: string
           writeOnly: true
+          minLength: 1
         password_nova:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - password_atual
       - password_nova
@@ -1500,8 +1576,9 @@ components:
           readOnly: true
         tamanho:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         descricao:
           type: string
           maxLength: 255
@@ -1514,6 +1591,17 @@ components:
       - id
       - nome_arquivo
       - url
+    AnexoIntervencaoRequest:
+      type: object
+      properties:
+        tamanho:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        descricao:
+          type: string
+          maxLength: 255
     ClienteDetalhe:
       type: object
       properties:
@@ -1528,25 +1616,37 @@ components:
           type: string
           format: email
           maxLength: 254
+        perfil:
+          $ref: '#/components/schemas/UsuarioPerfilEnum'
         telefone:
           type: string
           maxLength: 50
         empresa:
           type: string
           maxLength: 255
+        postos:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
         nif:
           type: string
           maxLength: 50
         endereco:
           type: string
         status:
-          $ref: '#/components/schemas/Status8efEnum'
+          $ref: '#/components/schemas/UsuarioStatusEnum'
         data_criacao:
           type: string
           format: date-time
           readOnly: true
         contratos_ativos:
-          type: string
+          type: integer
           readOnly: true
         contratos:
           type: string
@@ -1562,6 +1662,7 @@ components:
       - id
       - intervencoes
       - nome
+      - perfil
     ClienteEscrita:
       type: object
       properties:
@@ -1578,6 +1679,44 @@ components:
         empresa:
           type: string
           maxLength: 255
+        postos: {}
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+      required:
+      - email
+      - nome
+    ClienteEscritaRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        postos: {}
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
         nif:
           type: string
           maxLength: 50
@@ -1586,8 +1725,9 @@ components:
         password:
           type: string
           writeOnly: true
+          minLength: 1
         status:
-          $ref: '#/components/schemas/Status8efEnum'
+          $ref: '#/components/schemas/UsuarioStatusEnum'
       required:
       - email
       - nome
@@ -1605,25 +1745,37 @@ components:
           type: string
           format: email
           maxLength: 254
+        perfil:
+          $ref: '#/components/schemas/UsuarioPerfilEnum'
         telefone:
           type: string
           maxLength: 50
         empresa:
           type: string
           maxLength: 255
+        postos:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
         nif:
           type: string
           maxLength: 50
         endereco:
           type: string
         status:
-          $ref: '#/components/schemas/Status8efEnum'
+          $ref: '#/components/schemas/UsuarioStatusEnum'
         data_criacao:
           type: string
           format: date-time
           readOnly: true
         contratos_ativos:
-          type: string
+          type: integer
           readOnly: true
       required:
       - contratos_ativos
@@ -1631,6 +1783,7 @@ components:
       - email
       - id
       - nome
+      - perfil
     ComentarioIntervencao:
       type: object
       properties:
@@ -1672,8 +1825,31 @@ components:
           type: boolean
         prazo_padrao_intervencao:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
+        taxa_hora_padrao:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+    ConfiguracaoSistemaRequest:
+      type: object
+      properties:
+        moeda:
+          type: string
+          minLength: 1
+          maxLength: 10
+        fuso_horario:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email_notificacoes:
+          type: boolean
+        prazo_padrao_intervencao:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
         taxa_hora_padrao:
           type: string
           format: decimal
@@ -1692,8 +1868,10 @@ components:
         cliente_nome:
           type: string
           readOnly: true
-        tipo:
-          $ref: '#/components/schemas/Tipo58fEnum'
+        tipo_contrato:
+          $ref: '#/components/schemas/TipoContratoEnum'
+        tipo_de_pagamento:
+          $ref: '#/components/schemas/TipoDePagamentoEnum'
         horas_contratadas:
           type: string
           format: decimal
@@ -1718,7 +1896,7 @@ components:
           type: string
           format: date
         status:
-          $ref: '#/components/schemas/StatusAe3Enum'
+          $ref: '#/components/schemas/ContratoStatusEnum'
         observacoes:
           type: string
         cliente:
@@ -1740,18 +1918,21 @@ components:
       - horas_disponiveis
       - id
       - intervencoes
-      - tipo
+      - tipo_contrato
+      - tipo_de_pagamento
       - valor_total
     ContratoEscrita:
       type: object
       properties:
-        cliente_id:
-          type: string
-          format: uuid
-          writeOnly: true
-        tipo:
-          $ref: '#/components/schemas/Tipo58fEnum'
+        tipo_contrato:
+          $ref: '#/components/schemas/TipoContratoEnum'
+        tipo_de_pagamento:
+          $ref: '#/components/schemas/TipoDePagamentoEnum'
         horas_contratadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        horas_utilizadas:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
@@ -1766,14 +1947,54 @@ components:
           type: string
           format: date
         status:
-          $ref: '#/components/schemas/StatusAe3Enum'
+          $ref: '#/components/schemas/ContratoStatusEnum'
+        observacoes:
+          type: string
+      required:
+      - data_fim
+      - data_inicio
+      - tipo_contrato
+      - tipo_de_pagamento
+      - valor_total
+    ContratoEscritaRequest:
+      type: object
+      properties:
+        cliente_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        tipo_contrato:
+          $ref: '#/components/schemas/TipoContratoEnum'
+        tipo_de_pagamento:
+          $ref: '#/components/schemas/TipoDePagamentoEnum'
+        horas_contratadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        horas_utilizadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valor_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/ContratoStatusEnum'
         observacoes:
           type: string
       required:
       - cliente_id
       - data_fim
       - data_inicio
-      - tipo
+      - tipo_contrato
+      - tipo_de_pagamento
       - valor_total
     ContratoLista:
       type: object
@@ -1789,8 +2010,10 @@ components:
         cliente_nome:
           type: string
           readOnly: true
-        tipo:
-          $ref: '#/components/schemas/Tipo58fEnum'
+        tipo_contrato:
+          $ref: '#/components/schemas/TipoContratoEnum'
+        tipo_de_pagamento:
+          $ref: '#/components/schemas/TipoDePagamentoEnum'
         horas_contratadas:
           type: string
           format: decimal
@@ -1815,7 +2038,7 @@ components:
           type: string
           format: date
         status:
-          $ref: '#/components/schemas/StatusAe3Enum'
+          $ref: '#/components/schemas/ContratoStatusEnum'
         observacoes:
           type: string
       required:
@@ -1825,8 +2048,19 @@ components:
       - data_inicio
       - horas_disponiveis
       - id
-      - tipo
+      - tipo_contrato
+      - tipo_de_pagamento
       - valor_total
+    ContratoStatusEnum:
+      enum:
+      - activo
+      - expirado
+      - cancelado
+      type: string
+      description: |-
+        * `activo` - Activo
+        * `expirado` - Expirado
+        * `cancelado` - Cancelado
     HistoricoEstadoIntervencao:
       type: object
       properties:
@@ -1835,7 +2069,7 @@ components:
           format: uuid
           readOnly: true
         status:
-          $ref: '#/components/schemas/StatusB1cEnum'
+          $ref: '#/components/schemas/IntervecoesStatusEnum'
         alterado_por_nome:
           type: string
           readOnly: true
@@ -1863,7 +2097,39 @@ components:
       required:
       - descricao
       - horas
+    HoraTrabalhoAtualizacaoRequest:
+      type: object
+      properties:
+        horas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        descricao:
+          type: string
+          minLength: 1
+      required:
+      - descricao
+      - horas
     HoraTrabalhoEscrita:
+      type: object
+      properties:
+        horas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        data_trabalho:
+          type: string
+          format: date
+        descricao:
+          type: string
+        tipo:
+          $ref: '#/components/schemas/HoraTrabalhoTipoEnum'
+      required:
+      - data_trabalho
+      - descricao
+      - horas
+      - tipo
+    HoraTrabalhoEscritaRequest:
       type: object
       properties:
         intervencao_id:
@@ -1883,8 +2149,9 @@ components:
           format: date
         descricao:
           type: string
+          minLength: 1
         tipo:
-          $ref: '#/components/schemas/Tipo23bEnum'
+          $ref: '#/components/schemas/HoraTrabalhoTipoEnum'
       required:
       - data_trabalho
       - descricao
@@ -1914,7 +2181,7 @@ components:
         descricao:
           type: string
         tipo:
-          $ref: '#/components/schemas/Tipo23bEnum'
+          $ref: '#/components/schemas/HoraTrabalhoTipoEnum'
       required:
       - data_trabalho
       - descricao
@@ -1923,18 +2190,62 @@ components:
       - intervencao
       - tecnico
       - tipo
+    HoraTrabalhoTipoEnum:
+      enum:
+      - presencial
+      - remoto
+      type: string
+      description: |-
+        * `presencial` - Presencial
+        * `remoto` - Remoto
     InicioSessao:
       type: object
       properties:
         email:
           type: string
           format: email
+      required:
+      - email
+    InicioSessaoRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
         password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - email
       - password
+    IntervecoesPrioridadeEnum:
+      enum:
+      - baixa
+      - media
+      - alta
+      - urgente
+      type: string
+      description: |-
+        * `baixa` - Baixa
+        * `media` - Média
+        * `alta` - Alta
+        * `urgente` - Urgente
+    IntervecoesStatusEnum:
+      enum:
+      - aberto
+      - em_andamento
+      - resolvido
+      - fechado
+      - concluido
+      type: string
+      description: |-
+        * `aberto` - Aberto
+        * `em_andamento` - Em andamento
+        * `resolvido` - Resolvido
+        * `fechado` - Fechado
+        * `concluido` - Concluído
     IntervencaoAtualizacao:
       type: object
       properties:
@@ -1948,9 +2259,31 @@ components:
           format: uuid
           nullable: true
         status:
-          $ref: '#/components/schemas/StatusB1cEnum'
+          $ref: '#/components/schemas/IntervecoesStatusEnum'
         prioridade:
-          $ref: '#/components/schemas/PrioridadeEnum'
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+      required:
+      - descricao
+      - prioridade
+      - titulo
+    IntervencaoAtualizacaoRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 255
+        descricao:
+          type: string
+          minLength: 1
+        tecnico_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/IntervecoesStatusEnum'
+        prioridade:
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
       required:
       - descricao
       - prioridade
@@ -1989,9 +2322,9 @@ components:
           format: uuid
           readOnly: true
         status:
-          $ref: '#/components/schemas/StatusB1cEnum'
+          $ref: '#/components/schemas/IntervecoesStatusEnum'
         prioridade:
-          $ref: '#/components/schemas/PrioridadeEnum'
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
         horas_trabalhadas:
           type: string
           format: decimal
@@ -2051,6 +2384,22 @@ components:
           maxLength: 255
         descricao:
           type: string
+        prioridade:
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+      required:
+      - descricao
+      - prioridade
+      - titulo
+    IntervencaoEscritaRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 255
+        descricao:
+          type: string
+          minLength: 1
         cliente_id:
           type: string
           format: uuid
@@ -2061,12 +2410,12 @@ components:
           writeOnly: true
           nullable: true
         prioridade:
-          $ref: '#/components/schemas/PrioridadeEnum'
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
         anexos:
           type: array
           items:
             type: string
-            format: uri
+            format: binary
           writeOnly: true
       required:
       - cliente_id
@@ -2107,9 +2456,9 @@ components:
           format: uuid
           readOnly: true
         status:
-          $ref: '#/components/schemas/StatusB1cEnum'
+          $ref: '#/components/schemas/IntervecoesStatusEnum'
         prioridade:
-          $ref: '#/components/schemas/PrioridadeEnum'
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
         horas_trabalhadas:
           type: string
           format: decimal
@@ -2136,6 +2485,38 @@ components:
       - prioridade
       - tecnico_id
       - tecnico_nome
+      - titulo
+    IntervencaoListaRequest:
+      type: object
+      properties:
+        numero:
+          type: string
+          maxLength: 30
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 255
+        descricao:
+          type: string
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/IntervecoesStatusEnum'
+        prioridade:
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+        horas_trabalhadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        data_abertura:
+          type: string
+          format: date-time
+        data_conclusao:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - descricao
+      - prioridade
       - titulo
     Notificacao:
       type: object
@@ -2164,6 +2545,29 @@ components:
       required:
       - data_criacao
       - id
+      - mensagem
+      - tipo
+      - titulo
+    NotificacaoRequest:
+      type: object
+      properties:
+        tipo:
+          type: string
+          minLength: 1
+          maxLength: 100
+        titulo:
+          type: string
+          minLength: 1
+          maxLength: 255
+        mensagem:
+          type: string
+          minLength: 1
+        link:
+          type: string
+          maxLength: 255
+        lida:
+          type: boolean
+      required:
       - mensagem
       - tipo
       - titulo
@@ -2351,15 +2755,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TecnicoLista'
-    PatchedClienteEscrita:
+    PatchedClienteEscritaRequest:
       type: object
       properties:
         nome:
           type: string
+          minLength: 1
           maxLength: 255
         email:
           type: string
           format: email
+          minLength: 1
           maxLength: 254
         telefone:
           type: string
@@ -2367,6 +2773,11 @@ components:
         empresa:
           type: string
           maxLength: 255
+        postos: {}
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
         nif:
           type: string
           maxLength: 50
@@ -2375,18 +2786,25 @@ components:
         password:
           type: string
           writeOnly: true
+          minLength: 1
         status:
-          $ref: '#/components/schemas/Status8efEnum'
-    PatchedContratoEscrita:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+    PatchedContratoEscritaRequest:
       type: object
       properties:
         cliente_id:
           type: string
           format: uuid
           writeOnly: true
-        tipo:
-          $ref: '#/components/schemas/Tipo58fEnum'
+        tipo_contrato:
+          $ref: '#/components/schemas/TipoContratoEnum'
+        tipo_de_pagamento:
+          $ref: '#/components/schemas/TipoDePagamentoEnum'
         horas_contratadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        horas_utilizadas:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
@@ -2401,10 +2819,10 @@ components:
           type: string
           format: date
         status:
-          $ref: '#/components/schemas/StatusAe3Enum'
+          $ref: '#/components/schemas/ContratoStatusEnum'
         observacoes:
           type: string
-    PatchedHoraTrabalhoAtualizacao:
+    PatchedHoraTrabalhoAtualizacaoRequest:
       type: object
       properties:
         horas:
@@ -2413,31 +2831,36 @@ components:
           pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
         descricao:
           type: string
-    PatchedIntervencaoAtualizacao:
+          minLength: 1
+    PatchedIntervencaoAtualizacaoRequest:
       type: object
       properties:
         titulo:
           type: string
+          minLength: 1
           maxLength: 255
         descricao:
           type: string
+          minLength: 1
         tecnico_id:
           type: string
           format: uuid
           nullable: true
         status:
-          $ref: '#/components/schemas/StatusB1cEnum'
+          $ref: '#/components/schemas/IntervecoesStatusEnum'
         prioridade:
-          $ref: '#/components/schemas/PrioridadeEnum'
-    PatchedTecnicoEscrita:
+          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+    PatchedTecnicoEscritaRequest:
       type: object
       properties:
         nome:
           type: string
+          minLength: 1
           maxLength: 255
         email:
           type: string
           format: email
+          minLength: 1
           maxLength: 254
         telefone:
           type: string
@@ -2445,13 +2868,14 @@ components:
         password:
           type: string
           writeOnly: true
+          minLength: 1
         especialidades: {}
         data_contratacao:
           type: string
           format: date
           nullable: true
         status:
-          $ref: '#/components/schemas/Status8efEnum'
+          $ref: '#/components/schemas/UsuarioStatusEnum'
     Perfil:
       type: object
       properties:
@@ -2468,8 +2892,13 @@ components:
           readOnly: true
         perfil:
           allOf:
-          - $ref: '#/components/schemas/PerfilEnum'
+          - $ref: '#/components/schemas/UsuarioPerfilEnum'
           readOnly: true
+        postos: {}
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
         telefone:
           type: string
           maxLength: 50
@@ -2483,16 +2912,6 @@ components:
       - id
       - nome
       - perfil
-    PerfilEnum:
-      enum:
-      - admin
-      - tecnico
-      - cliente
-      type: string
-      description: |-
-        * `admin` - Admin
-        * `tecnico` - Técnico
-        * `cliente` - Cliente
     PerfilPainel:
       type: object
       properties:
@@ -2508,7 +2927,7 @@ components:
           format: email
           maxLength: 254
         perfil:
-          $ref: '#/components/schemas/PerfilEnum'
+          $ref: '#/components/schemas/UsuarioPerfilEnum'
         telefone:
           type: string
           maxLength: 50
@@ -2518,10 +2937,10 @@ components:
           maxLength: 200
         preferencias: {}
         contratos_ativos:
-          type: string
+          type: integer
           readOnly: true
         intervencoes_abertas:
-          type: string
+          type: integer
           readOnly: true
       required:
       - contratos_ativos
@@ -2530,18 +2949,45 @@ components:
       - intervencoes_abertas
       - nome
       - perfil
-    PrioridadeEnum:
-      enum:
-      - baixa
-      - media
-      - alta
-      - urgente
-      type: string
-      description: |-
-        * `baixa` - Baixa
-        * `media` - Média
-        * `alta` - Alta
-        * `urgente` - Urgente
+    PerfilRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        postos: {}
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
+        telefone:
+          type: string
+          maxLength: 50
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 200
+        preferencias: {}
+      required:
+      - nome
+    Recupera:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    RecuperaRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
     Registo:
       type: object
       properties:
@@ -2549,57 +2995,93 @@ components:
           type: string
           format: email
           maxLength: 254
-        password:
-          type: string
-          writeOnly: true
         nome:
           type: string
           maxLength: 255
         perfil:
-          $ref: '#/components/schemas/PerfilEnum'
+          $ref: '#/components/schemas/UsuarioPerfilEnum'
         telefone:
           type: string
           maxLength: 50
         empresa:
           type: string
           maxLength: 255
+        postos: {}
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        especialidades: {}
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+      required:
+      - email
+      - nome
+      - perfil
+    RegistoRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        perfil:
+          $ref: '#/components/schemas/UsuarioPerfilEnum'
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        postos: {}
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        especialidades: {}
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
       required:
       - email
       - nome
       - password
       - perfil
-    Status8efEnum:
-      enum:
-      - activo
-      - inactivo
-      type: string
-      description: |-
-        * `activo` - Activo
-        * `inactivo` - Inactivo
-    StatusAe3Enum:
-      enum:
-      - activo
-      - expirado
-      - cancelado
-      type: string
-      description: |-
-        * `activo` - Activo
-        * `expirado` - Expirado
-        * `cancelado` - Cancelado
-    StatusB1cEnum:
-      enum:
-      - aberto
-      - em_andamento
-      - resolvido
-      - fechado
-      - concluido
-      type: string
-      description: |-
-        * `aberto` - Aberto
-        * `em_andamento` - Em andamento
-        * `resolvido` - Resolvido
-        * `fechado` - Fechado
-        * `concluido` - Concluído
+    ResetSenhaRequest:
+      type: object
+      properties:
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - new_password
     TecnicoDetalhe:
       type: object
       properties:
@@ -2619,9 +3101,9 @@ components:
           maxLength: 50
         especialidades: {}
         status:
-          $ref: '#/components/schemas/Status8efEnum'
+          $ref: '#/components/schemas/UsuarioStatusEnum'
         intervencoes_ativas:
-          type: string
+          type: integer
           readOnly: true
         total_horas_mes:
           type: string
@@ -2653,16 +3135,42 @@ components:
         telefone:
           type: string
           maxLength: 50
-        password:
-          type: string
-          writeOnly: true
         especialidades: {}
         data_contratacao:
           type: string
           format: date
           nullable: true
         status:
-          $ref: '#/components/schemas/Status8efEnum'
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+      required:
+      - email
+      - nome
+    TecnicoEscritaRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        especialidades: {}
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
       required:
       - email
       - nome
@@ -2685,9 +3193,9 @@ components:
           maxLength: 50
         especialidades: {}
         status:
-          $ref: '#/components/schemas/Status8efEnum'
+          $ref: '#/components/schemas/UsuarioStatusEnum'
         intervencoes_ativas:
-          type: string
+          type: integer
           readOnly: true
         total_horas_mes:
           type: string
@@ -2698,15 +3206,27 @@ components:
       - intervencoes_ativas
       - nome
       - total_horas_mes
-    Tipo23bEnum:
+    TipoContratoEnum:
       enum:
-      - presencial
-      - remoto
+      - assistencia tecnica
+      - suporte
+      - instalação
+      - manutencao preventiva
+      - manutencao corretiva
+      - servico avulso
+      - outros
+      - anual
       type: string
       description: |-
-        * `presencial` - Presencial
-        * `remoto` - Remoto
-    Tipo58fEnum:
+        * `assistencia tecnica` - Assistência Técnica
+        * `suporte` - Suporte
+        * `instalação` - Instalação
+        * `manutencao preventiva` - Manutenção Preventiva
+        * `manutencao corretiva` - Manutenção Corretiva
+        * `servico avulso` - Serviço Avulso
+        * `outros` - Outros
+        * `anual` - Anual
+    TipoDePagamentoEnum:
       enum:
       - horas
       - mensal
@@ -2727,6 +3247,135 @@ components:
       required:
       - access
       - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        perfil:
+          allOf:
+          - $ref: '#/components/schemas/UsuarioPerfilEnum'
+          readOnly: true
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        postos: {}
+        nif:
+          type: string
+          maxLength: 50
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
+        endereco:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 200
+        preferencias: {}
+        especialidades: {}
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+        is_deleted:
+          type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - data_criacao
+      - email
+      - id
+      - nome
+      - perfil
+    UsuarioPerfilEnum:
+      enum:
+      - admin
+      - tecnico
+      - cliente
+      type: string
+      description: |-
+        * `admin` - Admin
+        * `tecnico` - Técnico
+        * `cliente` - Cliente
+    UsuarioRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        empresa:
+          type: string
+          maxLength: 255
+        postos: {}
+        nif:
+          type: string
+          maxLength: 50
+        ip_servidor:
+          type: string
+          maxLength: 50
+          minLength: 7
+        endereco:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 200
+        preferencias: {}
+        especialidades: {}
+        data_contratacao:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+        is_deleted:
+          type: boolean
+      required:
+      - email
+      - nome
+    UsuarioStatusEnum:
+      enum:
+      - activo
+      - inactivo
+      type: string
+      description: |-
+        * `activo` - Activo
+        * `inactivo` - Inactivo
   securitySchemes:
     jwtAuth:
       type: http

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
+from drf_spectacular.utils import extend_schema_field
 
 
 class ContratoListaSerializer(serializers.ModelSerializer):
@@ -34,6 +35,7 @@ class ContratoDetalheSerializer(ContratoListaSerializer):
     class Meta(ContratoListaSerializer.Meta):
         fields = ContratoListaSerializer.Meta.fields + ("cliente", "valor_hora", "intervencoes")
 
+    @extend_schema_field(serializers.DictField())
     def get_cliente(self, obj):
         return {
             "id": str(obj.cliente.id),
@@ -41,6 +43,7 @@ class ContratoDetalheSerializer(ContratoListaSerializer):
             "empresa": obj.cliente.empresa,
         }
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_intervencoes(self, obj):
         return [
             {

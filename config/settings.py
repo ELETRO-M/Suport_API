@@ -1,17 +1,23 @@
 from datetime import timedelta
 from pathlib import Path
-import dj_database_url, os
+import os
 
 from decouple import config
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config("SECRET_KEY")
-DEBUG = config("DEBUG", cast=bool)
-ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", default="*").split(",") 
+SECRET_KEY = config("SECRET_KEY", default="django-suport-api-secret-key-clacs-2026-xjf9!")
+DEBUG = config("DEBUG", default=False, cast=bool)
+ALLOWED_HOSTS = config(
+    "DJANGO_ALLOWED_HOSTS",
+    default="*",
+    cast=lambda v: [item.strip() for item in v.split(",") if item.strip()],
+)
+CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
+    "apps.configuracoes",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -24,7 +30,9 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "drf_spectacular",
-    "apps.configuracoes",
+    "corsheaders",
+    "cloudinary",
+    "cloudinary_storage",
     "apps.usuarios",
     "apps.clientes",
     "apps.contratos",
@@ -32,12 +40,11 @@ INSTALLED_APPS = [
     "apps.relatorios",
     "apps.notificacoes",
     "apps.sistema",
-    
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware", 
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -50,14 +57,14 @@ ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], 
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -65,12 +72,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
+
 DATABASES = {
-      "default": dj_database_url.config(default='sqlite:///db.sqlite3')
+    "default": {
+        "ENGINE": config("DB_ENGINE", default="django.db.backends.sqlite3"),
+        "NAME": config("DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
+        "USER": config("DB_USER", default=""),
+        "PASSWORD": config("DB_PASSWORD", default=""),
+        "HOST": config("DB_HOST", default=""),
+        "PORT": config("DB_PORT", default=""),
+    }
 }
-
-
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -82,14 +94,26 @@ LANGUAGE_CODE = "pt-pt"
 TIME_ZONE = "Africa/Luanda"
 USE_I18N = True
 USE_TZ = True
-SITE_URL = config("DOMAIN_URL", default="http://localhost:8000")
-STATICFILES_DIRS = []
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
+STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": config("CLOUDINARY_CLOUD_NAME", default="dhpain7wq"),
+    "API_KEY": config("CLOUDINARY_API_KEY", default="772767193863469"),
+    "API_SECRET": config("CLOUDINARY_API_SECRET", default="wJH5akhlGNv1Ltg-OURGSpTODTQ"),
+}
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "usuarios.Usuario"
@@ -114,33 +138,33 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(config("ACCESS_TOKEN_LIFETIME_MINUTES"))),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(config("REFRESH_TOKEN_LIFETIME_DAYS"))),
-    "PASSWORD_RESET_TIMEOUT": 900,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("ACCESS_TOKEN_LIFETIME_MINUTES", default=60, cast=int)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=config("REFRESH_TOKEN_LIFETIME_DAYS", default=7, cast=int)),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Suporte API",
-    "DESCRIPTION": "API de gestão.",
+    "TITLE": "CLACS Suporte API",
+    "DESCRIPTION": "API de gestão de suporte técnico.",
     "VERSION": "1.0.0",
-    "SWAGGER_UI_FAVICON_HREF": "data:,",
-    'SERVERS': [
-        {'url': config("DOMAIN_URL", default="http://localhost:8000")},
-    ]
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": {
+        "IntervecoesStatusEnum": "apps.intervencoes.models.Intervencao.StatusChoices",
+        "IntervecoesPrioridadeEnum": "apps.intervencoes.models.Intervencao.PrioridadeChoices",
+        "HoraTrabalhoTipoEnum": "apps.intervencoes.models.HoraTrabalho.TipoChoices",
+        "ContratoStatusEnum": "apps.contratos.models.Contrato.StatusChoices",
+        "ContratoTipoEnum": "apps.contratos.models.Contrato.Tipo_de_contratos",
+        "ContratoPagamentoEnum": "apps.contratos.models.Contrato.TipoPagamento",
+        "UsuarioStatusEnum": "apps.usuarios.models.Usuario.StatusChoices",
+        "UsuarioPerfilEnum": "apps.usuarios.models.Usuario.PerfilChoices",
+    },
 }
-if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-else:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-    EMAIL_HOST = config("EMAIL_HOST")
-    EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
-    EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
-    EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)
-    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=30)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default=config("EMAIL_EMPRESA", default=""))
-    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default=config("PASSWORD_EMAIL", default=""))
- 
+CSRF_TRUSTED_ORIGINS = [
+    "https://suport-api-1.onrender.com",
+]

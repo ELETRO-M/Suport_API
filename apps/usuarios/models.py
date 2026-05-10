@@ -111,10 +111,6 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                 raise ValidationError({
                     "telefone": "Obrigatório para clientes.",
                     })
-            if not self.postos:
-                raise ValidationError({
-                    "postos": "Obrigatório para clientes.",
-                    })
 #____________________________________________________________________________________
 
         if self.perfil == self.PerfilChoices.TECNICO:

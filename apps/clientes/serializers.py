@@ -3,10 +3,16 @@ from django.db import IntegrityError
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
 from django.conf import settings
+from drf_spectacular.utils import extend_schema_field
 
 
 class ClienteListaSerializer(serializers.ModelSerializer):
     contratos_ativos = serializers.SerializerMethodField()
+    postos = serializers.DictField(
+        child=serializers.DictField(child=serializers.CharField()),
+        required=False,
+        allow_empty=True,
+    )
 
     class Meta:
         model = Usuario
@@ -14,6 +20,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
             "id",
             "nome",
             "email",
+            "perfil",
             "telefone",
             "empresa",
             "postos",
@@ -25,6 +32,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
             "contratos_ativos",
         )
 
+    @extend_schema_field(serializers.IntegerField())
     def get_contratos_ativos(self, obj):
         return Contrato.objects.filter(
             cliente=obj,
@@ -42,6 +50,7 @@ class ClienteDetalheSerializer(ClienteListaSerializer):
     class Meta(ClienteListaSerializer.Meta):
         fields = ClienteListaSerializer.Meta.fields + ("contratos", "intervencoes")
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_contratos(self, obj):
         return [
             {
@@ -53,6 +62,7 @@ class ClienteDetalheSerializer(ClienteListaSerializer):
             for item in obj.contratos.alive().order_by("-data_criacao")[:20]
         ]
 
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_intervencoes(self, obj):
         return [
             {
