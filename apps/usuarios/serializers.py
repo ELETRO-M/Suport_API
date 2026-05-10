@@ -264,11 +264,13 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
             "password",
             "especialidades",
             "data_contratacao",
+            "empresa",
+            "endereco",
             "status",
         )
 
     def create(self, validated_data):
-        password = validated_data.pop("password")
+        password = validated_data.pop("password", "123456")
         return Usuario.objects.create_user(
             password=password,
             perfil=Usuario.PerfilChoices.TECNICO,
