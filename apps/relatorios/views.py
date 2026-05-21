@@ -35,8 +35,8 @@ class RelatorioViewSet(viewsets.GenericViewSet):
         .annotate(
             total=Count("id")
         )
-    .order_by("mes")
-)
+        .order_by("mes")
+        )
         grafico_horas_tecnico = list(
             Intervencao.objects
             .values("tecnico__nome")
@@ -96,17 +96,16 @@ class RelatorioViewSet(viewsets.GenericViewSet):
                 status=Intervencao.StatusChoices.EM_ANDAMENTO
             ).count(),
 
-            "intervencoes_concluidas_mes":intervencoes.filter(
+            "intervencoes_concluidas_mes": intervencoes.filter(
                 status=Intervencao.StatusChoices.CONCLUIDO,
-                data_conclusao__isnull=False,
                 data_conclusao__year=agora.year,
                 data_conclusao__month=agora.month
             ).count(),
 
             "total_horas_mes": float(
                 intervencoes.filter(
-                    data_conclusao__month=agora.month,
-                    data_conclusao__year=agora.year
+                    data_conclusao__year=agora.year,
+                    data_conclusao__month=agora.month
                 ).aggregate(
                     total=Sum("horas_trabalhadas")
                 )["total"] or 0
@@ -146,28 +145,57 @@ class RelatorioViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard-cliente")
     def dashboard_cliente(self, request: Request):
-        if request.user.perfil not in [Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.CLIENTE]:
+
+        if request.user.perfil not in [
+            Usuario.PerfilChoices.ADMIN,
+            Usuario.PerfilChoices.CLIENTE
+        ]:
             self.permission_denied(request, message="Sem permissão para este recurso.")
+
         contratos = Contrato.objects.filter(cliente=request.user, status="activo")
-        total_horas_contratadas = sum((item.horas_contratadas for item in contratos), 0)
-        total_horas_utilizadas = sum((item.horas_utilizadas for item in contratos), 0)
-        total_horas_disponiveis = sum((item.horas_disponiveis for item in contratos), 0)
-        percentual = 0
-        if total_horas_contratadas:
-            percentual = float(total_horas_utilizadas / total_horas_contratadas) * 100
+
+        total_horas_contratadas = sum(c.horas_contratadas for c in contratos)
+        total_horas_utilizadas = sum(c.horas_utilizadas for c in contratos)
+        total_horas_disponiveis = sum(c.horas_disponiveis for c in contratos)
+
+        percentual = (
+            float(total_horas_utilizadas / total_horas_contratadas) * 100
+            if total_horas_contratadas else 0
+        )
+
         data = {
             "contratos_ativos": contratos.count(),
             "total_horas_contratadas": total_horas_contratadas,
             "total_horas_utilizadas": total_horas_utilizadas,
             "total_horas_disponiveis": total_horas_disponiveis,
             "percentual_utilizacao": round(percentual, 2),
-            "intervencoes_abertas": Intervencao.objects.filter(cliente=request.user, status="aberto").count(),
-            "intervencoes_em_andamento": Intervencao.objects.filter(cliente=request.user, status="em_andamento").count(),
-            "intervencoes_concluidas_mes": Intervencao.objects.filter(cliente=request.user, status="concluido").count(),
-            "grafico_uso_horas": [],
+
+            "intervencoes_abertas": Intervencao.objects.filter(
+                cliente=request.user,
+                status="aberto"
+            ).count(),
+
+            "intervencoes_em_andamento": Intervencao.objects.filter(
+                cliente=request.user,
+                status="em_andamento"
+            ).count(),
+
+            "intervencoes_concluidas": Intervencao.objects.filter(
+                cliente=request.user,
+                status="concluido"
+            ).count(),
+
+            "grafico_uso_horas": Intervencao.objects.filter(
+                cliente=request.user
+            ).annotate(
+                mes=TruncMonth("data_abertura")
+            ).values("mes").annotate(
+                total=Sum("horas_trabalhadas")
+            )
         }
+
         return resposta_sucesso(data=data)
-        '''
+    
 
     @action(detail=False, methods=["get"], url_path="intervencoes")
     def relatorio_intervencoes(self, request: Request):
@@ -254,6 +282,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             ],
         }
         return resposta_sucesso(data=data)
+        '''
 
     @action(detail=False, methods=["get"], url_path="financeiro")
     def relatorio_financeiro(self, request: Request):
@@ -283,3 +312,4 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "previsao_receita": contratos.aggregate(total=Sum("valor_total"))["total"] or 0,
         }
         return resposta_sucesso(data=data)
+    

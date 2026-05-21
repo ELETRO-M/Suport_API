@@ -7,7 +7,7 @@ from apps.notificacoes.models import Notificacao
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from drf_spectacular.utils import extend_schema_field
-
+from django.db.models import Sum
 from apps.usuarios.models import Usuario, empresa
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import Intervencao
@@ -266,7 +266,11 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.IntegerField())
     def get_total_horas_mes(self, obj):
-        return getattr(obj, "total_horas_mes", 0) or 0
+        return Intervencao.objects.filter(
+            tecnico=obj
+        ).aggregate(
+            total=Sum("horas_trabalhadas")
+        )["total"] or 0
 
 
 class TecnicoDetalheSerializer(TecnicoListaSerializer):

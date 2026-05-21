@@ -4,9 +4,11 @@ from apps.usuarios.models import Usuario, empresa as Empresa
 from apps.contratos.models import Contrato
 from django.conf import settings
 from drf_spectacular.utils import extend_schema_field
+from apps.usuarios.serializers import notifySerialazrs
 
 
 class ClienteEmpresaSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Empresa
         fields = (
@@ -22,12 +24,15 @@ class ClienteEmpresaSerializer(serializers.ModelSerializer):
             "is_deleted",
             "data_criacao",
             "data_actualizacao",
+            
+            
         )
 
 
 class ClienteListaSerializer(serializers.ModelSerializer):
     contratos_ativos = serializers.SerializerMethodField()
     empresa = ClienteEmpresaSerializer(read_only=True)
+    
 
     class Meta:
         model = Usuario
@@ -42,6 +47,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
             "status",
             "data_criacao",
             "contratos_ativos",
+            
         )
 
     @extend_schema_field(serializers.IntegerField())

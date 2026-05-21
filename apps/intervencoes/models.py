@@ -211,8 +211,8 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
             tipo_de_pagamento=self.tipo_pagamento,
             horas_contratadas=horas,
             valor_total=valor_total,
-            data_inicio=inicio.date(),
-            data_fim=fim.date(),
+            data_inicio=inicio,
+            data_fim=fim,
             status=Contrato.StatusChoices.ACTIVO,
             observacoes=f"Criação de contrato a partir de intervenção número {self.numero} do cliente {self.cliente.nome} na empresa {self.cliente.empresa.nome}.",
         )
