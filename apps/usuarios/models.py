@@ -1,10 +1,60 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from django.db import models
 from django.core.validators import MinLengthValidator
 
-from apps.configuracoes.models import ModeloUUIDComTimestamps
+from apps.configuracoes.models import ModeloUUIDComTimestamps, SoftDeleteModel
+
+class empresa(ModeloUUIDComTimestamps, SoftDeleteModel):
+    Email_empresa = models.EmailField(unique=True)
+    nome = models.CharField(max_length=255, unique=True)
+    nif = models.CharField(max_length=50, unique=True)
+    endereco = models.TextField()
+    postos = models.JSONField(default=dict)
+    telefone = models.CharField(max_length=50)
+    avatar_url = models.URLField(blank=True)
+    class StatusChoices(models.TextChoices):
+        ACTIVO = "activo", "Activo"
+        INACTIVO = "inactivo", "Inactivo"
+
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
+    def clean(self):
+        if not self.Email_empresa:
+            raise ValidationError({
+                "ERRO": "O email é obrigatório.",
+                })
+        if not self.nome:
+            raise ValidationError({
+                "ERRO": "O nome é obrigatório.",
+                })
+        if not self.nif:
+            raise ValidationError({
+                "ERRO": "O NIF é obrigatório.",
+                })
+        if not self.endereco:
+            raise ValidationError({
+                "ERRO": "O endereço é obrigatório.",
+                })
+        if not self.postos:
+            raise ValidationError({
+                "ERRO": "Os postos são obrigatórios.",
+                })
+        if not self.telefone:
+            raise ValidationError({
+                "ERRO": "O telefone é obrigatório.",
+                })
+        
+       
+    def __str__(self):
+        return self.nome
+    def save(self, *args, **kwargs):
+        try:
+            self.full_clean()
+        except ValidationError as e:
+            raise DRFValidationError(e.message_dict)
+        super().save(*args, **kwargs)
 
 
 class GestorUsuario(BaseUserManager):
@@ -72,16 +122,19 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
 
     email = models.EmailField(unique=True)
     ip_servidor = models.CharField(max_length=50, validators=[MinLengthValidator(7)], blank=True)
-    
+    empresa = models.ForeignKey(
+        empresa, 
+        related_name="clientes",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     nome = models.CharField(max_length=255)
     perfil = models.CharField(max_length=20, choices=PerfilChoices.choices)
     telefone = models.CharField(max_length=50, blank=True)
-    empresa = models.CharField(max_length=255, blank=True)
-    nif = models.CharField(max_length=50, blank=True)
-    endereco = models.TextField(blank=True)
+    postos = models.CharField(max_length=50, blank=True)
     avatar_url = models.URLField(blank=True)
     is_deleted=models.BooleanField(default=False)
-    postos=models.JSONField(default=dict,blank=True)
 
     preferencias = models.JSONField(default=dict, blank=True)
     especialidades = models.JSONField(default=list, blank=True)
@@ -99,19 +152,10 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                 raise ValidationError({
                     "empresa": "Obrigatório para clientes.",
                     })
-            if not self.ip_servidor:
-                raise ValidationError({
-                    "ip_servidor": "Obrigatório para clientes.",
-                    })
-            if not self.nif:
-                raise ValidationError({
-                    "nif": "Obrigatório para clientes.",
-                    })
-            if not self.telefone:
-                raise ValidationError({
-                    "telefone": "Obrigatório para clientes.",
-                    })
-#____________________________________________________________________________________
+        elif self.empresa_id:
+            raise ValidationError({
+                "empresa": "Apenas clientes podem estar associados a uma empresa.",
+                })
 
         if self.perfil == self.PerfilChoices.TECNICO:
             if not self.especialidades:
@@ -122,21 +166,31 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                 raise ValidationError({
                     "data_contratacao": "Obrigatório para técnicos.",
                     })
-            if not self.empresa:
-                raise ValidationError({
-                    "empresa": "Obrigatório para técnicos.",
-                    })
             if not self.telefone:
                 raise ValidationError({
                     "telefone": "Obrigatório para técnicos.",
                     })
-            if not self.endereco:
+            
+
+        if self.ip_servidor and self.empresa:
+            postos_empresa = self.empresa.postos or {}
+            ip_valido = False
+            
+            for posto_key, posto_info in postos_empresa.items():
+                if isinstance(posto_info, dict) and posto_info.get("ip") == self.ip_servidor:
+                    ip_valido = True
+                    break
+            
+            if not ip_valido:
                 raise ValidationError({
-                    "endereco": "Obrigatório para técnicos.",
-                    })
+                    "ip_servidor": "O IP do servidor não corresponde a nenhum IP dos postos da empresa."
+                })
 #____________________________________________________________________________________
     def save(self, *args, **kwargs):
-        self.full_clean()
+        try:
+            self.full_clean()
+        except ValidationError as e:
+            raise DRFValidationError(e.message_dict)
         super().save(*args, **kwargs)
 
     def recuperar(self):

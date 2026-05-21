@@ -3,16 +3,55 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.encoding import force_str
+from apps.notificacoes.models import Notificacao
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from drf_spectacular.utils import extend_schema_field
 
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Usuario, empresa
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import Intervencao
-
+class notifySerialazrs(serializers.ModelSerializer):
+    class Meta:
+        model=Notificacao
+        fields=(
+            "id",
+            "tipo",
+            "titulo",
+        )
+class empresdatilserialazrs(serializers.ModelSerializer):
+    class Meta():
+        model=empresa
+        fields=(
+            "id",
+            "nome",
+            "Email_empresa",
+            "nif",
+            "endereco",
+            "telefone",
+            "status",
+            "postos",
+            "data_criacao",
+            "data_actualizacao"
+        )
+class EmpresaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = empresa
+        fields = (
+            "nome",
+            "Email_empresa",
+            "telefone",
+            "endereco",
+            "nif",
+            "postos"
+          
+        )
+        read_only_fields = ("id", "perfil", "data_criacao")
 
 class UsuarioSerializer(serializers.ModelSerializer):
+    empresa = EmpresaSerializer(read_only=True)
+    notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
+    
     class Meta:
         model = Usuario
         fields = (
@@ -22,14 +61,12 @@ class UsuarioSerializer(serializers.ModelSerializer):
             "perfil",
             "telefone",
             "empresa",
-            "postos",
-            "nif",
             "ip_servidor",
-            "endereco",
             "avatar_url",
             "preferencias",
             "especialidades",
             "data_contratacao",
+            "notificacao",
             "status",
             "is_deleted",
             "data_criacao",
@@ -39,7 +76,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
 class RegistoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
-
+    empresa=EmpresaSerializer(read_only=True)
     class Meta:
         model = Usuario
         fields = (
@@ -47,12 +84,8 @@ class RegistoSerializer(serializers.ModelSerializer):
             "password",
             "nome",
             "perfil",
-            "telefone",
             "empresa",
-            "postos",
-            "ip_servidor",
-            "nif",
-            "endereco",
+            "telefone",
             "especialidades",
             "data_contratacao",
             "status",
@@ -60,10 +93,7 @@ class RegistoSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "telefone": {"required": False},
             "empresa": {"required": False},
-            "postos": {"required": False},
             "ip_servidor": {"required": False},
-            "nif": {"required": False},
-            "endereco": {"required": False},
             "especialidades": {"required": False},
             "data_contratacao": {"required": False},
             "status": {"required": False},
@@ -73,9 +103,9 @@ class RegistoSerializer(serializers.ModelSerializer):
         perfil = attrs.get("perfil")
 
         if perfil == Usuario.PerfilChoices.CLIENTE:
-            required_fields = ("telefone", "empresa", "ip_servidor", "nif")
+            required_fields = ("telefone", "empresa", "ip_servidor")
         elif perfil == Usuario.PerfilChoices.TECNICO:
-            required_fields = ("telefone", "empresa", "endereco", "especialidades", "data_contratacao")
+            required_fields = ("telefone",  "especialidades", "data_contratacao")
         else:
             required_fields = ()
 
@@ -87,6 +117,11 @@ class RegistoSerializer(serializers.ModelSerializer):
 
         if errors:
             raise serializers.ValidationError(errors)
+
+        if perfil != Usuario.PerfilChoices.CLIENTE and attrs.get("empresa"):
+            raise serializers.ValidationError({
+                "empresa": "Apenas clientes podem estar associados a uma empresa."
+            })
 
         return attrs
 
@@ -141,6 +176,7 @@ class RecuperaSerializer(serializers.Serializer):
 
 
 class PerfilSerializer(serializers.ModelSerializer):
+    empresa=EmpresaSerializer(read_only=True)
     class Meta:
         model = Usuario
         fields = (
@@ -148,11 +184,11 @@ class PerfilSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "perfil",
-            "postos",
             "ip_servidor",
             "telefone",
             "avatar_url",
             "preferencias",
+            "empresa"
         )
         read_only_fields = ("id", "email", "perfil")
 
@@ -205,6 +241,7 @@ class AlterarSenhaSerializer(serializers.Serializer):
 class TecnicoListaSerializer(serializers.ModelSerializer):
     intervencoes_ativas = serializers.SerializerMethodField()
     total_horas_mes = serializers.SerializerMethodField()
+    notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
 
     class Meta:
         model = Usuario
@@ -217,6 +254,8 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
             "status",
             "intervencoes_ativas",
             "total_horas_mes",
+            "notificacao",
+
         )
     @extend_schema_field(serializers.IntegerField())
     def get_intervencoes_ativas(self, obj):
@@ -264,8 +303,6 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
             "password",
             "especialidades",
             "data_contratacao",
-            "empresa",
-            "endereco",
             "status",
         )
 
@@ -292,6 +329,7 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
     from rest_framework import serializers
     contratos_ativos = serializers.SerializerMethodField()
     intervencoes_abertas = serializers.SerializerMethodField()
+    
 
     class Meta:
         model = Usuario

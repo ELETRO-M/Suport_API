@@ -46,7 +46,7 @@ class IntervencaoAdmin(admin.ModelAdmin):
 @admin.register(HoraTrabalho)
 class HoraTrabalhoAdmin(admin.ModelAdmin):
     list_display = ("intervencao", "tecnico", "horas", "data_trabalho", "tipo")
-    list_filter = ("tipo", "data_trabalho")
+    list_filter = ("data_trabalho", "tipo")
     search_fields = ("intervencao__numero", "tecnico__nome", "descricao")
     autocomplete_fields = ("intervencao", "tecnico")
 

@@ -17,8 +17,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from drf_spectacular.utils import extend_schema
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Usuario, empresa
 from apps.usuarios.serializers import (
+    empresdatilserialazrs,
     AlterarSenhaSerializer,
     InicioSessaoSerializer,
     PerfilPainelSerializer,
@@ -98,7 +99,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         return resposta_sucesso(message="Usuário deletado com sucesso")
 #__________________________________________________________________________________________________________
-    @action(detail=False, methods=["post"], url_path="register/", permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["post"], url_path="register", permission_classes=[IsAuthenticated])
     def register(self, request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             raise PermissionDenied("Permissão Negada.")
@@ -325,3 +326,46 @@ class reset_password_confirm(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return resposta_sucesso(message="Senha resetada com sucesso")
+
+
+@extend_schema(tags=['Empresa'])
+class empresaviewset(viewsets.ModelViewSet):
+    permission_classes=[IsAuthenticated]
+    queryset= empresa.all_objects.all()
+    serializer_class= empresdatilserialazrs
+
+    def list(self, request):
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Sem permissão para este recurso.")
+        serializer = self.get_serializer(self.get_queryset(), many=True)
+        return resposta_sucesso(data=serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Sem permissão para este recurso.")
+        obj = self.get_object()
+        serializer = self.get_serializer(obj)
+        return resposta_sucesso(data=serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Apenas administradores podem criar empresas.")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return resposta_sucesso(
+            data={"id": str(obj.id), "nome": obj.nome, "email": obj.email},
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Apenas administradores podem atualizar empresas.")
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return resposta_sucesso(data={"id": str(obj.id), "nome": obj.nome})
+    
+

@@ -5,10 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema
 
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Usuario, empresa
 from apps.configuracoes.responses import resposta_sucesso
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import HoraTrabalho, Intervencao
+from django.db.models.functions import TruncMonth, TruncWeek
+from django.utils import timezone
 
 
 class RelatorioSerializer(serializers.Serializer):
@@ -25,7 +27,38 @@ class RelatorioViewSet(viewsets.GenericViewSet):
     def dashboard_admin(self, request: Request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Sem permissão para este recurso.")
+
+        grafico_intervencoes_mes = list(
+        Intervencao.objects
+        .annotate(mes=TruncMonth("data_abertura"))
+        .values("mes")
+        .annotate(
+            total=Count("id")
+        )
+    .order_by("mes")
+)
+        grafico_horas_tecnico = list(
+            Intervencao.objects
+            .values("tecnico__nome")
+            .annotate(
+                total=Sum("horas_trabalhadas")
+            )
+            .order_by("-total")
+        )
+        top_clientes = list(
+            Intervencao.objects
+            .values("cliente__nome","cliente__empresa__nome")
+            .annotate(total=Count("id"))
+            .order_by("-total")[:5]
+        )
+        top_tecnico = list(
+            Intervencao.objects
+            .values("tecnico__nome")
+            .annotate(total=Count("id"))
+            .order_by("-total")[:5]
+        )
         data = {
+            "total_empresas": empresa.objects.count(),
             "total_clientes": Usuario.objects.filter(perfil=Usuario.PerfilChoices.CLIENTE).count(),
             "total_contratos_ativos": Contrato.objects.filter(status="activo").count(),
             "total_intervencoes": Intervencao.objects.count(),
@@ -34,32 +67,82 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "intervencoes_resolvidas": Intervencao.objects.filter(status="resolvido").count(),
             "intervencoes_fechadas": Intervencao.objects.filter(status="fechado").count(),
             "intervencoes_concluidas": Intervencao.objects.filter(status="concluido").count(),
-            "total_horas_trabalhadas": HoraTrabalho.objects.aggregate(total=Sum("horas"))["total"] or 0,
             "receita_total": Contrato.objects.aggregate(total=Sum("valor_total"))["total"] or 0,
             "tecnicos_ativos": Usuario.objects.filter(perfil=Usuario.PerfilChoices.TECNICO, status="activo").count(),
-            "grafico_intervencoes_mes": [],
-            "grafico_horas_tecnico": [],
-            "top_clientes": [],
+            "grafico_intervencoes_mes": grafico_intervencoes_mes,
+            "grafico_horas_tecnico": grafico_horas_tecnico,
+            "top_clientes": top_clientes,
+            
         }
         return resposta_sucesso(data=data)
 
     @action(detail=False, methods=["get"], url_path="dashboard-tecnico")
     def dashboard_tecnico(self, request: Request):
-        if request.user.perfil not in [Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.TECNICO]:
-            self.permission_denied(request, message="Sem permissão para este recurso.")
-        data = {
-            "intervencoes_atribuidas": Intervencao.objects.filter(tecnico=request.user).count(),
-            "intervencoes_em_andamento": Intervencao.objects.filter(tecnico=request.user, status="em_andamento").count(),
-            "intervencoes_concluidas_mes": Intervencao.objects.filter(
-                tecnico=request.user,
-                status="concluido",
+
+        if request.user.perfil not in [
+            Usuario.PerfilChoices.ADMIN,
+            Usuario.PerfilChoices.TECNICO
+        ]:
+            self.permission_denied(request)
+
+        agora = timezone.now()
+
+        intervencoes = Intervencao.objects.filter(tecnico=request.user)
+
+        base = {
+            "intervencoes_atribuidas": intervencoes.count(),
+
+            "intervencoes_em_andamento": intervencoes.filter(
+                status=Intervencao.StatusChoices.EM_ANDAMENTO
             ).count(),
-            "total_horas_mes": HoraTrabalho.objects.filter(tecnico=request.user).aggregate(total=Sum("horas"))["total"] or 0,
-            "media_horas_dia": HoraTrabalho.objects.filter(tecnico=request.user).aggregate(media=Avg("horas"))["media"] or 0,
-            "proximas_intervencoes": [],
-            "grafico_horas_semana": [],
+
+            "intervencoes_concluidas_mes":intervencoes.filter(
+                status=Intervencao.StatusChoices.CONCLUIDO,
+                data_conclusao__isnull=False,
+                data_conclusao__year=agora.year,
+                data_conclusao__month=agora.month
+            ).count(),
+
+            "total_horas_mes": float(
+                intervencoes.filter(
+                    data_conclusao__month=agora.month,
+                    data_conclusao__year=agora.year
+                ).aggregate(
+                    total=Sum("horas_trabalhadas")
+                )["total"] or 0
+            ),
+
+            "media_horas_dia": float(
+                intervencoes.aggregate(
+                    media=Avg("horas_trabalhadas")
+                )["media"] or 0
+            ),
         }
-        return resposta_sucesso(data=data)
+
+        base["proximas_intervencoes"] = [
+            {
+                "id": str(i.id),
+                "numero": i.numero,
+                "titulo": i.titulo,
+                "status": i.status,
+            }
+            for i in intervencoes.exclude(
+                status__in=[
+                    Intervencao.StatusChoices.FECHADO,
+                    Intervencao.StatusChoices.CONCLUIDO
+                ]
+            )[:5]
+        ]
+
+        base["grafico_horas_semana"] = list(
+            intervencoes
+            .annotate(semana=TruncWeek("data_abertura"))
+            .values("semana")
+            .annotate(total=Sum("horas_trabalhadas"))
+            .order_by("semana")
+        )
+
+        return resposta_sucesso(data=base)
 
     @action(detail=False, methods=["get"], url_path="dashboard-cliente")
     def dashboard_cliente(self, request: Request):
@@ -84,6 +167,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "grafico_uso_horas": [],
         }
         return resposta_sucesso(data=data)
+        '''
 
     @action(detail=False, methods=["get"], url_path="intervencoes")
     def relatorio_intervencoes(self, request: Request):
@@ -100,12 +184,32 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             queryset = queryset.filter(data_abertura__date__gte=request.query_params["data_inicio"])
         if request.query_params.get("data_fim"):
             queryset = queryset.filter(data_abertura__date__lte=request.query_params["data_fim"])
+        intervencoes = Intervencao.objects.filter(data_conclusao__isnull=False)
+
+        total_horas = 0
+
+        for item in intervencoes:
+
+            diferenca = item.data_fim_intervencao - item.data_inicio_intervencao
+
+            horas = diferenca.total_seconds() / 86400
+
+            total_horas += horas
+
+        tempo_medio_resolucao = 0
+
+        if intervencoes.count() > 0:
+
+            tempo_medio_resolucao = round(
+                total_horas / intervencoes.count(),
+                2
+            )
 
         data = {
             "total_intervencoes": queryset.count(),
             "por_status": list(queryset.values("status").annotate(total=Count("id"))),
             "por_prioridade": list(queryset.values("prioridade").annotate(total=Count("id"))),
-            "tempo_medio_resolucao": 0,
+            "tempo_medio_resolucao": f"{tempo_medio_resolucao} dias",
             "intervencoes": [
                 {
                     "id": str(item.id),
@@ -118,6 +222,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             ],
         }
         return resposta_sucesso(data=data)
+        '''
 
     @action(detail=False, methods=["get"], url_path="horas")
     def relatorio_horas(self, request: Request):
@@ -155,15 +260,22 @@ class RelatorioViewSet(viewsets.GenericViewSet):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Sem permissão para este recurso.")
         contratos = Contrato.objects.all()
+        receita_mes = Contrato.objects.filter(
+            data_criacao__month=timezone.now().month,
+            data_criacao__year=timezone.now().year
+        ).aggregate(
+            total=Sum("valor_total")
+        )["total"] or 0
         data = {
             "receita_total": contratos.aggregate(total=Sum("valor_total"))["total"] or 0,
-            "receita_mes": 0,
+            "receita_mes": receita_mes,
             "por_cliente": list(contratos.values("cliente__nome").annotate(total=Sum("valor_total"))),
             "por_contrato": list(contratos.values("tipo_contrato").annotate(total=Sum("valor_total"))),
             "contratos_vencendo": [
                 {
                     "id": str(item.id),
-                    "cliente_nome": item.cliente.nome,
+                    "cliente_nome": item.cliente.nome if item.cliente else None,
+                    "empresa_nome": item.cliente.empresa.nome if item.cliente and getattr(item.cliente, "empresa", None) else None,
                     "data_fim": item.data_fim,
                 }
                 for item in contratos.order_by("data_fim")[:10]

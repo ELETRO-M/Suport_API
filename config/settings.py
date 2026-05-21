@@ -8,7 +8,7 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY", default="django-suport-api-secret-key-clacs-2026-xjf9!")
-DEBUG = config("DEBUG", default=True, cast=bool)
+DEBUG =config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = config(
     "DJANGO_ALLOWED_HOSTS",
     default="*",
@@ -121,7 +121,8 @@ STORAGES = {
         "BACKEND": _STATIC_BACKEND,
     },
 }
-
+print("____________________"*10)
+print("DEBUG:", DEBUG)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "usuarios.Usuario"
 APPEND_SLASH = False

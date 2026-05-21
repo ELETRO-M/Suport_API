@@ -20,9 +20,9 @@ from apps.intervencoes.serializers import (
     AdicionarComentarioSerializer,
     AtribuirTecnicoSerializer,
     CarregarAnexoSerializer,
-    HoraTrabalhoAtualizacaoSerializer,
-    HoraTrabalhoEscritaSerializer,
-    HoraTrabalhoListaSerializer,
+    TecnicoRelatorioAtualizacaoSerializer,
+    TecnicoRelatorioEscritaSerializer,
+    TecnicoRelatorioListaSerializer,
     IntervencaoAtualizacaoSerializer,
     IntervencaoDetalheSerializer,
     IntervencaoEscritaSerializer,
@@ -102,14 +102,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
-        if obj.tecnico_id:
-            Notificacao.objects.create(
-                utilizador=obj.tecnico,
-                tipo="intervencao_atribuida",
-                titulo="Nova intervenção atribuída",
-                mensagem=f"A intervenção {obj.numero} foi atribuída a si.",
-                link=f"/intervencoes/{obj.id}",
-            )
+       
         return resposta_sucesso(
             data={"id": str(obj.id), "numero": obj.numero, "status": obj.status},
             status_code=status.HTTP_201_CREATED,
@@ -117,17 +110,18 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id != request.user.id:
-            self.permission_denied(request, message="Apenas o técnico atribuído pode atualizar.")
+        partial = kwargs.pop('partial', False)
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN and not(request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id == request.user.id):
+            self.permission_denied(request, message="Apenas o técnico atribuído pode actualizar.")
         if request.user.perfil == Usuario.PerfilChoices.CLIENTE:
-            self.permission_denied(request, message="Clientes não podem atualizar intervenções.")
-        serializer = self.get_serializer(instance, data=request.data, partial=False, context={"request": request})
+            self.permission_denied(request, message="Clientes não podem actualizar intervenções.")
+        serializer = self.get_serializer(instance, data=request.data, partial=partial, context={"request": request})
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
         return resposta_sucesso(data={"id": str(obj.id), "status": obj.status})
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN :
             self.permission_denied(request, message="Apenas administradores podem deletar intervenções.")
         instance = self.get_object()
         instance.delete()
@@ -214,7 +208,9 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             status_code=status.HTTP_201_CREATED,
         )
 
-@extend_schema(tags=["Intervenções"])
+'''
+
+@extend_schema(tags=["Relatórios Técnicos"])
 class HoraTrabalhoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -238,10 +234,10 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == "create":
-            return HoraTrabalhoEscritaSerializer
+            return TecnicoRelatorioEscritaSerializer
         if self.action in {"update", "partial_update"}:
-            return HoraTrabalhoAtualizacaoSerializer
-        return HoraTrabalhoListaSerializer
+            return TecnicoRelatorioAtualizacaoSerializer
+        return TecnicoRelatorioListaSerializer
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -250,7 +246,7 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if request.user.perfil not in {Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.TECNICO}:
-            self.permission_denied(request, message="Sem permissão para registar horas.")
+            self.permission_denied(request, message="Sem permissão para registar relatório.")
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
@@ -268,7 +264,7 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id != request.user.id:
-            self.permission_denied(request, message="Só pode atualizar as próprias horas.")
+            self.permission_denied(request, message="So pode actualizar as proprias horas.")
         serializer = self.get_serializer(instance, data=request.data, partial=False, context={"request": request})
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
@@ -276,10 +272,15 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if request.user.perfil == Usuario.PerfilChoices.TECNICO or request.user.perfil == Usuario.PerfilChoices.ADMIN:
-            if instance.tecnico_id != request.user.id:
-                self.permission_denied(request, message="Só pode apagar as próprias horas.")
-            if timezone.now() - instance.data_criacao > timedelta(hours=24):
-                self.permission_denied(request, message="Só pode apagar registos nas primeiras 24 horas.")
+        if request.user.perfil not in {Usuario.PerfilChoices.TECNICO, Usuario.PerfilChoices.ADMIN}:
+            self.permission_denied(request, message="Sem permissão para apagar.")
+        if request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id != request.user.id:
+            self.permission_denied(request, message="So pode apagar as proprias horas.")
+        if request.user.perfil == Usuario.PerfilChoices.TECNICO and timezone.now() - instance.data_criacao > timedelta(hours=24):
+            self.permission_denied(request, message="So pode apagar registos nas primeiras 24 horas.")
         instance.delete()
-        return resposta_sucesso(message="Registo de horas deletado com sucesso")
+        return resposta_sucesso(message="Registo deletado com sucesso")
+
+
+TecnicoRelatorioViewSet = HoraTrabalhoViewSet
+'''

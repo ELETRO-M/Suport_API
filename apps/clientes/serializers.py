@@ -1,14 +1,33 @@
 from rest_framework import serializers
 from django.db import IntegrityError
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Usuario, empresa as Empresa
 from apps.contratos.models import Contrato
 from django.conf import settings
 from drf_spectacular.utils import extend_schema_field
 
 
+class ClienteEmpresaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Empresa
+        fields = (
+            "id",
+            "Email_empresa",
+            "nome",
+            "nif",
+            "endereco",
+            "postos",
+            "telefone",
+            "avatar_url",
+            "status",
+            "is_deleted",
+            "data_criacao",
+            "data_actualizacao",
+        )
+
+
 class ClienteListaSerializer(serializers.ModelSerializer):
     contratos_ativos = serializers.SerializerMethodField()
-    postos = serializers.JSONField(required=False, allow_null=True, default=dict)
+    empresa = ClienteEmpresaSerializer(read_only=True)
 
     class Meta:
         model = Usuario
@@ -19,10 +38,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
             "perfil",
             "telefone",
             "empresa",
-            "postos",
             "ip_servidor",
-            "nif",
-            "endereco",
             "status",
             "data_criacao",
             "contratos_ativos",
@@ -81,10 +97,7 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
             "email",
             "telefone",
             "empresa",
-            "postos",
             "ip_servidor",
-            "nif",
-            "endereco",
             "password",
             "status",
         )

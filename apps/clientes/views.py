@@ -12,7 +12,7 @@ from drf_spectacular.utils import extend_schema
 @extend_schema(tags=["Clientes"])
 class ClienteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    search_fields = ("nome", "email", "empresa", "nif")
+    search_fields = ("nome", "email", "empresa__nome", "nif")
     ordering_fields = ("nome", "data_criacao")
     filterset_fields = ("status",)
 
@@ -20,7 +20,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return Usuario.objects.none()
             
-        queryset = Usuario.objects.filter(perfil=Usuario.PerfilChoices.CLIENTE).order_by("nome")
+        queryset = Usuario.objects.select_related("empresa").filter(
+            perfil=Usuario.PerfilChoices.CLIENTE
+        ).order_by("nome")
         
         if self.request.user.is_authenticated and self.request.user.perfil == Usuario.PerfilChoices.CLIENTE:
             queryset = queryset.filter(id=self.request.user.id)
@@ -61,12 +63,13 @@ class ClienteViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        
         if request.user.perfil != Usuario.PerfilChoices.ADMIN and (
             request.user.perfil != Usuario.PerfilChoices.CLIENTE or instance.id != request.user.id
         ):
             self.permission_denied(request, message="Alteração de perfil não permitida.")
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()

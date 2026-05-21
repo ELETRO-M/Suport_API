@@ -11,5 +11,7 @@ class ConfiguracaoSistemaSerializer(serializers.ModelSerializer):
             "fuso_horario",
             "email_notificacoes",
             "prazo_padrao_intervencao",
-            "taxa_hora_padrao",
+            "taxa_hora",
+            "taxa_mensal",
+            "taxa_anual"
         )

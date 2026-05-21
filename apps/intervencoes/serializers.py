@@ -1,6 +1,7 @@
+from django.db import transaction
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
-
+from apps.notificacoes.models import Notificacao
 from apps.usuarios.models import Usuario
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import (
@@ -57,6 +58,8 @@ class IntervencaoListaSerializer(serializers.ModelSerializer):
     tecnico_nome = serializers.CharField(source="tecnico.nome", read_only=True)
     contrato_id = serializers.UUIDField(source="contrato.id", read_only=True)
     anexos = AnexoIntervencaoSerializer(many=True, read_only=True)
+    comentario=ComentarioIntervencaoSerializer(many=True, read_only=True)
+    sla= serializers.SerializerMethodField()
 
     class Meta:
         model = Intervencao
@@ -64,6 +67,9 @@ class IntervencaoListaSerializer(serializers.ModelSerializer):
             "id",
             "numero",
             "titulo",
+            "actuacao_tipo",
+            "tipo_pagamento",
+            "tipo_intervencao",
             "descricao",
             "cliente_id",
             "cliente_nome",
@@ -71,12 +77,19 @@ class IntervencaoListaSerializer(serializers.ModelSerializer):
             "tecnico_nome",
             "contrato_id",
             "status",
+            "estado",
+            "sla",
             "prioridade",
             "horas_trabalhadas",
+            "data_inicio_intervencao",
+            "data_fim_intervencao",
             "data_abertura",
             "data_conclusao",
             "anexos",
+            "comentario"
         )
+    def get_sla(self, obj):
+        return obj.sla
 
 
 class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
@@ -100,7 +113,7 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
         return {
             "id": str(obj.cliente.id),
             "nome": obj.cliente.nome,
-            "empresa": obj.cliente.empresa,
+            "empresa": obj.cliente.empresa.nome if obj.cliente.empresa else None,
         }
 
     @extend_schema_field(serializers.DictField(allow_null=True))
@@ -118,7 +131,7 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
             return None
         return {
             "id": str(obj.contrato.id),
-            "tipo": obj.contrato.tipo,
+            "tipo": obj.contrato.tipo_contrato,
         }
 
 
@@ -136,6 +149,8 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
             "cliente_id",
             "contrato_id",
             "prioridade",
+            "tipo_pagamento",
+            "tipo_intervencao",
             "anexos",
         )
 
@@ -147,18 +162,18 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
             attrs["cliente"] = request.user
         else:
             if not cliente_id:
-                raise serializers.ValidationError({"cliente_id": "Este campo é obrigatório para administradores."})
+                raise serializers.ValidationError({"cliente_id": "Este campo Ã© obrigatÃ³rio para administradores."})
             try:
                 attrs["cliente"] = Usuario.objects.get(id=cliente_id, perfil=Usuario.PerfilChoices.CLIENTE)
             except Usuario.DoesNotExist as exc:
-                raise serializers.ValidationError({"cliente_id": "Cliente não encontrado."}) from exc
+                raise serializers.ValidationError({"cliente_id": "Cliente nÃ£o encontrado."}) from exc
 
         contrato_id = attrs.pop("contrato_id", None)
         if contrato_id:
             try:
                 attrs["contrato"] = Contrato.objects.get(id=contrato_id, cliente=attrs["cliente"])
             except Contrato.DoesNotExist as exc:
-                raise serializers.ValidationError({"contrato_id": "Contrato não encontrado para este cliente."}) from exc
+                raise serializers.ValidationError({"contrato_id": "Contrato nÃ£o encontrado para este cliente."}) from exc
         return attrs
 
     def create(self, validated_data):
@@ -176,12 +191,12 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
                     utilizador=request.user,
                     arquivo=arquivo,
                 )
-        
+          
         HistoricoEstadoIntervencao.objects.create(
             intervencao=intervencao,
             status=intervencao.status,
             alterado_por=self.context["request"].user,
-            nota="Intervenção criada.",
+            nota="IntervenÃ§Ã£o criada.",
         )
         return intervencao
 
@@ -191,7 +206,7 @@ class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Intervencao
-        fields = ("titulo", "descricao", "tecnico_id", "status", "prioridade")
+        fields = ("titulo","actuacao_tipo","tipo_pagamento","tipo_intervencao","descricao", "tecnico_id", "status", "prioridade","data_inicio_intervencao","data_fim_intervencao","horas_trabalhadas")
 
     def validate_tecnico_id(self, value):
         if value is None:
@@ -199,23 +214,24 @@ class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
         try:
             return Usuario.objects.get(id=value, perfil=Usuario.PerfilChoices.TECNICO)
         except Usuario.DoesNotExist as exc:
-            raise serializers.ValidationError("Técnico não encontrado.") from exc
+            raise serializers.ValidationError("TÃ©cnico nÃ£o encontrado.") from exc
 
     def update(self, instance, validated_data):
         tecnico = validated_data.pop("tecnico_id", None)
         previous_status = instance.status
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if tecnico is not None:
-            instance.tecnico = tecnico
-        instance.save()
-        if previous_status != instance.status:
-            HistoricoEstadoIntervencao.objects.create(
-                intervencao=instance,
-                status=instance.status,
-                alterado_por=self.context["request"].user,
-                nota="Status atualizado.",
-            )
+        with transaction.atomic():
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            if tecnico is not None:
+                instance.tecnico = tecnico
+            instance.save()
+            if previous_status != instance.status:
+                HistoricoEstadoIntervencao.objects.create(
+                    intervencao=instance,
+                    status=instance.status,
+                    alterado_por=self.context["request"].user,
+                    nota="Status atualizado.",
+                )
         return instance
 
 
@@ -226,7 +242,7 @@ class AtribuirTecnicoSerializer(serializers.Serializer):
         try:
             return Usuario.objects.get(id=value, perfil=Usuario.PerfilChoices.TECNICO)
         except Usuario.DoesNotExist as exc:
-            raise serializers.ValidationError("Técnico não encontrado.") from exc
+            raise serializers.ValidationError("TÃ©cnico nÃ£o encontrado.") from exc
 
 
 class AdicionarComentarioSerializer(serializers.Serializer):
@@ -239,16 +255,18 @@ class CarregarAnexoSerializer(serializers.Serializer):
     descricao = serializers.CharField(required=False, allow_blank=True)
 
 
-class HoraTrabalhoListaSerializer(serializers.ModelSerializer):
+class TecnicoRelatorioListaSerializer(serializers.ModelSerializer):
     intervencao = serializers.SerializerMethodField()
-    tecnico = serializers.SerializerMethodField()
+    tecnico_id = serializers.UUIDField(source="tecnico.id", read_only=True)
+    tecnico_nome = serializers.CharField(source="tecnico.nome", read_only=True)
 
     class Meta:
         model = HoraTrabalho
         fields = (
             "id",
             "intervencao",
-            "tecnico",
+            "tecnico_id",
+            "tecnico_nome",
             "horas",
             "data_trabalho",
             "descricao",
@@ -263,15 +281,7 @@ class HoraTrabalhoListaSerializer(serializers.ModelSerializer):
             "titulo": obj.intervencao.titulo,
         }
 
-    @extend_schema_field(serializers.DictField())
-    def get_tecnico(self, obj):
-        return {
-            "id": str(obj.tecnico.id),
-            "nome": obj.tecnico.nome,
-        }
-
-
-class HoraTrabalhoEscritaSerializer(serializers.ModelSerializer):
+class TecnicoRelatorioEscritaSerializer(serializers.ModelSerializer):
     intervencao_id = serializers.UUIDField(write_only=True)
     tecnico_id = serializers.UUIDField(write_only=True, required=False)
 
@@ -280,26 +290,31 @@ class HoraTrabalhoEscritaSerializer(serializers.ModelSerializer):
         fields = ("intervencao_id", "tecnico_id", "horas", "data_trabalho", "descricao", "tipo")
 
     def validate(self, attrs):
-        request = self.context["request"]
         try:
             attrs["intervencao"] = Intervencao.objects.get(id=attrs.pop("intervencao_id"))
         except Intervencao.DoesNotExist as exc:
-            raise serializers.ValidationError({"intervencao_id": "Intervenção não encontrada."}) from exc
-
+            raise serializers.ValidationError({"intervencao_id": "IntervenÃ§Ã£o nÃ£o encontrada."}) from exc
+        request = self.context.get("request")
         tecnico_id = attrs.pop("tecnico_id", None)
-        if request.user.perfil == Usuario.PerfilChoices.TECNICO:
+        if request and request.user.perfil == Usuario.PerfilChoices.TECNICO:
             attrs["tecnico"] = request.user
         elif tecnico_id:
             try:
                 attrs["tecnico"] = Usuario.objects.get(id=tecnico_id, perfil=Usuario.PerfilChoices.TECNICO)
             except Usuario.DoesNotExist as exc:
-                raise serializers.ValidationError({"tecnico_id": "Técnico não encontrado."}) from exc
+                raise serializers.ValidationError({"tecnico_id": "Tecnico nao encontrado."}) from exc
+        elif attrs["intervencao"].tecnico_id:
+            attrs["tecnico"] = attrs["intervencao"].tecnico
         else:
-            raise serializers.ValidationError({"tecnico_id": "Este campo é obrigatório para admin."})
+            raise serializers.ValidationError({"tecnico_id": "Este campo e obrigatorio."})
         return attrs
 
-
-class HoraTrabalhoAtualizacaoSerializer(serializers.ModelSerializer):
+class TecnicoRelatorioAtualizacaoSerializer(serializers.ModelSerializer):
     class Meta:
         model = HoraTrabalho
-        fields = ("horas", "descricao")
+        fields = ("horas", "data_trabalho", "descricao", "tipo")
+
+
+HoraTrabalhoListaSerializer = TecnicoRelatorioListaSerializer
+HoraTrabalhoEscritaSerializer = TecnicoRelatorioEscritaSerializer
+HoraTrabalhoAtualizacaoSerializer = TecnicoRelatorioAtualizacaoSerializer

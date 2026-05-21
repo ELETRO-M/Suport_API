@@ -42,3 +42,5 @@ class NotificacaoViewSet(viewsets.ReadOnlyModelViewSet):
     def marcar_todas_lidas(self, request):
         self.get_queryset().update(lida=True)
         return resposta_sucesso(message="Todas notificações marcadas como lidas")
+    
+

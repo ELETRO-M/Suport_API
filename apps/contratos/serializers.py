@@ -7,7 +7,10 @@ from drf_spectacular.utils import extend_schema_field
 class ContratoListaSerializer(serializers.ModelSerializer):
     cliente_nome = serializers.CharField(source="cliente.nome", read_only=True)
     cliente_id = serializers.UUIDField(source="cliente.id", read_only=True)
+    cliente_empresa = serializers.CharField(source="cliente.empresa.nome", read_only=True, allow_null=True, default=None)
     horas_disponiveis = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    
+
 
     class Meta:
         model = Contrato
@@ -15,12 +18,15 @@ class ContratoListaSerializer(serializers.ModelSerializer):
             "id",
             "cliente_id",
             "cliente_nome",
+            "cliente_empresa",
+            "expiracao",
             "tipo_contrato",
             "tipo_de_pagamento",
             "horas_contratadas",
             "horas_utilizadas",
             "horas_disponiveis",
             "valor_total",
+            "valor_hora",
             "data_inicio",
             "data_fim",
             "status",
@@ -40,7 +46,7 @@ class ContratoDetalheSerializer(ContratoListaSerializer):
         return {
             "id": str(obj.cliente.id),
             "nome": obj.cliente.nome,
-            "empresa": obj.cliente.empresa,
+            "empresa": obj.cliente.empresa.nome if obj.cliente.empresa else None,
         }
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
@@ -58,11 +64,13 @@ class ContratoDetalheSerializer(ContratoListaSerializer):
 
 class ContratoEscritaSerializer(serializers.ModelSerializer):
     cliente_id = serializers.UUIDField(write_only=True)
+    cliente_empresa = serializers.CharField(source="cliente.empresa.nome", read_only=True, allow_null=True, default=None)
 
     class Meta:
         model = Contrato
         fields = (
             "cliente_id",
+            "cliente_empresa",
             "tipo_contrato",
             "tipo_de_pagamento",
             "horas_contratadas",

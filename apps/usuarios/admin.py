@@ -4,7 +4,14 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Usuario, empresa as Empresa
+
+@admin.register(Empresa)
+class EmpresaAdmin(admin.ModelAdmin):
+    list_display = ("nome", "status", "is_deleted", "data_criacao", "data_actualizacao")
+    list_filter = ("status", "is_deleted")
+    search_fields = ("nome",)
+    ordering = ("nome",)
 
 
 @admin.register(Usuario)
@@ -39,7 +46,7 @@ class UsuarioAdmin(UserAdmin):
         "email",
         "nome",
         "telefone",
-        "empresa",
+        "empresa__nome",
     )
 
     fieldsets = (
@@ -49,8 +56,7 @@ class UsuarioAdmin(UserAdmin):
                 "nome",
                 "telefone",
                 "empresa",
-                "nif",
-                "endereco",
+                "ip_servidor",
                 "avatar_url",
             )
         }),
@@ -93,10 +99,7 @@ class UsuarioAdmin(UserAdmin):
                     "status",
                     "telefone",
                     "empresa",
-                    "postos",
                     "ip_servidor",
-                    "nif",
-                    "endereco",
                     "especialidades",
                     "data_contratacao",
                     "password1",

@@ -15,3 +15,7 @@ class NotificacaoAdmin(admin.ModelAdmin):
 
     def delete_model(self, request, obj):
         obj.all_objects.filter(pk=obj.pk).hard_delete()
+
+    def delete_queryset(self, request, queryset):
+        
+        queryset.delete()

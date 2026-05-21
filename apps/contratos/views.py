@@ -37,7 +37,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
         request = cast(Request, self.request)
 
-        queryset = Contrato.objects.select_related("cliente")
+        queryset = Contrato.objects.select_related("cliente", "cliente__empresa")
 
         cliente_id = request.query_params.get("cliente_id")
         if cliente_id:
@@ -75,7 +75,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(data=serializer.data)
 
     def create(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN or Usuario.PerfilChoices.CLIENTE:
             self.permission_denied(request, message="Permissão negada para este recurso.")
 
         serializer = self.get_serializer(data=request.data)
