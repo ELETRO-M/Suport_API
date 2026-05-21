@@ -16,6 +16,8 @@ ALLOWED_HOSTS = config(
 ) + ["suport-api-1.onrender.com", "localhost", "127.0.0.1"]
 CORS_ALLOW_ALL_ORIGINS = True
 
+SITE_URL = config("SITE_URL", default="http://localhost:8000")
+
 INSTALLED_APPS = [
     "apps.configuracoes",
     "django.contrib.admin",
@@ -121,8 +123,6 @@ STORAGES = {
         "BACKEND": _STATIC_BACKEND,
     },
 }
-print("____________________"*10)
-print("DEBUG:", DEBUG)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "usuarios.Usuario"
 APPEND_SLASH = False
@@ -171,7 +171,12 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT", cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS",  cast=bool)
+EMAIL_HOST_USER = config("EMAIL_EMPRESA")
+EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
 
 CSRF_TRUSTED_ORIGINS = [
     "https://suport-api-1.onrender.com",

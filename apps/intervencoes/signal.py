@@ -29,5 +29,26 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                     mensagem=f"A intervenção {instance.titulo} na empresa {instance.cliente.empresa.nome}  pelo cliente {instance.cliente.nome}.",
                 )
             )
+        send_mail(
+                subject="Criação de Nova Intervenção",
+                message=(
+                    f"Olá, caro admin da empresa{utilizador.empresa.nome}\n\n"
+                    "Foi criada uma nova intervenção na empresa.\n\n"
+                    f"Intervenção: {instance.titulo}\n"
+                    f"Cliente: {instance.cliente.nome}\n"
+                    f"Descrição: {instance.descricao}\n"
+                    f"para mais detalhes entre em contato com o utilizador: {utilizador.nome} pelo telefone: {utilizador.telefone} ou pelo email: {utilizador.email}"
+                   
+                ),
+                from_email=getattr(
+                    settings,
+                    "DEFAULT_FROM_EMAIL",
+                    settings.EMAIL_HOST_USER
+                ),
+                recipient_list=[utilizador.empresa.email],
+                fail_silently=False,
+            )
+
+        
 
         Notificacao.objects.bulk_create(notificacoes)

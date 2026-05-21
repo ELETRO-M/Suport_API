@@ -5,6 +5,7 @@ from django.core.mail import BadHeaderError
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
 from django.conf import settings
+from django.shortcuts import redirect
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.db.models import Sum
@@ -107,22 +108,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         serializer = RegistoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         utilizador = serializer.save()
-        run=send_mail(
-            subject=f"Seja bem-vindo ao API de Gestão de Serviços.",
-            message=(f"Olá,{utilizador.nome} \nSeja bem-vindo(a) ao nosso sistema!\n\n"
-            "O seu cadastro foi realizado com sucesso e já pode começar a utilizar todas as funcionalidades disponíveis.\n"
-            "Aqui estão alguns dados importantes:\n\n"
-            "1- Utilize o seu email e senha para acessar a plataforma\n"
-            "2- Mantenha os seus dados sempre atualizados\n"
-            "3- Em caso de dúvidas, entre em contacto com o nosso suporte Estamos felizes por tê-lo(a) connosco e esperamos que tenha uma excelente experiência.\n\n"
-            "Atenciosamente,"
-            ),
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[utilizador.email],
-        )
-        if not run:
-            utilizador.delete()
-            raise serializers.ValidationError({"email": "Email de confirmação não enviado."})
+       
       
         data = {
             "usuario_id": str(utilizador.id),
@@ -310,9 +296,11 @@ class RecuperarConta(viewsets.GenericViewSet):
 
     
 
-        return Response(
-            {"detail": "Enviámos um email para recuperar a conta"},
-            status=status.HTTP_200_OK
+        return resposta_sucesso(
+            message="Enviámos um email para recuperar a conta",
+            data={
+                "INFO":f"User: {utilizador.nome}, ID:{utilizador.id}"
+            }
         )
 @extend_schema(tags=['Recuperação'])
 class reset_password_confirm(viewsets.GenericViewSet):
