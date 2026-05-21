@@ -4,9 +4,15 @@ from apps.usuarios.models import Usuario, empresa as Empresa
 from apps.contratos.models import Contrato
 from django.conf import settings
 from drf_spectacular.utils import extend_schema_field
-from apps.usuarios.serializers import notifySerialazrs
 
-
+class notifySerialazrs(serializers.ModelSerializer):
+    class Meta:
+        model=Notificacao
+        fields=(
+            "id",
+            "tipo",
+            "titulo",
+        )
 class ClienteEmpresaSerializer(serializers.ModelSerializer):
 
     class Meta:
