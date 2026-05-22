@@ -89,7 +89,7 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
 
             diferenca = self.data_fim - self.data_inicio
 
-            horas = Decimal(str(diferenca.total_seconds()/3600))
+            horas = Decimal(str(diferenca.total_seconds()/86400))
 
             self.horas_contratadas =round(horas,2)
 
