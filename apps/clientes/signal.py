@@ -35,6 +35,6 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
             titulo="Seja bem-vindo(a) ao nosso sistema!",
             mensagem=f"Seja bem-vindo(a) ao nosso sistema!",
         )
-        EmailService.send_welcome_email(instance)
+        #EmailService.send_welcome_email(instance)
 
         Notificacao.objects.bulk_create(notificacoes)

@@ -29,6 +29,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                     mensagem=f"A intervenção {instance.titulo} na empresa {instance.cliente.empresa.nome}  pelo cliente {instance.cliente.nome}.",
                 )
             )
+            """
         send_mail(
                 subject="Criação de Nova Intervenção",
                 message=(
@@ -48,6 +49,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                 recipient_list=[utilizador.empresa.email],
                 fail_silently=False,
             )
+            """
 
         
 

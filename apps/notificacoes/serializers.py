@@ -6,13 +6,4 @@ from apps.notificacoes.models import Notificacao
 class NotificacaoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notificacao
-        fields = (
-            "id", 
-            "tipo", 
-            "titulo",
-            "mensagem",
-            "link", 
-            "lida",
-            "is_deleted",
-            "data_criacao"
-            )
+        fields = ("id", "tipo", "titulo", "mensagem", "link", "lida","delete", "data_criacao")
