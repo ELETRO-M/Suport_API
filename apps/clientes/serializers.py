@@ -50,7 +50,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
             "perfil",
             "telefone",
             "empresa",
-            "ip_servidor",
+            "ID_POSTOS",
             "status",
             "data_criacao",
             "contratos_ativos",
@@ -110,7 +110,7 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
             "email",
             "telefone",
             "empresa",
-            "ip_servidor",
+            "ID_POSTOS",
             "password",
             "status",
         )

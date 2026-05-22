@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+from apps.configuracoes.pagination import PaginacaoPadraoResultados
 
 
 def resposta_sucesso(*, data=None, message="", status_code=200, pagination=None):

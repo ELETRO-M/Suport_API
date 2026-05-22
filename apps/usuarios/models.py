@@ -121,7 +121,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     last_name = None
 
     email = models.EmailField(unique=True)
-    ip_servidor = models.CharField(max_length=50, validators=[MinLengthValidator(7)], blank=True)
+    ID_POSTOS= models.CharField(max_length=50, blank=True)
     empresa = models.ForeignKey(
         empresa, 
         related_name="clientes",
@@ -152,10 +152,16 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                 raise ValidationError({
                     "empresa": "Obrigatório para clientes.",
                     })
+            if not self.ID_POSTOS:
+                raise ValidationError({
+                    "ID_POSTOS": "Obrigatório para clientes.",
+                    })
+        
         elif self.empresa_id:
             raise ValidationError({
                 "empresa": "Apenas clientes podem estar associados a uma empresa.",
                 })
+            
 
         if self.perfil == self.PerfilChoices.TECNICO:
             if not self.especialidades:
@@ -172,18 +178,18 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                     })
             
 
-        if self.ip_servidor and self.empresa:
+        if self.ID_POSTOS and self.empresa:
             postos_empresa = self.empresa.postos or {}
-            ip_valido = False
+            ID_POSTOS_valido = False
             
             for posto_key, posto_info in postos_empresa.items():
-                if isinstance(posto_info, dict) and posto_info.get("ip") == self.ip_servidor:
-                    ip_valido = True
+                if isinstance(posto_info, dict) and posto_info.get("id") == self.ID_POSTOS:
+                    ID_POSTOS_valido = True
                     break
             
-            if not ip_valido:
+            if not ID_POSTOS_valido:
                 raise ValidationError({
-                    "ip_servidor": "O IP do servidor não corresponde a nenhum IP dos postos da empresa."
+                    "ERRO": "O ID do posto não encontrado."
                 })
 #____________________________________________________________________________________
     def save(self, *args, **kwargs):

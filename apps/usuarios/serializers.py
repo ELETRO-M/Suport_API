@@ -50,7 +50,7 @@ class EmpresaSerializer(serializers.ModelSerializer):
 
 class UsuarioSerializer(serializers.ModelSerializer):
     empresa = EmpresaSerializer(read_only=True)
-    notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
+    #notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
     
     class Meta:
         model = Usuario
@@ -61,12 +61,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
             "perfil",
             "telefone",
             "empresa",
-            "ip_servidor",
+            "ID_POSTOS",
             "avatar_url",
             "preferencias",
             "especialidades",
             "data_contratacao",
-            "notificacao",
             "status",
             "is_deleted",
             "data_criacao",
@@ -85,7 +84,7 @@ class RegistoSerializer(serializers.ModelSerializer):
             "nome",
             "perfil",
             "empresa",
-            "ip_servidor",
+            "ID_POSTOS",
             "telefone",
             "especialidades",
             "data_contratacao",
@@ -97,7 +96,7 @@ class RegistoSerializer(serializers.ModelSerializer):
             "ip_servidor": {"required": False},
             "especialidades": {"required": False},
             "data_contratacao": {"required": False},
-            "status": {"required": False},
+            
         }
 
     def validate(self, attrs):
@@ -185,7 +184,7 @@ class PerfilSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "perfil",
-            "ip_servidor",
+            "ID_POSTOS",
             "telefone",
             "avatar_url",
             "preferencias",
@@ -242,7 +241,7 @@ class AlterarSenhaSerializer(serializers.Serializer):
 class TecnicoListaSerializer(serializers.ModelSerializer):
     intervencoes_ativas = serializers.SerializerMethodField()
     total_horas_mes = serializers.SerializerMethodField()
-    notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
+    #notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
 
     class Meta:
         model = Usuario
@@ -255,7 +254,7 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
             "status",
             "intervencoes_ativas",
             "total_horas_mes",
-            "notificacao",
+            #"notificacao",
 
         )
     @extend_schema_field(serializers.IntegerField())

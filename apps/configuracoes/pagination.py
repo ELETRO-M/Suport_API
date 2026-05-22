@@ -17,6 +17,8 @@ class PaginacaoPadraoResultados(PageNumberPagination):
                     "page": self.page.number,
                     "limit": self.get_page_size(self.request),
                     "total_pages": self.page.paginator.num_pages,
+                    "next": self.get_next_link(),
+                    "previous": self.get_previous_link(),
                 },
                  "data": data
             }

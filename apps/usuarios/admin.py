@@ -56,7 +56,7 @@ class UsuarioAdmin(UserAdmin):
                 "nome",
                 "telefone",
                 "empresa",
-                "ip_servidor",
+                "ID_POSTOS",
                 "avatar_url",
             )
         }),
@@ -99,7 +99,7 @@ class UsuarioAdmin(UserAdmin):
                     "status",
                     "telefone",
                     "empresa",
-                    "ip_servidor",
+                    "ID_POSTOS",
                     "especialidades",
                     "data_contratacao",
                     "password1",
