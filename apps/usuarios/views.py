@@ -8,6 +8,7 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+from rest_framework_simplejwt.exceptions import TokenError
 from django.db.models import Sum
 from smtplib import SMTPException
 from django.utils import timezone
@@ -129,9 +130,20 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"], url_path="refresh", authentication_classes=[])
     def refresh(self, request):
-        serializer = TokenRefreshSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return resposta_sucesso(data=serializer.validated_data)
+        try:
+            serializer = TokenRefreshSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            return resposta_sucesso(
+                data=serializer.validated_data
+            )
+
+        except TokenError as e:
+
+            return resposta_erro(
+                message=str(e),
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
 
     @action(detail=False, methods=["post"], url_path="reset-password")
     def reset_password(self, request):
@@ -141,6 +153,29 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data["password_nova"])
         request.user.save(update_fields=["password"])
+        def refresh(self, request):
+
+            try:
+                serializer = TokenRefreshSerializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+
+                return Response(
+                    {
+                        "success": True,
+                        "data": serializer.validated_data
+                    },
+                    status=status.HTTP_200_OK
+                )
+
+            except TokenError as e:
+
+                return Response(
+                    {
+                        "success": False,
+                        "message": str(e)
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
         return resposta_sucesso(message="Recuperado com sucesso")
     
    
@@ -342,7 +377,7 @@ class empresaviewset(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
         return resposta_sucesso(
-            data={"id": str(obj.id), "nome": obj.nome, "email": obj.email},
+            data={"id": str(obj.id), "nome": obj.nome, "email": obj.Email_empresa},
             status_code=status.HTTP_201_CREATED,
         )
 

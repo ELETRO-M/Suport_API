@@ -63,36 +63,36 @@ class ContratoDetalheSerializer(ContratoListaSerializer):
 
 
 class ContratoEscritaSerializer(serializers.ModelSerializer):
-    cliente_id = serializers.UUIDField(write_only=True)
-    cliente_empresa = serializers.CharField(source="cliente.empresa.nome", read_only=True, allow_null=True, default=None)
+    #cliente_id = serializers.UUIDField(write_only=True)
+    #cliente_empresa = serializers.CharField(source="cliente.empresa.nome", read_only=True, allow_null=True, default=None)
 
     class Meta:
-        model = Contrato
-        fields = (
-            "cliente_id",
-            "cliente_empresa",
-            "tipo_contrato",
-            "tipo_de_pagamento",
-            "horas_contratadas",
-            "horas_utilizadas",
-            "valor_total",
-            "data_inicio",
-            "data_fim",
-            "status",
-            "observacoes",
-        )
-
-    def validate(self, attrs):
         
-
-        try:
-            attrs["cliente"] = Usuario.objects.get(id=attrs.pop("cliente_id"), perfil=Usuario.PerfilChoices.CLIENTE)
-        except Usuario.DoesNotExist as exc:
-            raise serializers.ValidationError({"cliente_id": "Cliente não encontrado."}) from exc
-        return attrs
+        model = Contrato
+        fields = "__all__"
+        read_only_fields = ("cliente", "empresa")
 
     def create(self, validated_data):
-        return Contrato.objects.create(**validated_data)
+
+        request = self.context["request"]
+        user = request.user
+
+        # cliente autenticado
+        if user.perfil == Usuario.PerfilChoices.CLIENTE:
+            validated_data["cliente"] = user
+
+            # pega empresa automaticamente
+            validated_data["empresa"] = user.empresa
+
+        # admin pode escolher cliente
+        elif user.perfil == Usuario.PerfilChoices.ADMIN:
+
+            cliente = validated_data.get("cliente")
+
+            if cliente and cliente.empresa:
+                validated_data["empresa"] = cliente.empresa
+
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         validated_data.pop("cliente", None)

@@ -75,10 +75,14 @@ class ContratoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(data=serializer.data)
 
     def create(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN or Usuario.PerfilChoices.CLIENTE:
+        if request.user.perfil not in (Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.CLIENTE):
             self.permission_denied(request, message="Permissão negada para este recurso.")
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(
+            data=request.data,
+            context={"request": request}
+        )
+
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
 

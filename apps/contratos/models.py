@@ -44,7 +44,7 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
     descricao_contrato = models.TextField(blank=True)
     horas_contratadas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     horas_utilizadas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    valor_total = models.DecimalField(max_digits=14, decimal_places=2)
+    valor_total = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
     valor_hora = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"), blank=True, null=True)
     data_inicio = models.DateTimeField()
     data_fim = models.DateTimeField()
@@ -59,10 +59,13 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
             raise ValidationError("A data de fim é obrigatória para serviços avulsos.")
         if self.tipo_contrato == self.Tipo_de_contratos.SERVIÇO_AVULSO and self.data_inicio is None:
             raise ValidationError("A data de inicio é obrigatória para serviços avulsos.")
-        if self.cliente and self.cliente.is_deleted:
-            raise ValidationError("O cliente não pode estar inativo.")
-        if not self.cliente:
+        if not self.cliente_id:
             raise ValidationError("O cliente é obrigatório.")
+        try:
+            if self.cliente.is_deleted:
+                raise ValidationError("O cliente não pode estar inativo.")
+        except Usuario.DoesNotExist:
+            raise ValidationError("O cliente não foi encontrado.")
         if self.status == self.StatusChoices.EXPIRADO and self.data_fim and self.data_fim > timezone.now():
             raise ValidationError("O contrato não pode estar marcado como expirado se a data de fim é futura.")
         if self.tipo_contrato == self.Tipo_de_contratos.OUTROS:
@@ -95,17 +98,20 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
             config = ConfiguracaoSistema.load()
 
             if self.tipo_de_pagamento == self.TipoPagamento.HORAS:
-                self.valor_total= self.horas_contratadas* config.taxa_hora
+                if self.valor_total is None:
+                    self.valor_total= self.horas_contratadas* config.taxa_hora
                 if self.horas_contratadas > 0:
                     self.valor_hora = self.valor_total / self.horas_contratadas
 
             elif self.tipo_de_pagamento == self.TipoPagamento.MENSAL:
-                self.valor_total= self.horas_contratadas* config.taxa_mensal
+                if self.valor_total is None:
+                    self.valor_total= self.horas_contratadas* config.taxa_mensal
                 meses = diferenca.days // 30
 
                 
             elif self.tipo_de_pagamento == self.TipoPagamento.ANUAL:
-                self.valor_total= self.horas_contratadas* config.taxa_anual
+                if self.valor_total is None:
+                    self.valor_total= self.horas_contratadas* config.taxa_anual
                 anos = diferenca.days // 365
             if self.horas_contratadas:
               self.valor_hora= self.valor_total/ self.horas_contratadas
