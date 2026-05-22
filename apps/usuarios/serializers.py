@@ -76,7 +76,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
 class RegistoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
-    empresa=EmpresaSerializer(read_only=True)
+    empresa=EmpresaSerializer(read_only=True, source="clientes")
     class Meta:
         model = Usuario
         fields = (
@@ -85,6 +85,7 @@ class RegistoSerializer(serializers.ModelSerializer):
             "nome",
             "perfil",
             "empresa",
+            "ip_servidor",
             "telefone",
             "especialidades",
             "data_contratacao",
