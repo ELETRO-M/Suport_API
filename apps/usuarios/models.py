@@ -23,27 +23,27 @@ class empresa(ModeloUUIDComTimestamps, SoftDeleteModel):
     def clean(self):
         if not self.Email_empresa:
             raise ValidationError({
-                "ERRO": "O email é obrigatório.",
+                "Email_empresa": "O email é obrigatório.",
                 })
         if not self.nome:
             raise ValidationError({
-                "ERRO": "O nome é obrigatório.",
+                "nome": "O nome é obrigatório.",
                 })
         if not self.nif:
             raise ValidationError({
-                "ERRO": "O NIF é obrigatório.",
+                "nif": "O NIF é obrigatório.",
                 })
         if not self.endereco:
             raise ValidationError({
-                "ERRO": "O endereço é obrigatório.",
+                "endereco": "O endereço é obrigatório.",
                 })
         if not self.postos:
             raise ValidationError({
-                "ERRO": "Os postos são obrigatórios.",
+                "postos": "Os postos são obrigatórios.",
                 })
         if not self.telefone:
             raise ValidationError({
-                "ERRO": "O telefone é obrigatório.",
+                "telefone": "O telefone é obrigatório.",
                 })
         
        
@@ -189,7 +189,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
             
             if not ID_POSTOS_valido:
                 raise ValidationError({
-                    "ERRO": "O ID do posto não encontrado."
+                    "ID_POSTOS": "O ID do posto não encontrado."
                 })
 #____________________________________________________________________________________
     def save(self, *args, **kwargs):

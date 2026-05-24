@@ -152,7 +152,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
         ]:
             self.permission_denied(request, message="Sem permissão para este recurso.")
 
-        contratos = Contrato.objects.filter(cliente=request.user, status="activo")
+        contratos = Contrato.objects.filter(Empresa=request.user.empresa, status="activo")
 
         total_horas_contratadas = sum(c.horas_contratadas for c in contratos)
         total_horas_utilizadas = sum(c.horas_utilizadas for c in contratos)
@@ -298,13 +298,12 @@ class RelatorioViewSet(viewsets.GenericViewSet):
         data = {
             "receita_total": contratos.aggregate(total=Sum("valor_total"))["total"] or 0,
             "receita_mes": receita_mes,
-            "por_cliente": list(contratos.values("cliente__nome").annotate(total=Sum("valor_total"))),
+            "por_empresa": list(contratos.values("Empresa__nome").annotate(total=Sum("valor_total"))),
             "por_contrato": list(contratos.values("tipo_contrato").annotate(total=Sum("valor_total"))),
             "contratos_vencendo": [
                 {
                     "id": str(item.id),
-                    "cliente_nome": item.cliente.nome if item.cliente else None,
-                    "empresa_nome": item.cliente.empresa.nome if item.cliente and getattr(item.cliente, "empresa", None) else None,
+                    "empresa_nome": item.Empresa.nome if item.Empresa else None,
                     "data_fim": item.data_fim,
                 }
                 for item in contratos.order_by("data_fim")[:10]

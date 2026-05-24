@@ -1,24 +1,22 @@
 from rest_framework import serializers
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Usuario, empresa as Empresa
 from apps.contratos.models import Contrato
 from drf_spectacular.utils import extend_schema_field
 
 
 class ContratoListaSerializer(serializers.ModelSerializer):
-    cliente_nome = serializers.CharField(source="cliente.nome", read_only=True)
-    cliente_id = serializers.UUIDField(source="cliente.id", read_only=True)
-    cliente_empresa = serializers.CharField(source="cliente.empresa.nome", read_only=True, allow_null=True, default=None)
+    empresa = serializers.CharField(source="Empresa.nome", read_only=True)
+    empresa_id = serializers.UUIDField(source="Empresa.id", read_only=True)
+    expiracao = serializers.IntegerField(read_only=True)
     horas_disponiveis = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    
 
 
     class Meta:
         model = Contrato
         fields = (
             "id",
-            "cliente_id",
-            "cliente_nome",
-            "cliente_empresa",
+            "empresa_id",
+            "empresa",
             "expiracao",
             "tipo_contrato",
             "tipo_de_pagamento",
@@ -30,23 +28,25 @@ class ContratoListaSerializer(serializers.ModelSerializer):
             "data_inicio",
             "data_fim",
             "status",
+            "descricao_contrato",
             "observacoes",
         )
 
 
 class ContratoDetalheSerializer(ContratoListaSerializer):
-    cliente = serializers.SerializerMethodField()
+    empresa_detalhe = serializers.SerializerMethodField()
     intervencoes = serializers.SerializerMethodField()
 
     class Meta(ContratoListaSerializer.Meta):
-        fields = ContratoListaSerializer.Meta.fields + ("cliente", "valor_hora", "intervencoes")
+        fields = ContratoListaSerializer.Meta.fields + ("empresa_detalhe", "valor_hora", "intervencoes")
 
     @extend_schema_field(serializers.DictField())
-    def get_cliente(self, obj):
+    def get_empresa_detalhe(self, obj):
         return {
-            "id": str(obj.cliente.id),
-            "nome": obj.cliente.nome,
-            "empresa": obj.cliente.empresa.nome if obj.cliente.empresa else None,
+            "id": str(obj.Empresa.id),
+            "nome": obj.Empresa.nome,
+            "email": obj.Empresa.Email_empresa,
+            "nif": obj.Empresa.nif,
         }
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
@@ -63,39 +63,43 @@ class ContratoDetalheSerializer(ContratoListaSerializer):
 
 
 class ContratoEscritaSerializer(serializers.ModelSerializer):
-    #cliente_id = serializers.UUIDField(write_only=True)
-    #cliente_empresa = serializers.CharField(source="cliente.empresa.nome", read_only=True, allow_null=True, default=None)
+    empresa_id = serializers.PrimaryKeyRelatedField(
+        source="Empresa",
+        queryset=Empresa.objects.filter(is_deleted=False),
+        write_only=True,
+        required=False,
+    )
 
     class Meta:
-        
         model = Contrato
-        fields = "__all__"
-        read_only_fields = ("cliente", "empresa")
+        fields = (
+            "empresa_id",
+            "tipo_de_pagamento",
+            "tipo_contrato",
+            "descricao_contrato",
+            "horas_contratadas",
+            "valor_total",
+            "data_inicio",
+            "data_fim",
+            "status",
+            "observacoes",
+        )
 
     def create(self, validated_data):
-
         request = self.context["request"]
         user = request.user
 
-        # cliente autenticado
         if user.perfil == Usuario.PerfilChoices.CLIENTE:
-            validated_data["cliente"] = user
-
-            # pega empresa automaticamente
-            validated_data["empresa"] = user.empresa
-
-        # admin pode escolher cliente
-        elif user.perfil == Usuario.PerfilChoices.ADMIN:
-
-            cliente = validated_data.get("cliente")
-
-            if cliente and cliente.empresa:
-                validated_data["empresa"] = cliente.empresa
+            validated_data["Empresa"] = user.empresa
+        elif user.perfil == Usuario.PerfilChoices.ADMIN and not validated_data.get("Empresa"):
+            raise serializers.ValidationError({"empresa_id": "Este campo é obrigatório para administradores."})
 
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        validated_data.pop("cliente", None)
+        request = self.context.get("request")
+        if request and request.user.perfil == Usuario.PerfilChoices.CLIENTE:
+            validated_data.pop("Empresa", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()

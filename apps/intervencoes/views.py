@@ -182,7 +182,8 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             status_code=status.HTTP_201_CREATED,
         )
 
-    @action(detail=True, methods=["post"], url_path="anexos")
+    @extend_schema(request={"multipart/form-data": CarregarAnexoSerializer})
+    @action(detail=True, methods=["post"], url_path="anexos", parser_classes=[parsers.MultiPartParser])
     def anexos(self, request, pk=None):
         instance = self.get_object()
         if request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id != request.user.id:

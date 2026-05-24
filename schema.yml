@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API de gestão de suporte técnico.
 paths:
-  /api/v1/auth/{id}/register:
+  /api/v1/auth/{id}/register/:
     delete:
       operationId: api_v1_auth_register_destroy
       parameters:
@@ -22,7 +22,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/auth/login:
+  /api/v1/auth/login/:
     post:
       operationId: api_v1_auth_login_create
       tags:
@@ -46,7 +46,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InicioSessao'
           description: ''
-  /api/v1/auth/logout:
+  /api/v1/auth/logout/:
     post:
       operationId: api_v1_auth_logout_create
       tags:
@@ -72,7 +72,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Usuario'
           description: ''
-  /api/v1/auth/refresh:
+  /api/v1/auth/refresh/:
     post:
       operationId: api_v1_auth_refresh_create
       tags:
@@ -96,7 +96,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
-  /api/v1/auth/register:
+  /api/v1/auth/register/:
     get:
       operationId: api_v1_auth_register_retrieve
       tags:
@@ -110,7 +110,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Usuario'
           description: ''
-  /api/v1/auth/register/:
     post:
       operationId: api_v1_auth_register_create
       tags:
@@ -136,7 +135,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Registo'
           description: ''
-  /api/v1/auth/reset-password:
+  /api/v1/auth/reset-password/:
     post:
       operationId: api_v1_auth_reset_password_create
       tags:
@@ -158,7 +157,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/clientes:
+  /api/v1/clientes/:
     get:
       operationId: api_v1_clientes_list
       parameters:
@@ -232,7 +231,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClienteEscrita'
           description: ''
-  /api/v1/clientes/{id}:
+  /api/v1/clientes/{id}/:
     get:
       operationId: api_v1_clientes_retrieve
       parameters:
@@ -399,12 +398,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ConfiguracaoSistema'
           description: ''
-  /api/v1/contratos:
+  /api/v1/contratos/:
     get:
       operationId: api_v1_contratos_list
       parameters:
       - in: query
-        name: cliente
+        name: Empresa
         schema:
           type: string
           format: uuid
@@ -514,7 +513,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ContratoEscrita'
           description: ''
-  /api/v1/contratos/{id}:
+  /api/v1/contratos/{id}/:
     get:
       operationId: api_v1_contratos_retrieve
       parameters:
@@ -618,9 +617,9 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/horas:
+  /api/v1/empresas/:
     get:
-      operationId: api_v1_horas_list
+      operationId: api_v1_empresas_list
       parameters:
       - name: limit
         required: false
@@ -647,7 +646,7 @@ paths:
         schema:
           type: string
       tags:
-      - Intervenções
+      - Empresa
       security:
       - jwtAuth: []
       responses:
@@ -655,23 +654,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedHoraTrabalhoListaList'
+                $ref: '#/components/schemas/PaginatedempresdatilserialazrsList'
           description: ''
     post:
-      operationId: api_v1_horas_create
+      operationId: api_v1_empresas_create
       tags:
-      - Intervenções
+      - Empresa
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoEscritaRequest'
+              $ref: '#/components/schemas/empresdatilserialazrsRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoEscritaRequest'
+              $ref: '#/components/schemas/empresdatilserialazrsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoEscritaRequest'
+              $ref: '#/components/schemas/empresdatilserialazrsRequest'
         required: true
       security:
       - jwtAuth: []
@@ -680,21 +679,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HoraTrabalhoEscrita'
+                $ref: '#/components/schemas/empresdatilserialazrs'
           description: ''
-  /api/v1/horas/{id}:
+  /api/v1/empresas/{id}/:
     get:
-      operationId: api_v1_horas_retrieve
+      operationId: api_v1_empresas_retrieve
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this hora trabalho.
+        description: A UUID string identifying this empresa.
         required: true
       tags:
-      - Intervenções
+      - Empresa
       security:
       - jwtAuth: []
       responses:
@@ -702,31 +701,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HoraTrabalhoLista'
+                $ref: '#/components/schemas/empresdatilserialazrs'
           description: ''
     put:
-      operationId: api_v1_horas_update
+      operationId: api_v1_empresas_update
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this hora trabalho.
+        description: A UUID string identifying this empresa.
         required: true
       tags:
-      - Intervenções
+      - Empresa
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoAtualizacaoRequest'
+              $ref: '#/components/schemas/empresdatilserialazrsRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoAtualizacaoRequest'
+              $ref: '#/components/schemas/empresdatilserialazrsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/HoraTrabalhoAtualizacaoRequest'
+              $ref: '#/components/schemas/empresdatilserialazrsRequest'
         required: true
       security:
       - jwtAuth: []
@@ -735,31 +734,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+                $ref: '#/components/schemas/empresdatilserialazrs'
           description: ''
     patch:
-      operationId: api_v1_horas_partial_update
+      operationId: api_v1_empresas_partial_update
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this hora trabalho.
+        description: A UUID string identifying this empresa.
         required: true
       tags:
-      - Intervenções
+      - Empresa
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacaoRequest'
+              $ref: '#/components/schemas/PatchedempresdatilserialazrsRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacaoRequest'
+              $ref: '#/components/schemas/PatchedempresdatilserialazrsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedHoraTrabalhoAtualizacaoRequest'
+              $ref: '#/components/schemas/PatchedempresdatilserialazrsRequest'
       security:
       - jwtAuth: []
       responses:
@@ -767,26 +766,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HoraTrabalhoAtualizacao'
+                $ref: '#/components/schemas/empresdatilserialazrs'
           description: ''
     delete:
-      operationId: api_v1_horas_destroy
+      operationId: api_v1_empresas_destroy
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this hora trabalho.
+        description: A UUID string identifying this empresa.
         required: true
       tags:
-      - Intervenções
+      - Empresa
       security:
       - jwtAuth: []
       responses:
         '204':
           description: No response body
-  /api/v1/intervencoes:
+  /api/v1/intervencoes/:
     get:
       operationId: api_v1_intervencoes_list
       parameters:
@@ -831,13 +830,7 @@ paths:
       - Intervenções
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/IntervencaoEscritaRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/IntervencaoEscritaRequest'
-          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/IntervencaoEscritaRequest'
         required: true
@@ -850,7 +843,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/IntervencaoEscrita'
           description: ''
-  /api/v1/intervencoes/{id}:
+  /api/v1/intervencoes/{id}/:
     get:
       operationId: api_v1_intervencoes_retrieve
       parameters:
@@ -954,7 +947,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/intervencoes/{id}/anexos:
+  /api/v1/intervencoes/{id}/anexos/:
     post:
       operationId: api_v1_intervencoes_anexos_create
       parameters:
@@ -969,15 +962,9 @@ paths:
       - Intervenções
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
+              $ref: '#/components/schemas/CarregarAnexoRequest'
         required: true
       security:
       - jwtAuth: []
@@ -986,9 +973,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IntervencaoLista'
+                $ref: '#/components/schemas/CarregarAnexo'
           description: ''
-  /api/v1/intervencoes/{id}/atribuir:
+  /api/v1/intervencoes/{id}/atribuir/:
     post:
       operationId: api_v1_intervencoes_atribuir_create
       parameters:
@@ -1005,13 +992,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
+              $ref: '#/components/schemas/AtribuirTecnicoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
+              $ref: '#/components/schemas/AtribuirTecnicoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
+              $ref: '#/components/schemas/AtribuirTecnicoRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1020,9 +1007,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IntervencaoLista'
+                $ref: '#/components/schemas/AtribuirTecnico'
           description: ''
-  /api/v1/intervencoes/{id}/comentarios:
+  /api/v1/intervencoes/{id}/comentarios/:
     post:
       operationId: api_v1_intervencoes_comentarios_create
       parameters:
@@ -1039,13 +1026,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
+              $ref: '#/components/schemas/AdicionarComentarioRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
+              $ref: '#/components/schemas/AdicionarComentarioRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IntervencaoListaRequest'
+              $ref: '#/components/schemas/AdicionarComentarioRequest'
         required: true
       security:
       - jwtAuth: []
@@ -1054,9 +1041,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IntervencaoLista'
+                $ref: '#/components/schemas/AdicionarComentario'
           description: ''
-  /api/v1/notificacoes:
+  /api/v1/notificacoes/:
     get:
       operationId: api_v1_notificacoes_list
       parameters:
@@ -1095,31 +1082,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedNotificacaoList'
           description: ''
-  /api/v1/notificacoes/{id}:
-    get:
-      operationId: api_v1_notificacoes_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this notificacao.
-        required: true
-      tags:
-      - Notificações
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Notificacao'
-          description: ''
-  /api/v1/notificacoes/{id}/lida:
+  /api/v1/notificacoes/{id}/:
     put:
-      operationId: api_v1_notificacoes_lida_update
+      operationId: api_v1_notificacoes_update
       parameters:
       - in: path
         name: id
@@ -1151,7 +1116,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Notificacao'
           description: ''
-  /api/v1/notificacoes/marcar-todas-lidas:
+  /api/v1/notificacoes/marcar-todas-lidas/:
     put:
       operationId: api_v1_notificacoes_marcar_todas_lidas_update
       tags:
@@ -1263,7 +1228,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/recuperar:
+  /api/v1/recuperar/:
     post:
       operationId: api_v1_recuperar_create
       tags:
@@ -1287,7 +1252,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Recupera'
           description: ''
-  /api/v1/relatorios/dashboard-admin:
+  /api/v1/relatorios/dashboard-admin/:
     get:
       operationId: api_v1_relatorios_dashboard_admin_retrieve
       tags:
@@ -1297,7 +1262,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/relatorios/dashboard-cliente:
+  /api/v1/relatorios/dashboard-cliente/:
     get:
       operationId: api_v1_relatorios_dashboard_cliente_retrieve
       tags:
@@ -1307,7 +1272,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/relatorios/dashboard-tecnico:
+  /api/v1/relatorios/dashboard-tecnico/:
     get:
       operationId: api_v1_relatorios_dashboard_tecnico_retrieve
       tags:
@@ -1317,7 +1282,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/relatorios/financeiro:
+  /api/v1/relatorios/financeiro/:
     get:
       operationId: api_v1_relatorios_financeiro_retrieve
       tags:
@@ -1327,17 +1292,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/relatorios/horas:
-    get:
-      operationId: api_v1_relatorios_horas_retrieve
-      tags:
-      - Admin
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/v1/relatorios/intervencoes:
+  /api/v1/relatorios/intervencoes/:
     get:
       operationId: api_v1_relatorios_intervencoes_retrieve
       tags:
@@ -1347,7 +1302,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/v1/reset-password:
+  /api/v1/reset-password/:
     post:
       operationId: api_v1_reset_password_create
       tags:
@@ -1367,7 +1322,7 @@ paths:
       responses:
         '201':
           description: No response body
-  /api/v1/tecnicos:
+  /api/v1/tecnicos/:
     get:
       operationId: api_v1_tecnicos_list
       parameters:
@@ -1441,7 +1396,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TecnicoEscrita'
           description: ''
-  /api/v1/tecnicos/{id}:
+  /api/v1/tecnicos/{id}/:
     get:
       operationId: api_v1_tecnicos_retrieve
       parameters:
@@ -1547,6 +1502,35 @@ paths:
           description: No response body
 components:
   schemas:
+    ActuacaoTipoEnum:
+      enum:
+      - remoto
+      - presencial
+      type: string
+      description: |-
+        * `remoto` - Remoto
+        * `presencial` - Presencial
+    AdicionarComentario:
+      type: object
+      properties:
+        texto:
+          type: string
+        visivel_cliente:
+          type: boolean
+          default: true
+      required:
+      - texto
+    AdicionarComentarioRequest:
+      type: object
+      properties:
+        texto:
+          type: string
+          minLength: 1
+        visivel_cliente:
+          type: boolean
+          default: true
+      required:
+      - texto
     AlterarSenhaRequest:
       type: object
       properties:
@@ -1573,6 +1557,7 @@ components:
           readOnly: true
         url:
           type: string
+          format: uri
           readOnly: true
         tamanho:
           type: integer
@@ -1591,17 +1576,42 @@ components:
       - id
       - nome_arquivo
       - url
-    AnexoIntervencaoRequest:
+    AtribuirTecnico:
       type: object
       properties:
-        tamanho:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
+        tecnico_id:
+          type: string
+          format: uuid
+      required:
+      - tecnico_id
+    AtribuirTecnicoRequest:
+      type: object
+      properties:
+        tecnico_id:
+          type: string
+          format: uuid
+      required:
+      - tecnico_id
+    CarregarAnexo:
+      type: object
+      properties:
+        ficheiro:
+          type: string
+          format: uri
         descricao:
           type: string
-          maxLength: 255
+      required:
+      - ficheiro
+    CarregarAnexoRequest:
+      type: object
+      properties:
+        ficheiro:
+          type: string
+          format: binary
+        descricao:
+          type: string
+      required:
+      - ficheiro
     ClienteDetalhe:
       type: object
       properties:
@@ -1622,23 +1632,12 @@ components:
           type: string
           maxLength: 50
         empresa:
-          type: string
-          maxLength: 255
-        postos:
-          type: object
-          additionalProperties:
-            type: object
-            additionalProperties:
-              type: string
-        ip_servidor:
+          allOf:
+          - $ref: '#/components/schemas/ClienteEmpresa'
+          readOnly: true
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
-        nif:
-          type: string
-          maxLength: 50
-        endereco:
-          type: string
         status:
           $ref: '#/components/schemas/UsuarioStatusEnum'
         data_criacao:
@@ -1649,20 +1648,75 @@ components:
           type: integer
           readOnly: true
         contratos:
-          type: string
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
           readOnly: true
         intervencoes:
-          type: string
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
           readOnly: true
       required:
       - contratos
       - contratos_ativos
       - data_criacao
       - email
+      - empresa
       - id
       - intervencoes
       - nome
       - perfil
+    ClienteEmpresa:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        Email_empresa:
+          type: string
+          format: email
+          maxLength: 254
+        nome:
+          type: string
+          maxLength: 255
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        postos: {}
+        telefone:
+          type: string
+          maxLength: 50
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+        is_deleted:
+          type: boolean
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+        data_actualizacao:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - Email_empresa
+      - data_actualizacao
+      - data_criacao
+      - endereco
+      - id
+      - nif
+      - nome
+      - telefone
     ClienteEscrita:
       type: object
       properties:
@@ -1678,17 +1732,11 @@ components:
           maxLength: 50
         empresa:
           type: string
-          maxLength: 255
-        postos: {}
-        ip_servidor:
+          format: uuid
+          nullable: true
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
-        nif:
-          type: string
-          maxLength: 50
-        endereco:
-          type: string
         status:
           $ref: '#/components/schemas/UsuarioStatusEnum'
       required:
@@ -1711,17 +1759,11 @@ components:
           maxLength: 50
         empresa:
           type: string
-          maxLength: 255
-        postos: {}
-        ip_servidor:
+          format: uuid
+          nullable: true
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
-        nif:
-          type: string
-          maxLength: 50
-        endereco:
-          type: string
         password:
           type: string
           writeOnly: true
@@ -1751,23 +1793,12 @@ components:
           type: string
           maxLength: 50
         empresa:
-          type: string
-          maxLength: 255
-        postos:
-          type: object
-          additionalProperties:
-            type: object
-            additionalProperties:
-              type: string
-        ip_servidor:
+          allOf:
+          - $ref: '#/components/schemas/ClienteEmpresa'
+          readOnly: true
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
-        nif:
-          type: string
-          maxLength: 50
-        endereco:
-          type: string
         status:
           $ref: '#/components/schemas/UsuarioStatusEnum'
         data_criacao:
@@ -1781,6 +1812,7 @@ components:
       - contratos_ativos
       - data_criacao
       - email
+      - empresa
       - id
       - nome
       - perfil
@@ -1828,7 +1860,15 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
-        taxa_hora_padrao:
+        taxa_hora:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        taxa_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        taxa_anual:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
@@ -1850,7 +1890,15 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
-        taxa_hora_padrao:
+        taxa_hora:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        taxa_mensal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        taxa_anual:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
@@ -1861,17 +1909,20 @@ components:
           type: string
           format: uuid
           readOnly: true
-        cliente_id:
+        empresa_id:
           type: string
           format: uuid
           readOnly: true
-        cliente_nome:
+        empresa:
           type: string
           readOnly: true
+        expiracao:
+          type: integer
+          readOnly: true
         tipo_contrato:
-          $ref: '#/components/schemas/TipoContratoEnum'
+          $ref: '#/components/schemas/ContratoTipoEnum'
         tipo_de_pagamento:
-          $ref: '#/components/schemas/TipoDePagamentoEnum'
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
         horas_contratadas:
           type: string
           format: decimal
@@ -1880,6 +1931,7 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
         horas_disponiveis:
           type: string
           format: decimal
@@ -1889,32 +1941,40 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
-        data_inicio:
-          type: string
-          format: date
-        data_fim:
-          type: string
-          format: date
-        status:
-          $ref: '#/components/schemas/ContratoStatusEnum'
-        observacoes:
-          type: string
-        cliente:
-          type: string
-          readOnly: true
         valor_hora:
           type: string
           format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
-        intervencoes:
+          pattern: ^-?\d{0,23}(?:\.\d{0,2})?$
+        data_inicio:
           type: string
+          format: date-time
+        data_fim:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/ContratoStatusEnum'
+        descricao_contrato:
+          type: string
+        observacoes:
+          type: string
+        empresa_detalhe:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        intervencoes:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
           readOnly: true
       required:
-      - cliente
-      - cliente_id
-      - cliente_nome
       - data_fim
       - data_inicio
+      - descricao_contrato
+      - empresa
+      - empresa_detalhe
+      - empresa_id
+      - expiracao
       - horas_disponiveis
       - id
       - intervencoes
@@ -1924,15 +1984,13 @@ components:
     ContratoEscrita:
       type: object
       properties:
-        tipo_contrato:
-          $ref: '#/components/schemas/TipoContratoEnum'
         tipo_de_pagamento:
-          $ref: '#/components/schemas/TipoDePagamentoEnum'
-        horas_contratadas:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_contrato:
+          $ref: '#/components/schemas/ContratoTipoEnum'
+        descricao_contrato:
           type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        horas_utilizadas:
+        horas_contratadas:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
@@ -1942,10 +2000,10 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         data_inicio:
           type: string
-          format: date
+          format: date-time
         data_fim:
           type: string
-          format: date
+          format: date-time
         status:
           $ref: '#/components/schemas/ContratoStatusEnum'
         observacoes:
@@ -1953,25 +2011,25 @@ components:
       required:
       - data_fim
       - data_inicio
+      - descricao_contrato
       - tipo_contrato
       - tipo_de_pagamento
       - valor_total
     ContratoEscritaRequest:
       type: object
       properties:
-        cliente_id:
+        empresa_id:
           type: string
           format: uuid
           writeOnly: true
-        tipo_contrato:
-          $ref: '#/components/schemas/TipoContratoEnum'
         tipo_de_pagamento:
-          $ref: '#/components/schemas/TipoDePagamentoEnum'
-        horas_contratadas:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_contrato:
+          $ref: '#/components/schemas/ContratoTipoEnum'
+        descricao_contrato:
           type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        horas_utilizadas:
+          minLength: 1
+        horas_contratadas:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
@@ -1981,18 +2039,18 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         data_inicio:
           type: string
-          format: date
+          format: date-time
         data_fim:
           type: string
-          format: date
+          format: date-time
         status:
           $ref: '#/components/schemas/ContratoStatusEnum'
         observacoes:
           type: string
       required:
-      - cliente_id
       - data_fim
       - data_inicio
+      - descricao_contrato
       - tipo_contrato
       - tipo_de_pagamento
       - valor_total
@@ -2003,17 +2061,20 @@ components:
           type: string
           format: uuid
           readOnly: true
-        cliente_id:
+        empresa_id:
           type: string
           format: uuid
           readOnly: true
-        cliente_nome:
+        empresa:
           type: string
           readOnly: true
+        expiracao:
+          type: integer
+          readOnly: true
         tipo_contrato:
-          $ref: '#/components/schemas/TipoContratoEnum'
+          $ref: '#/components/schemas/ContratoTipoEnum'
         tipo_de_pagamento:
-          $ref: '#/components/schemas/TipoDePagamentoEnum'
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
         horas_contratadas:
           type: string
           format: decimal
@@ -2022,6 +2083,7 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
         horas_disponiveis:
           type: string
           format: decimal
@@ -2031,26 +2093,44 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        valor_hora:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,23}(?:\.\d{0,2})?$
         data_inicio:
           type: string
-          format: date
+          format: date-time
         data_fim:
           type: string
-          format: date
+          format: date-time
         status:
           $ref: '#/components/schemas/ContratoStatusEnum'
+        descricao_contrato:
+          type: string
         observacoes:
           type: string
       required:
-      - cliente_id
-      - cliente_nome
       - data_fim
       - data_inicio
+      - descricao_contrato
+      - empresa
+      - empresa_id
+      - expiracao
       - horas_disponiveis
       - id
       - tipo_contrato
       - tipo_de_pagamento
       - valor_total
+    ContratoPagamentoEnum:
+      enum:
+      - horas
+      - mensal
+      - anual
+      type: string
+      description: |-
+        * `horas` - Horas
+        * `mensal` - Mensal
+        * `anual` - Anual
     ContratoStatusEnum:
       enum:
       - activo
@@ -2060,6 +2140,91 @@ components:
       description: |-
         * `activo` - Activo
         * `expirado` - Expirado
+        * `cancelado` - Cancelado
+    ContratoTipoEnum:
+      enum:
+      - assistencia tecnica
+      - suporte
+      - instalação
+      - manutencao preventiva
+      - manutencao corretiva
+      - servico avulso
+      - outros
+      - anual
+      type: string
+      description: |-
+        * `assistencia tecnica` - Assistência Técnica
+        * `suporte` - Suporte
+        * `instalação` - Instalação
+        * `manutencao preventiva` - Manutenção Preventiva
+        * `manutencao corretiva` - Manutenção Corretiva
+        * `servico avulso` - Serviço Avulso
+        * `outros` - Outros
+        * `anual` - Anual
+    Empresa:
+      type: object
+      properties:
+        nome:
+          type: string
+          maxLength: 255
+        Email_empresa:
+          type: string
+          format: email
+          maxLength: 254
+        telefone:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        nif:
+          type: string
+          maxLength: 50
+        postos: {}
+      required:
+      - Email_empresa
+      - endereco
+      - nif
+      - nome
+      - telefone
+    EmpresaRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        Email_empresa:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        telefone:
+          type: string
+          minLength: 1
+          maxLength: 50
+        endereco:
+          type: string
+          minLength: 1
+        nif:
+          type: string
+          minLength: 1
+          maxLength: 50
+        postos: {}
+      required:
+      - Email_empresa
+      - endereco
+      - nif
+      - nome
+      - telefone
+    EstadoEnum:
+      enum:
+      - expirado
+      - activo
+      - cancelado
+      type: string
+      description: |-
+        * `expirado` - Expirado
+        * `activo` - Activo
         * `cancelado` - Cancelado
     HistoricoEstadoIntervencao:
       type: object
@@ -2085,119 +2250,6 @@ components:
       - data_criacao
       - id
       - status
-    HoraTrabalhoAtualizacao:
-      type: object
-      properties:
-        horas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        descricao:
-          type: string
-      required:
-      - descricao
-      - horas
-    HoraTrabalhoAtualizacaoRequest:
-      type: object
-      properties:
-        horas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        descricao:
-          type: string
-          minLength: 1
-      required:
-      - descricao
-      - horas
-    HoraTrabalhoEscrita:
-      type: object
-      properties:
-        horas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        data_trabalho:
-          type: string
-          format: date
-        descricao:
-          type: string
-        tipo:
-          $ref: '#/components/schemas/HoraTrabalhoTipoEnum'
-      required:
-      - data_trabalho
-      - descricao
-      - horas
-      - tipo
-    HoraTrabalhoEscritaRequest:
-      type: object
-      properties:
-        intervencao_id:
-          type: string
-          format: uuid
-          writeOnly: true
-        tecnico_id:
-          type: string
-          format: uuid
-          writeOnly: true
-        horas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        data_trabalho:
-          type: string
-          format: date
-        descricao:
-          type: string
-          minLength: 1
-        tipo:
-          $ref: '#/components/schemas/HoraTrabalhoTipoEnum'
-      required:
-      - data_trabalho
-      - descricao
-      - horas
-      - intervencao_id
-      - tipo
-    HoraTrabalhoLista:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        intervencao:
-          type: string
-          readOnly: true
-        tecnico:
-          type: string
-          readOnly: true
-        horas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        data_trabalho:
-          type: string
-          format: date
-        descricao:
-          type: string
-        tipo:
-          $ref: '#/components/schemas/HoraTrabalhoTipoEnum'
-      required:
-      - data_trabalho
-      - descricao
-      - horas
-      - id
-      - intervencao
-      - tecnico
-      - tipo
-    HoraTrabalhoTipoEnum:
-      enum:
-      - presencial
-      - remoto
-      type: string
-      description: |-
-        * `presencial` - Presencial
-        * `remoto` - Remoto
     InicioSessao:
       type: object
       properties:
@@ -2252,6 +2304,12 @@ components:
         titulo:
           type: string
           maxLength: 255
+        actuacao_tipo:
+          $ref: '#/components/schemas/ActuacaoTipoEnum'
+        tipo_pagamento:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_intervencao:
+          $ref: '#/components/schemas/ContratoTipoEnum'
         descricao:
           type: string
         tecnico_id:
@@ -2262,9 +2320,24 @@ components:
           $ref: '#/components/schemas/IntervecoesStatusEnum'
         prioridade:
           $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+        data_inicio_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        data_fim_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        horas_trabalhadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
       required:
       - descricao
       - prioridade
+      - tipo_intervencao
+      - tipo_pagamento
       - titulo
     IntervencaoAtualizacaoRequest:
       type: object
@@ -2273,6 +2346,12 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        actuacao_tipo:
+          $ref: '#/components/schemas/ActuacaoTipoEnum'
+        tipo_pagamento:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_intervencao:
+          $ref: '#/components/schemas/ContratoTipoEnum'
         descricao:
           type: string
           minLength: 1
@@ -2284,9 +2363,24 @@ components:
           $ref: '#/components/schemas/IntervecoesStatusEnum'
         prioridade:
           $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+        data_inicio_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        data_fim_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        horas_trabalhadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
       required:
       - descricao
       - prioridade
+      - tipo_intervencao
+      - tipo_pagamento
       - titulo
     IntervencaoDetalhe:
       type: object
@@ -2301,6 +2395,12 @@ components:
         titulo:
           type: string
           maxLength: 255
+        actuacao_tipo:
+          $ref: '#/components/schemas/ActuacaoTipoEnum'
+        tipo_pagamento:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_intervencao:
+          $ref: '#/components/schemas/ContratoTipoEnum'
         descricao:
           type: string
         cliente_id:
@@ -2323,12 +2423,27 @@ components:
           readOnly: true
         status:
           $ref: '#/components/schemas/IntervecoesStatusEnum'
+        estado:
+          $ref: '#/components/schemas/EstadoEnum'
+        sla:
+          type: object
+          additionalProperties: {}
+          readOnly: true
         prioridade:
           $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
         horas_trabalhadas:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        data_inicio_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        data_fim_intervencao:
+          type: string
+          format: date-time
+          nullable: true
         data_abertura:
           type: string
           format: date-time
@@ -2341,14 +2456,24 @@ components:
           items:
             $ref: '#/components/schemas/AnexoIntervencao'
           readOnly: true
+        comentario:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComentarioIntervencao'
+          readOnly: true
         cliente:
-          type: string
+          type: object
+          additionalProperties: {}
           readOnly: true
         tecnico:
-          type: string
+          type: object
+          additionalProperties: {}
+          nullable: true
           readOnly: true
         contrato:
-          type: string
+          type: object
+          additionalProperties: {}
+          nullable: true
           readOnly: true
         historico_status:
           type: array
@@ -2365,6 +2490,7 @@ components:
       - cliente
       - cliente_id
       - cliente_nome
+      - comentario
       - comentarios
       - contrato
       - contrato_id
@@ -2372,9 +2498,12 @@ components:
       - historico_status
       - id
       - prioridade
+      - sla
       - tecnico
       - tecnico_id
       - tecnico_nome
+      - tipo_intervencao
+      - tipo_pagamento
       - titulo
     IntervencaoEscrita:
       type: object
@@ -2386,9 +2515,15 @@ components:
           type: string
         prioridade:
           $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+        tipo_pagamento:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_intervencao:
+          $ref: '#/components/schemas/ContratoTipoEnum'
       required:
       - descricao
       - prioridade
+      - tipo_intervencao
+      - tipo_pagamento
       - titulo
     IntervencaoEscritaRequest:
       type: object
@@ -2411,16 +2546,19 @@ components:
           nullable: true
         prioridade:
           $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+        tipo_pagamento:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_intervencao:
+          $ref: '#/components/schemas/ContratoTipoEnum'
         anexos:
-          type: array
-          items:
-            type: string
-            format: binary
+          type: string
+          format: binary
           writeOnly: true
       required:
-      - cliente_id
       - descricao
       - prioridade
+      - tipo_intervencao
+      - tipo_pagamento
       - titulo
     IntervencaoLista:
       type: object
@@ -2435,6 +2573,12 @@ components:
         titulo:
           type: string
           maxLength: 255
+        actuacao_tipo:
+          $ref: '#/components/schemas/ActuacaoTipoEnum'
+        tipo_pagamento:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_intervencao:
+          $ref: '#/components/schemas/ContratoTipoEnum'
         descricao:
           type: string
         cliente_id:
@@ -2457,12 +2601,27 @@ components:
           readOnly: true
         status:
           $ref: '#/components/schemas/IntervecoesStatusEnum'
+        estado:
+          $ref: '#/components/schemas/EstadoEnum'
+        sla:
+          type: object
+          additionalProperties: {}
+          readOnly: true
         prioridade:
           $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
         horas_trabalhadas:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        data_inicio_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        data_fim_intervencao:
+          type: string
+          format: date-time
+          nullable: true
         data_abertura:
           type: string
           format: date-time
@@ -2475,48 +2634,25 @@ components:
           items:
             $ref: '#/components/schemas/AnexoIntervencao'
           readOnly: true
+        comentario:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComentarioIntervencao'
+          readOnly: true
       required:
       - anexos
       - cliente_id
       - cliente_nome
+      - comentario
       - contrato_id
       - descricao
       - id
       - prioridade
+      - sla
       - tecnico_id
       - tecnico_nome
-      - titulo
-    IntervencaoListaRequest:
-      type: object
-      properties:
-        numero:
-          type: string
-          maxLength: 30
-        titulo:
-          type: string
-          minLength: 1
-          maxLength: 255
-        descricao:
-          type: string
-          minLength: 1
-        status:
-          $ref: '#/components/schemas/IntervecoesStatusEnum'
-        prioridade:
-          $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
-        horas_trabalhadas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        data_abertura:
-          type: string
-          format: date-time
-        data_conclusao:
-          type: string
-          format: date-time
-          nullable: true
-      required:
-      - descricao
-      - prioridade
+      - tipo_intervencao
+      - tipo_pagamento
       - titulo
     Notificacao:
       type: object
@@ -2640,29 +2776,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ContratoLista'
-    PaginatedHoraTrabalhoListaList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/HoraTrabalhoLista'
     PaginatedIntervencaoListaList:
       type: object
       required:
@@ -2755,6 +2868,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TecnicoLista'
+    PaginatedempresdatilserialazrsList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/empresdatilserialazrs'
     PatchedClienteEscritaRequest:
       type: object
       properties:
@@ -2772,17 +2908,11 @@ components:
           maxLength: 50
         empresa:
           type: string
-          maxLength: 255
-        postos: {}
-        ip_servidor:
+          format: uuid
+          nullable: true
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
-        nif:
-          type: string
-          maxLength: 50
-        endereco:
-          type: string
         password:
           type: string
           writeOnly: true
@@ -2792,19 +2922,18 @@ components:
     PatchedContratoEscritaRequest:
       type: object
       properties:
-        cliente_id:
+        empresa_id:
           type: string
           format: uuid
           writeOnly: true
-        tipo_contrato:
-          $ref: '#/components/schemas/TipoContratoEnum'
         tipo_de_pagamento:
-          $ref: '#/components/schemas/TipoDePagamentoEnum'
-        horas_contratadas:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_contrato:
+          $ref: '#/components/schemas/ContratoTipoEnum'
+        descricao_contrato:
           type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        horas_utilizadas:
+          minLength: 1
+        horas_contratadas:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
@@ -2814,24 +2943,14 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         data_inicio:
           type: string
-          format: date
+          format: date-time
         data_fim:
           type: string
-          format: date
+          format: date-time
         status:
           $ref: '#/components/schemas/ContratoStatusEnum'
         observacoes:
           type: string
-    PatchedHoraTrabalhoAtualizacaoRequest:
-      type: object
-      properties:
-        horas:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        descricao:
-          type: string
-          minLength: 1
     PatchedIntervencaoAtualizacaoRequest:
       type: object
       properties:
@@ -2839,6 +2958,12 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        actuacao_tipo:
+          $ref: '#/components/schemas/ActuacaoTipoEnum'
+        tipo_pagamento:
+          $ref: '#/components/schemas/ContratoPagamentoEnum'
+        tipo_intervencao:
+          $ref: '#/components/schemas/ContratoTipoEnum'
         descricao:
           type: string
           minLength: 1
@@ -2850,6 +2975,19 @@ components:
           $ref: '#/components/schemas/IntervecoesStatusEnum'
         prioridade:
           $ref: '#/components/schemas/IntervecoesPrioridadeEnum'
+        data_inicio_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        data_fim_intervencao:
+          type: string
+          format: date-time
+          nullable: true
+        horas_trabalhadas:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
     PatchedTecnicoEscritaRequest:
       type: object
       properties:
@@ -2865,6 +3003,10 @@ components:
         telefone:
           type: string
           maxLength: 50
+        avatar_url:
+          type: string
+          format: uri
+          minLength: 1
         password:
           type: string
           writeOnly: true
@@ -2876,6 +3018,32 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/UsuarioStatusEnum'
+    PatchedempresdatilserialazrsRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        Email_empresa:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        nif:
+          type: string
+          minLength: 1
+          maxLength: 50
+        endereco:
+          type: string
+          minLength: 1
+        telefone:
+          type: string
+          minLength: 1
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+        postos: {}
     Perfil:
       type: object
       properties:
@@ -2894,21 +3062,23 @@ components:
           allOf:
           - $ref: '#/components/schemas/UsuarioPerfilEnum'
           readOnly: true
-        postos: {}
-        ip_servidor:
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
         telefone:
           type: string
           maxLength: 50
         avatar_url:
           type: string
           format: uri
-          maxLength: 200
         preferencias: {}
+        empresa:
+          allOf:
+          - $ref: '#/components/schemas/Empresa'
+          readOnly: true
       required:
       - email
+      - empresa
       - id
       - nome
       - perfil
@@ -2934,7 +3104,6 @@ components:
         avatar_url:
           type: string
           format: uri
-          maxLength: 200
         preferencias: {}
         contratos_ativos:
           type: integer
@@ -2956,18 +3125,16 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        postos: {}
-        ip_servidor:
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
         telefone:
           type: string
           maxLength: 50
         avatar_url:
           type: string
           format: uri
-          maxLength: 200
+          minLength: 1
         preferencias: {}
       required:
       - nome
@@ -3000,22 +3167,19 @@ components:
           maxLength: 255
         perfil:
           $ref: '#/components/schemas/UsuarioPerfilEnum'
+        empresa:
+          allOf:
+          - $ref: '#/components/schemas/Empresa'
+          readOnly: true
+        ID_POSTOS:
+          type: string
+          maxLength: 50
         telefone:
           type: string
           maxLength: 50
-        empresa:
+        avatar_url:
           type: string
-          maxLength: 255
-        postos: {}
-        ip_servidor:
-          type: string
-          maxLength: 50
-          minLength: 7
-        nif:
-          type: string
-          maxLength: 50
-        endereco:
-          type: string
+          format: uri
         especialidades: {}
         data_contratacao:
           type: string
@@ -3025,6 +3189,7 @@ components:
           $ref: '#/components/schemas/UsuarioStatusEnum'
       required:
       - email
+      - empresa
       - nome
       - perfil
     RegistoRequest:
@@ -3045,22 +3210,16 @@ components:
           maxLength: 255
         perfil:
           $ref: '#/components/schemas/UsuarioPerfilEnum'
+        ID_POSTOS:
+          type: string
+          maxLength: 50
         telefone:
           type: string
           maxLength: 50
-        empresa:
+        avatar_url:
           type: string
-          maxLength: 255
-        postos: {}
-        ip_servidor:
-          type: string
-          maxLength: 50
-          minLength: 7
-        nif:
-          type: string
-          maxLength: 50
-        endereco:
-          type: string
+          format: uri
+          minLength: 1
         especialidades: {}
         data_contratacao:
           type: string
@@ -3106,14 +3265,17 @@ components:
           type: integer
           readOnly: true
         total_horas_mes:
-          type: string
+          type: integer
           readOnly: true
         data_contratacao:
           type: string
           format: date
           nullable: true
         historico_intervencoes:
-          type: string
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
           readOnly: true
       required:
       - email
@@ -3135,6 +3297,9 @@ components:
         telefone:
           type: string
           maxLength: 50
+        avatar_url:
+          type: string
+          format: uri
         especialidades: {}
         data_contratacao:
           type: string
@@ -3160,6 +3325,10 @@ components:
         telefone:
           type: string
           maxLength: 50
+        avatar_url:
+          type: string
+          format: uri
+          minLength: 1
         password:
           type: string
           writeOnly: true
@@ -3198,7 +3367,7 @@ components:
           type: integer
           readOnly: true
         total_horas_mes:
-          type: string
+          type: integer
           readOnly: true
       required:
       - email
@@ -3206,36 +3375,6 @@ components:
       - intervencoes_ativas
       - nome
       - total_horas_mes
-    TipoContratoEnum:
-      enum:
-      - assistencia tecnica
-      - suporte
-      - instalação
-      - manutencao preventiva
-      - manutencao corretiva
-      - servico avulso
-      - outros
-      - anual
-      type: string
-      description: |-
-        * `assistencia tecnica` - Assistência Técnica
-        * `suporte` - Suporte
-        * `instalação` - Instalação
-        * `manutencao preventiva` - Manutenção Preventiva
-        * `manutencao corretiva` - Manutenção Corretiva
-        * `servico avulso` - Serviço Avulso
-        * `outros` - Outros
-        * `anual` - Anual
-    TipoDePagamentoEnum:
-      enum:
-      - horas
-      - mensal
-      - anual
-      type: string
-      description: |-
-        * `horas` - Horas
-        * `mensal` - Mensal
-        * `anual` - Anual
     TokenRefresh:
       type: object
       properties:
@@ -3277,22 +3416,15 @@ components:
           type: string
           maxLength: 50
         empresa:
-          type: string
-          maxLength: 255
-        postos: {}
-        nif:
-          type: string
-          maxLength: 50
-        ip_servidor:
+          allOf:
+          - $ref: '#/components/schemas/Empresa'
+          readOnly: true
+        ID_POSTOS:
           type: string
           maxLength: 50
-          minLength: 7
-        endereco:
-          type: string
         avatar_url:
           type: string
           format: uri
-          maxLength: 200
         preferencias: {}
         especialidades: {}
         data_contratacao:
@@ -3310,6 +3442,7 @@ components:
       required:
       - data_criacao
       - email
+      - empresa
       - id
       - nome
       - perfil
@@ -3338,23 +3471,13 @@ components:
         telefone:
           type: string
           maxLength: 50
-        empresa:
-          type: string
-          maxLength: 255
-        postos: {}
-        nif:
+        ID_POSTOS:
           type: string
           maxLength: 50
-        ip_servidor:
-          type: string
-          maxLength: 50
-          minLength: 7
-        endereco:
-          type: string
         avatar_url:
           type: string
           format: uri
-          maxLength: 200
+          minLength: 1
         preferencias: {}
         especialidades: {}
         data_contratacao:
@@ -3376,6 +3499,80 @@ components:
       description: |-
         * `activo` - Activo
         * `inactivo` - Inactivo
+    empresdatilserialazrs:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        nome:
+          type: string
+          maxLength: 255
+        Email_empresa:
+          type: string
+          format: email
+          maxLength: 254
+        nif:
+          type: string
+          maxLength: 50
+        endereco:
+          type: string
+        telefone:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+        postos: {}
+        data_criacao:
+          type: string
+          format: date-time
+          readOnly: true
+        data_actualizacao:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - Email_empresa
+      - data_actualizacao
+      - data_criacao
+      - endereco
+      - id
+      - nif
+      - nome
+      - telefone
+    empresdatilserialazrsRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 1
+          maxLength: 255
+        Email_empresa:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        nif:
+          type: string
+          minLength: 1
+          maxLength: 50
+        endereco:
+          type: string
+          minLength: 1
+        telefone:
+          type: string
+          minLength: 1
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/UsuarioStatusEnum'
+        postos: {}
+      required:
+      - Email_empresa
+      - endereco
+      - nif
+      - nome
+      - telefone
   securitySchemes:
     jwtAuth:
       type: http

@@ -4,6 +4,7 @@ import os
 
 from decouple import config
 import dj_database_url
+import cloudinary
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,9 +80,9 @@ ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
-        default=config("DATABASE_URL"),
+        default=config("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
         conn_max_age=60,
-        ssl_require=True
+        ssl_require=not DEBUG,
     )
 }
 
@@ -101,17 +102,30 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+CLOUDINARY_CLOUD_NAME = config("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = config("CLOUDINARY_API_SECRET")
+
 CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": config("CLOUDINARY_CLOUD_NAME", default="dhpain7wq"),
-    "API_KEY": config("CLOUDINARY_API_KEY", default="772767193863469"),
-    "API_SECRET": config("CLOUDINARY_API_SECRET", default="wJH5akhlGNv1Ltg-OURGSpTODTQ"),
+    "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
+    "API_KEY": CLOUDINARY_API_KEY,
+    "API_SECRET": CLOUDINARY_API_SECRET,
 }
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET,
+    secure=True,
+)
 
 _STATIC_BACKEND = (
     "django.contrib.staticfiles.storage.StaticFilesStorage"
     if DEBUG
     else "whitenoise.storage.CompressedManifestStaticFilesStorage"
 )
+
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.RawMediaCloudinaryStorage"
 
 STORAGES = {
     "default": {

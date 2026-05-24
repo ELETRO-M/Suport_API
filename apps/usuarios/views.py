@@ -106,7 +106,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             raise PermissionDenied("Permissão Negada.")
 
-        serializer = RegistoSerializer(data=request.data)
+        serializer = RegistoSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         utilizador = serializer.save()
        
@@ -115,6 +115,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
             "usuario_id": str(utilizador.id),
             "email": utilizador.email,
             "perfil": utilizador.perfil,
+            "avatar_url": utilizador.avatar_url,
         }
         return resposta_sucesso(data=data, status_code=status.HTTP_201_CREATED)
 

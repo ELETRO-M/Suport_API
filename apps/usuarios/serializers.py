@@ -1,5 +1,8 @@
+import uuid
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.core.files.storage import default_storage
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.encoding import force_str
@@ -11,6 +14,38 @@ from django.db.models import Sum
 from apps.usuarios.models import Usuario, empresa
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import Intervencao
+
+
+@extend_schema_field(serializers.URLField())
+class AvatarURLField(serializers.Field):
+    def to_internal_value(self, data):
+        if data in (None, ""):
+            return ""
+
+        if hasattr(data, "read"):
+            arquivo = serializers.ImageField().to_internal_value(data)
+            nome_arquivo = arquivo.name.replace("\\", "/").split("/")[-1]
+            extensao = f".{nome_arquivo.rsplit('.', 1)[1].lower()}" if "." in nome_arquivo else ""
+            caminho = f"usuarios/avatares/{uuid.uuid4().hex}{extensao}"
+            caminho_guardado = default_storage.save(caminho, arquivo)
+            url = default_storage.url(caminho_guardado)
+            return self._format_url(url)
+
+        return serializers.URLField(allow_blank=True).run_validation(data)
+
+    def to_representation(self, value):
+        return self._format_url(value)
+
+    def _format_url(self, value):
+        if not value:
+            return ""
+        url = str(value)
+        request = self.context.get("request")
+        if request and url.startswith("/"):
+            return request.build_absolute_uri(url)
+        return url
+
+
 class notifySerialazrs(serializers.ModelSerializer):
     class Meta:
         model=Notificacao
@@ -50,6 +85,7 @@ class EmpresaSerializer(serializers.ModelSerializer):
 
 class UsuarioSerializer(serializers.ModelSerializer):
     empresa = EmpresaSerializer(read_only=True)
+    avatar_url = AvatarURLField(required=False)
     #notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
     
     class Meta:
@@ -76,6 +112,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 class RegistoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     empresa=EmpresaSerializer(read_only=True, source="clientes")
+    avatar_url = AvatarURLField(required=False)
     class Meta:
         model = Usuario
         fields = (
@@ -86,6 +123,7 @@ class RegistoSerializer(serializers.ModelSerializer):
             "empresa",
             "ID_POSTOS",
             "telefone",
+            "avatar_url",
             "especialidades",
             "data_contratacao",
             "status",
@@ -158,6 +196,7 @@ class InicioSessaoSerializer(serializers.Serializer):
                 "email": utilizador.email,
                 "perfil": utilizador.perfil,
                 "nome": utilizador.nome,
+                "avatar_url": utilizador.avatar_url,
             },
         }
 
@@ -177,6 +216,7 @@ class RecuperaSerializer(serializers.Serializer):
 
 class PerfilSerializer(serializers.ModelSerializer):
     empresa=EmpresaSerializer(read_only=True)
+    avatar_url = AvatarURLField(required=False)
     class Meta:
         model = Usuario
         fields = (
@@ -297,6 +337,7 @@ class TecnicoDetalheSerializer(TecnicoListaSerializer):
 
 class TecnicoEscritaSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
+    avatar_url = AvatarURLField(required=False)
 
     class Meta:
         model = Usuario
@@ -304,6 +345,7 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "telefone",
+            "avatar_url",
             "password",
             "especialidades",
             "data_contratacao",
@@ -333,6 +375,7 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
     from rest_framework import serializers
     contratos_ativos = serializers.SerializerMethodField()
     intervencoes_abertas = serializers.SerializerMethodField()
+    avatar_url = AvatarURLField(required=False)
     
 
     class Meta:
@@ -353,7 +396,7 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
     def get_contratos_ativos(self, obj):
         if obj.perfil != Usuario.PerfilChoices.CLIENTE:
             return 0
-        return Contrato.objects.filter(cliente=obj, status="ativo").count()
+        return Contrato.objects.filter(Empresa=obj.empresa, status=Contrato.StatusChoices.ACTIVO).count()
     
     @extend_schema_field(serializers.IntegerField())
     def get_intervencoes_abertas(self, obj):

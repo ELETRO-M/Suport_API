@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from datetime import datetime
@@ -32,20 +33,19 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
         EXPIRADO = "expirado", "Expirado"
         CANCELADO = "cancelado", "Cancelado"
 
-    cliente = models.ForeignKey(
-        Usuario,
+    Empresa= models.ForeignKey(
+        empresa,
         related_name="contratos",
         on_delete=models.CASCADE,
-        limit_choices_to={"perfil": Usuario.PerfilChoices.CLIENTE},
     )
 
     tipo_de_pagamento= models.CharField(max_length=20, choices=TipoPagamento.choices)
     tipo_contrato= models.CharField(max_length=40, choices=Tipo_de_contratos.choices)
-    descricao_contrato = models.TextField(blank=True)
+    descricao_contrato = models.TextField()
     horas_contratadas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    horas_utilizadas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    valor_total = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
-    valor_hora = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"), blank=True, null=True)
+    horas_utilizadas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), null=True, blank=True)
+    valor_total = models.DecimalField(max_digits=14, decimal_places=2)
+    valor_hora = models.DecimalField(max_digits=25, decimal_places=2, default=Decimal("0.00"), blank=True)
     data_inicio = models.DateTimeField()
     data_fim = models.DateTimeField()
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
@@ -59,15 +59,14 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
             raise ValidationError("A data de fim é obrigatória para serviços avulsos.")
         if self.tipo_contrato == self.Tipo_de_contratos.SERVIÇO_AVULSO and self.data_inicio is None:
             raise ValidationError("A data de inicio é obrigatória para serviços avulsos.")
-        if not self.cliente_id:
-            raise ValidationError("O cliente é obrigatório.")
+        if not self.Empresa_id:
+            raise ValidationError("A empresa é obrigatório.")
         try:
-            if self.cliente.is_deleted:
+            if self.Empresa.is_deleted:
                 raise ValidationError("O cliente não pode estar inativo.")
         except Usuario.DoesNotExist:
             raise ValidationError("O cliente não foi encontrado.")
-        if self.status == self.StatusChoices.EXPIRADO and self.data_fim and self.data_fim > timezone.now():
-            raise ValidationError("O contrato não pode estar marcado como expirado se a data de fim é futura.")
+        
         if self.tipo_contrato == self.Tipo_de_contratos.OUTROS:
             if not self.descricao_contrato:
                 raise ValidationError("A descrição do contrato é obrigatória.")
@@ -86,45 +85,44 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
        
 
         if self.data_fim and self.data_inicio:
+            agora = timezone.now()
 
             diferenca = self.data_fim - self.data_inicio
+            if self.tipo_de_pagamento == self.TipoPagamento.HORAS:
 
-            horas = Decimal(str(diferenca.total_seconds()/86400))
+                horas = Decimal(
+                    str(diferenca.total_seconds() / 3600)
+                )
 
+
+            elif self.tipo_de_pagamento == self.TipoPagamento.MENSAL:
+
+                meses = (
+                    (agora.year - self.data_inicio.year) * 12
+                    + (agora.month - self.data_inicio.month)
+                )
+                horas = Decimal(str(meses))
+
+
+            elif self.tipo_de_pagamento == self.TipoPagamento.ANUAL:
+
+                anos = self.data_inicio.year - agora.year
+
+                horas = Decimal(str(anos))
+                
             self.horas_contratadas =round(horas,2)
-
-            self.horas_utilizadas = round(horas,2)
 
             config = ConfiguracaoSistema.load()
 
-            if self.tipo_de_pagamento == self.TipoPagamento.HORAS:
-                if self.valor_total is None:
-                    self.valor_total= self.horas_contratadas* config.taxa_hora
-                if self.horas_contratadas > 0:
-                    self.valor_hora = self.valor_total / self.horas_contratadas
-
-            elif self.tipo_de_pagamento == self.TipoPagamento.MENSAL:
-                if self.valor_total is None:
-                    self.valor_total= self.horas_contratadas* config.taxa_mensal
-                meses = diferenca.days // 30
-
-                
-            elif self.tipo_de_pagamento == self.TipoPagamento.ANUAL:
-                if self.valor_total is None:
-                    self.valor_total= self.horas_contratadas* config.taxa_anual
-                anos = diferenca.days // 365
             if self.horas_contratadas:
               self.valor_hora= self.valor_total/ self.horas_contratadas
-            if self.data_fim:
-                if timezone.now() > self.data_fim:
-                    
-                    dias = (timezone.now()- self.data_fim).days
-                else:
-                    dias = (self.data_fim - timezone.now()).days   
             
-            if dias >=15:
+            dias = (self.data_fim - timezone.now()).days   
+            
+            if dias <=0:
                 self.status = self.StatusChoices.EXPIRADO
             else:
+                print(dias)
                 self.status = self.StatusChoices.ACTIVO
              
 
@@ -136,11 +134,25 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
     all_objects = SoftDeleteQuerySet.as_manager()
 
     def __str__(self):
-        return f"{self.cliente.nome} - {self.tipo_contrato}"
+        return f"{self.Empresa.nome} - {self.tipo_contrato}"
 
     @property
     def horas_disponiveis(self):
-        return max(self.horas_contratadas - self.horas_utilizadas, Decimal("0.00"))
+        horas_contratadas = self.horas_contratadas or Decimal("0.00")
+        horas_utilizadas = self.horas_utilizadas or Decimal("0.00")
+        return max(horas_contratadas - horas_utilizadas, Decimal("0.00"))
+
+    @classmethod
+    def atualizar_horas_utilizadas(cls, contrato_id):
+        if not contrato_id:
+            return
+
+        total = (
+            cls.objects.filter(pk=contrato_id)
+            .aggregate(total=Sum("intervencoes__horas_trabalhadas"))["total"]
+            or Decimal("0.00")
+        )
+        cls.objects.filter(pk=contrato_id).update(horas_utilizadas=round(total, 2))
    
     @property
     def expiracao(self):

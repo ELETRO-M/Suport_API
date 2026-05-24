@@ -68,8 +68,6 @@ class IntervencaoListaSerializer(serializers.ModelSerializer):
             "numero",
             "titulo",
             "actuacao_tipo",
-            "tipo_pagamento",
-            "tipo_intervencao",
             "descricao",
             "cliente_id",
             "cliente_nome",
@@ -88,6 +86,7 @@ class IntervencaoListaSerializer(serializers.ModelSerializer):
             "anexos",
             "comentario"
         )
+    @extend_schema_field(serializers.DictField())
     def get_sla(self, obj):
         return obj.sla
 
@@ -149,8 +148,6 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
             "cliente_id",
             "contrato_id",
             "prioridade",
-            "tipo_pagamento",
-            "tipo_intervencao",
             "anexos",
         )
 
@@ -169,11 +166,30 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"cliente_id": "Cliente nÃ£o encontrado."}) from exc
 
         contrato_id = attrs.pop("contrato_id", None)
+        empresa_id = attrs["cliente"].empresa_id
+        if not empresa_id:
+            raise serializers.ValidationError({"cliente_id": "Cliente sem empresa associada."})
+
         if contrato_id:
             try:
-                attrs["contrato"] = Contrato.objects.get(id=contrato_id, cliente=attrs["cliente"])
+                attrs["contrato"] = Contrato.objects.get(
+                    id=contrato_id,
+                    Empresa_id=empresa_id,
+                    status=Contrato.StatusChoices.ACTIVO,
+                    is_deleted=False,
+                )
             except Contrato.DoesNotExist as exc:
-                raise serializers.ValidationError({"contrato_id": "Contrato nÃ£o encontrado para este cliente."}) from exc
+                raise serializers.ValidationError({"contrato_id": "Contrato activo não encontrado para a empresa deste cliente."}) from exc
+        else:
+            contratos_ativos = Contrato.objects.filter(
+                Empresa_id=empresa_id,
+                status=Contrato.StatusChoices.ACTIVO,
+                is_deleted=False,
+            ).order_by("data_fim", "data_criacao")
+            attrs["contrato"] = next(
+                (contrato for contrato in contratos_ativos if contrato.horas_disponiveis > 0),
+                contratos_ativos.first(),
+            )
         return attrs
 
     def create(self, validated_data):
@@ -253,6 +269,12 @@ class AdicionarComentarioSerializer(serializers.Serializer):
 class CarregarAnexoSerializer(serializers.Serializer):
     ficheiro = serializers.FileField()
     descricao = serializers.CharField(required=False, allow_blank=True)
+
+    def to_internal_value(self, data):
+        if "ficheiro" not in data and "anexos" in data:
+            data = data.copy()
+            data["ficheiro"] = data["anexos"]
+        return super().to_internal_value(data)
 
 
 class TecnicoRelatorioListaSerializer(serializers.ModelSerializer):

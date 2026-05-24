@@ -40,7 +40,8 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
         Usuario,
         related_name="intervencoes",
         on_delete=models.CASCADE,
-        limit_choices_to={"perfil__in": [Usuario.PerfilChoices.CLIENTE, Usuario.PerfilChoices.ADMIN]},
+
+        limit_choices_to={"perfil__in": [Usuario.PerfilChoices.CLIENTE, Usuario.PerfilChoices.ADMIN], "is_deleted": False, "status": Usuario.StatusChoices.ACTIVO},
     )
     tecnico = models.ForeignKey(
         Usuario,
@@ -56,15 +57,13 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        limit_choices_to={"is_deleted": False, "status": Contrato.StatusChoices.ACTIVO}
     )
     estado=models.CharField(choices=Estado.choices , default=Estado.ACTIVO)
-    
     actuacao_tipo = models.CharField(max_length=20, choices=ActuacaoTipo.choices, default=ActuacaoTipo.REMOTO)
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ABERTO)
     prioridade = models.CharField(max_length=20, choices=PrioridadeChoices.choices)
     data_abertura = models.DateTimeField(default=timezone.now)
-    tipo_pagamento = models.CharField(choices=Contrato.TipoPagamento.choices)
-    tipo_intervencao = models.CharField( choices=Contrato.Tipo_de_contratos.choices)
     data_inicio_intervencao = models.DateTimeField(null=True, blank=True)
     data_fim_intervencao = models.DateTimeField(null=True, blank=True)
     horas_trabalhadas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), null=True, blank=True)
@@ -95,7 +94,14 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
     def __str__(self):
         return f"{self.numero} - {self  .titulo}"
     def clean(self):
-        
+        if self.contrato_id:
+            if not self.cliente_id:
+                raise ValidationError("Erro: não foi fornecido o cliente")
+            if self.cliente.empresa_id != self.contrato.Empresa_id:
+                raise ValidationError("Erro: o contrato não pertence à empresa do cliente.")
+            if self.contrato.status != Contrato.StatusChoices.ACTIVO:
+                raise ValidationError("Erro: o contrato associado não está activo.")
+
         if self.status==self.StatusChoices.CONCLUIDO:
             if not self.data_fim_intervencao:
                 raise ValidationError("Erro: Não é possuivel concluí sem data final de trabalho")
@@ -126,6 +132,29 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                         "Esta intervenção está fechada e não pode ser editada."
                 )
     def save(self, *args, **kwargs):
+        contrato_anterior_id = None
+        if self.pk:
+            contrato_anterior_id = (
+                Intervencao.objects.filter(pk=self.pk)
+                .values_list("contrato_id", flat=True)
+                .first()
+            )
+
+        if not self.contrato_id and self.cliente_id and self.cliente.empresa_id:
+            contratos_ativos = Contrato.objects.filter(
+                Empresa_id=self.cliente.empresa_id,
+                status=Contrato.StatusChoices.ACTIVO,
+                is_deleted=False,
+            ).order_by("data_fim", "data_criacao")
+            self.contrato = next(
+                (contrato for contrato in contratos_ativos if contrato.horas_disponiveis > Decimal("0.00")),
+                contratos_ativos.first(),
+            )
+            if self.contrato_id:
+                update_fields = kwargs.get("update_fields")
+                if update_fields is not None:
+                    kwargs["update_fields"] = set(update_fields) | {"contrato"}
+
         if self.data_inicio_intervencao and self.data_fim_intervencao:
 
             diferenca = (
@@ -139,8 +168,14 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                 Decimal(str(horas)),
                 2
             )
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"horas_trabalhadas"}
             if self.sla and self.sla.get("horas_restantes", 1) == 0 and self.estado != self.Estado.EXPIRADO:
                 self.estado = self.Estado.EXPIRADO
+                update_fields = kwargs.get("update_fields")
+                if update_fields is not None:
+                    kwargs["update_fields"] = set(update_fields) | {"estado"}
                 admins = Usuario.objects.filter(
                     perfil=Usuario.PerfilChoices.ADMIN,
                     is_deleted=False,
@@ -188,34 +223,14 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
         except ValidationError as e:
             raise DRFValidationError(e.message_dict)
         super().save(*args, **kwargs)
-        if status_final and not self.contrato_id:
-            contrato = self.criar_contrato_automatico()
-            type(self).objects.filter(pk=self.pk, contrato__isnull=True).update(contrato=contrato)
-            self.contrato = contrato
-    
-    def criar_contrato_automatico(self):
-        
-        inicio = self.data_inicio_intervencao
-        fim = self.data_fim_intervencao 
-        if fim <= inicio:
-            fim = inicio + timedelta(hours=1)
-        horas = Decimal(str(round((fim - inicio).total_seconds() / 3600, 2)))
-        if horas <= 0:
-            horas = Decimal("1.00")
-        valor_total = horas * ConfiguracaoSistema.load().taxa_hora
+
+        contratos_para_atualizar = {contrato_anterior_id, self.contrato_id}
+        for contrato_id in contratos_para_atualizar:
+            Contrato.atualizar_horas_utilizadas(contrato_id)
+       
        
 
-        return Contrato.objects.create(
-            cliente=self.cliente,
-            tipo_contrato=self.tipo_intervencao,
-            tipo_de_pagamento=self.tipo_pagamento,
-            horas_contratadas=horas,
-            valor_total=valor_total,
-            data_inicio=inicio,
-            data_fim=fim,
-            status=Contrato.StatusChoices.ACTIVO,
-            observacoes=f"Criação de contrato a partir de intervenção número {self.numero} do cliente {self.cliente.nome} na empresa {self.cliente.empresa.nome}.",
-        )
+     
 
 
 class HistoricoEstadoIntervencao(ModeloUUIDComTimestamps):
@@ -270,12 +285,6 @@ class HoraTrabalho(ModeloUUIDComTimestamps):
         total = self.intervencao.horas.aggregate(total=models.Sum("horas"))["total"] or Decimal("0.00")
         self.intervencao.horas_trabalhadas = total
         self.intervencao.save(update_fields=["horas_trabalhadas"])
-        if self.intervencao.contrato_id:
-            contrato = self.intervencao.contrato
-            contrato.horas_utilizadas = (
-                contrato.intervencoes.aggregate(total=models.Sum("horas_trabalhadas"))["total"] or Decimal("0.00")
-            )
-            contrato.save(update_fields=["horas_utilizadas"])
 
 
 TecnicoRelatorio = HoraTrabalho

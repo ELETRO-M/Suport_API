@@ -4,7 +4,7 @@ from django.db.models import QuerySet
 from rest_framework import status, viewsets, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
 from apps.usuarios.models import Usuario
 from apps.configuracoes.responses import resposta_sucesso
@@ -19,7 +19,7 @@ from apps.contratos.serializers import (
 class ContratoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     ordering_fields = ("data_criacao", "data_inicio", "data_fim")
-    filterset_fields = ("status", "tipo_contrato", "tipo_de_pagamento", "cliente")
+    filterset_fields = ("status", "tipo_contrato", "tipo_de_pagamento", "Empresa")
 
     
     serializer_action_classes: dict[str, Type[serializers.Serializer]] = {
@@ -37,14 +37,14 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
         request = cast(Request, self.request)
 
-        queryset = Contrato.objects.select_related("cliente", "cliente__empresa")
+        queryset = Contrato.objects.select_related("Empresa")
 
-        cliente_id = request.query_params.get("cliente_id")
-        if cliente_id:
-            queryset = queryset.filter(cliente_id=cliente_id)
+        empresa_id = request.query_params.get("empresa_id")
+        if empresa_id:
+            queryset = queryset.filter(Empresa_id=empresa_id)
 
         if request.user.is_authenticated and request.user.perfil == Usuario.PerfilChoices.CLIENTE:
-            queryset = queryset.filter(cliente=request.user)
+            queryset = queryset.filter(Empresa=request.user.empresa)
 
         return queryset.order_by("-data_criacao")
 
@@ -68,7 +68,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         obj = self.get_object()
-        if request.user.perfil == Usuario.PerfilChoices.CLIENTE and obj.cliente_id != request.user.id:
+        if request.user.perfil == Usuario.PerfilChoices.CLIENTE and obj.Empresa_id != request.user.empresa_id:
             self.permission_denied(request, message="Sem permissão.")
 
         serializer = self.get_serializer(obj)
@@ -89,7 +89,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(
             data={
                 "id": str(obj.id),
-                "cliente_id": str(obj.cliente_id),
+                "empresa_id": str(obj.Empresa_id),
                 "tipo_contrato": obj.tipo_contrato,
                 "tipo_de_pagamento": obj.tipo_de_pagamento,
                 "status": obj.status,
@@ -101,7 +101,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         if request.user.perfil != Usuario.PerfilChoices.ADMIN and (
-            request.user.perfil != Usuario.PerfilChoices.CLIENTE or instance.cliente_id != request.user.id
+            request.user.perfil != Usuario.PerfilChoices.CLIENTE or instance.Empresa_id != request.user.empresa_id
         ):
             self.permission_denied(request, message="Permissão negada para este recurso.")
 
@@ -116,7 +116,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if request.user.perfil != Usuario.PerfilChoices.ADMIN and (
-            request.user.perfil != Usuario.PerfilChoices.CLIENTE or instance.cliente_id != request.user.id
+            request.user.perfil != Usuario.PerfilChoices.CLIENTE or instance.Empresa_id != request.user.empresa_id
         ):
             self.permission_denied(request, message="Permissão negada para este recurso.")
 

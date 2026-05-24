@@ -60,7 +60,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.IntegerField())
     def get_contratos_ativos(self, obj):
         return Contrato.objects.filter(
-            cliente=obj,
+            Empresa=obj.empresa,
             is_deleted=False,
             status=Contrato.StatusChoices.ACTIVO
         ).count()
@@ -84,7 +84,7 @@ class ClienteDetalheSerializer(ClienteListaSerializer):
                 "status": item.status,
                 "horas_disponiveis": item.horas_disponiveis,
             }
-            for item in obj.contratos.alive().order_by("-data_criacao")[:20]
+            for item in obj.empresa.contratos.alive().order_by("-data_criacao")[:20]
         ]
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))

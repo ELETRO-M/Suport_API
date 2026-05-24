@@ -26,7 +26,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                     utilizador=admin,
                     tipo="sistema",
                     titulo="Novo contrato",
-                    mensagem=f"O contrato {instance.titulo} na empresa {instance.cliente.empresa.nome}  pelo cliente {instance.cliente.nome}.",
+                    mensagem=f"Novo contrato {instance.tipo_contrato} criado para a empresa {instance.Empresa.nome}.",
                 )
             )
 
