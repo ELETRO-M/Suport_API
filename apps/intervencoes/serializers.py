@@ -222,7 +222,7 @@ class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Intervencao
-        fields = ("titulo","actuacao_tipo","tipo_pagamento","tipo_intervencao","descricao", "tecnico_id", "status", "prioridade","data_inicio_intervencao","data_fim_intervencao","horas_trabalhadas")
+        fields = ("titulo","actuacao_tipo","descricao", "tecnico_id", "status", "prioridade","data_inicio_intervencao","data_fim_intervencao","horas_trabalhadas")
 
     def validate_tecnico_id(self, value):
         if value is None:
