@@ -101,6 +101,8 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                 raise ValidationError("Erro: o contrato não pertence à empresa do cliente.")
             if self.contrato.status != Contrato.StatusChoices.ACTIVO:
                 raise ValidationError("Erro: o contrato associado não está activo.")
+            if self.horas_trabalhadas > empresa.self.horas_disponiveis:
+                raise ValidationError("Erro: valor de horas trabalhadas não satifaz o contrato")
 
         if self.status==self.StatusChoices.CONCLUIDO:
             if not self.data_fim_intervencao:
@@ -139,6 +141,8 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                 .values_list("contrato_id", flat=True)
                 .first()
             )
+        if self.horas_trabalhadas > empresa.self.horas_disponiveis:
+            raise ValidationError
 
         if not self.contrato_id and self.cliente_id and self.cliente.empresa_id:
             contratos_ativos = Contrato.objects.filter(
@@ -188,9 +192,14 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                         Notificacao(
                             utilizador=admin,
                             titulo=f"Alerta: Intervenção expirada {self.numero}",
-                            mensagem=f"A intervenção {self.numero} expirou.\n -Numero da Intervenção: {self.numero} \n-Titulo da Intervenção: {self.titulo} \n-Prioridade: {self.prioridade} \n-Tipo de actuação: {self.actuacao_tipo} \n-pelo cliente {self.cliente.nome} na empresa {self.cliente.empresa.nome}",
+                            mensagem=f"""A intervenção {self.numero} expirou.
+                            -Numero da Intervenção: {self.numero} 
+                            -Titulo da Intervenção: {self.titulo} 
+                            -Prioridade: {self.prioridade} 
+                            -Tipo de actuação: {self.actuacao_tipo} 
+                            -pelo cliente {self.cliente.nome} na empresa {self.cliente.empresa.nome}""",
                             tipo="Alerta",
-                            link=f"{settings.ALLOWED_HOSTS}/api/v1/intervencoes/{self.id}/",
+                            link=f"{settings.SITE_URL}/api/v1/intervencoes/{self.id}/",
                         )
                     )
                 if notificacoes:
@@ -202,9 +211,16 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
             Notificacao.objects.create(
                 utilizador=self.tecnico,
                 titulo=f"Nova intervenção na empresa {self.cliente.empresa.nome} ",
-                mensagem=f"Foi lhe atribuida uma nova intervenção \n -Numeiro da Intervenção: {self.numero} \n-Titulo da Intervenção: {self.titulo} \n-Prioridade: {self.prioridade} \n-Tipo de actuação: {self.actuacao_tipo} \n-pelo cliente {self.cliente.nome} na empresa {self.cliente.empresa.nome}",
+                mensagem=f"""
+                 Foi lhe atribuida uma nova intervenção 
+                 -Numeiro da Intervenção: {self.numero} 
+                 -Titulo da Intervenção: {self.titulo} 
+                 -Prioridade: {self.prioridade} 
+                 -Tipo de actuação: {self.actuacao_tipo} 
+                 -pelo cliente {self.cliente.nome} na empresa {self.cliente.empresa.nome}
+                 """,
                 tipo="imformação",
-                link=f"{settings.ALLOWED_HOSTS}/api/v1/intervencoes/{self.id}/",
+                link=f"{settings.SITE_URL}/api/v1/intervencoes/{self.id}/",
             )
         if not self.numero:
             date_part = timezone.now().year

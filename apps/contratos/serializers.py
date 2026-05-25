@@ -78,6 +78,7 @@ class ContratoEscritaSerializer(serializers.ModelSerializer):
             "tipo_contrato",
             "descricao_contrato",
             "horas_contratadas",
+            "valor_hora",
             "valor_total",
             "data_inicio",
             "data_fim",

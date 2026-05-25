@@ -12,7 +12,7 @@ class ConfiguracaoSistema(models.Model):
     taxa_hora= models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
     taxa_mensal= models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
     taxa_anual = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
-
+    
     def save(self, *args, **kwargs):
         self.pk = 1
         super().save(*args, **kwargs)

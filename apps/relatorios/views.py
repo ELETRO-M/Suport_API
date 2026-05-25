@@ -218,11 +218,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
 
         for item in intervencoes:
 
-            diferenca = item.data_fim_intervencao - item.data_inicio_intervencao
-
-            horas = diferenca.total_seconds() / 86400
-
-            total_horas += horas
+            total_horas += float(item.horas_trabalhadas or 0)
 
         tempo_medio_resolucao = 0
 
@@ -237,7 +233,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "total_intervencoes": queryset.count(),
             "por_status": list(queryset.values("status").annotate(total=Count("id"))),
             "por_prioridade": list(queryset.values("prioridade").annotate(total=Count("id"))),
-            "tempo_medio_resolucao": f"{tempo_medio_resolucao} dias",
+            "tempo_medio_resolucao": f"{tempo_medio_resolucao} horas",
             "intervencoes": [
                 {
                     "id": str(item.id),

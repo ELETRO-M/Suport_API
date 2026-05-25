@@ -27,6 +27,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                     tipo="sistema",
                     titulo="Nova intervenção",
                     mensagem=f"A intervenção {instance.titulo} na empresa {instance.cliente.empresa.nome}  pelo cliente {instance.cliente.nome}.",
+                    link=f"{settings.SITE_URL}/api/v1/intervencoes/{instance.id}/",
                 )
             )
             """

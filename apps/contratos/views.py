@@ -1,11 +1,14 @@
-from typing import Type, cast
+
 from django.db.models import QuerySet
+import logging
+from typing import Type, cast
 
 from rest_framework import status, viewsets, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema
 
+from rest_framework.decorators import action
 from apps.usuarios.models import Usuario
 from apps.configuracoes.responses import resposta_sucesso
 from apps.contratos.models import Contrato
@@ -14,6 +17,7 @@ from apps.contratos.serializers import (
     ContratoEscritaSerializer,
     ContratoListaSerializer,
 )
+
 
 @extend_schema(tags=["Contratos"])
 class ContratoViewSet(viewsets.ModelViewSet):
@@ -95,7 +99,31 @@ class ContratoViewSet(viewsets.ModelViewSet):
                 "status": obj.status,
             },
             status_code=status.HTTP_201_CREATED,
+            message="Contrato criado com sucesso",
         )
+    '''
+
+    @action(detail=True, methods=["get"], authentication_classes=[], permission_classes=[])
+    def pdf(self, request, pk=None):
+        contrato = self.get_object()
+
+        try:
+            html_string = render_to_string(
+                "contrato.html",
+                {"contrato": contrato}
+            )
+
+            pdf = HTML(string=html_string).write_pdf()
+
+            response = HttpResponse(pdf, content_type="application/pdf")
+            response["Content-Disposition"] = f'inline; filename="contrato_{contrato.pk}.pdf"'
+
+            return response
+
+        except Exception as e:
+            logger.exception(e)
+            return HttpResponse(str(e), status=500)
+            '''
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)

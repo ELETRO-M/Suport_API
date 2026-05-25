@@ -27,6 +27,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                     tipo="sistema",
                     titulo="Novo contrato",
                     mensagem=f"Novo contrato {instance.tipo_contrato} criado para a empresa {instance.Empresa.nome}.",
+                    link=f"{settings.SITE_URL}/api/v1/contratos/{instance.id}/",
                 )
             )
 

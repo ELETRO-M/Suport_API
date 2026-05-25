@@ -31,7 +31,7 @@ class HoraTrabalhoInline(admin.TabularInline):
 
 @admin.register(Intervencao)
 class IntervencaoAdmin(admin.ModelAdmin):
-    list_display = ("numero", "titulo", "cliente", "tecnico", "status", "prioridade", "data_abertura")
+    list_display = ("numero","is_deleted", "titulo", "cliente", "tecnico", "status", "prioridade", "data_abertura")
     list_filter = ("status", "prioridade", "data_abertura")
     search_fields = ("numero", "titulo", "descricao", "cliente__nome", "tecnico__nome")
     autocomplete_fields = ("cliente", "tecnico", "contrato")
@@ -41,6 +41,29 @@ class IntervencaoAdmin(admin.ModelAdmin):
         AnexoIntervencaoInline,
         HoraTrabalhoInline,
     )
+    def restaurar_view(self, request, object_id):
+        intervencao = self.get_object(request, object_id)
+        if intervencao is None:
+            self.message_user(request, "Intervenção não encontrada.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse("admin:intervencoes_intervencao_changelist"))
+        if not intervencao.is_deleted:
+            self.message_user(request, "Esta intervenção já está activa.", level=messages.INFO)
+            return HttpResponseRedirect(reverse("admin:intervencoes_intervencao_change", args=[intervencao.pk]))
+
+        intervencao.recuperar()
+        self.message_user(request, "Intervenção restaurada com sucesso.", level=messages.SUCCESS)
+        return HttpResponseRedirect(reverse("admin:intervencoes_intervencao_change", args=[intervencao.pk]))
+
+    def delete_model(self, request, obj):
+
+        Intervencao.all_objects.filter(pk=obj.pk).delete()
+
+    def delete_queryset(self, request, queryset):
+        
+        queryset.delete()
+    def get_queryset(self, request):
+        return Intervencao.all_objects.all()
+
 
 
 @admin.register(HoraTrabalho)

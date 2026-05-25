@@ -15,6 +15,7 @@ class ContratoAdmin(admin.ModelAdmin):
         "horas_utilizadas",
         "horas_disponiveis",
         "valor_total",
+        "valor_hora",
         "data_inicio",
         "data_fim",
     )
@@ -24,3 +25,6 @@ class ContratoAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return Contrato.all_objects.all() 
+    def delete_model(self, request, obj):
+        obj.delete()
+        

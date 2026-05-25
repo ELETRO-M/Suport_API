@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import cast
 
+
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import parsers, status, viewsets
@@ -126,6 +127,30 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         instance.delete()
         return resposta_sucesso(message="Intervenção deletada com sucesso")
+        '''
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, pk=None):
+        intervencao = self.get_object()
+
+        try:
+            html_string = render_to_string(
+                "contrato.html",
+                {"intervencao": intervencao}
+            )
+
+            pdf = HTML(string=html_string).write_pdf()
+
+            response = HttpResponse(pdf, content_type="application/pdf")
+            response["Content-Disposition"] = f'inline; filename="intervencao_{intervencao.pk}.pdf"'
+
+            return response
+
+        except Exception as e:
+            logger.exception(e)
+            return HttpResponse(str(e), status=500)
+            '''
+
+    
 
     @action(detail=True, methods=["post"], url_path="atribuir")
     def atribuir(self, request, pk=None):
