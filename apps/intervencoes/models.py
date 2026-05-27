@@ -141,8 +141,10 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                 .values_list("contrato_id", flat=True)
                 .first()
             )
-        if self.horas_trabalhadas > empresa.self.horas_disponiveis:
-            raise ValidationError
+        if self.horas_trabalhadas > empresa.horas_disponiveis:
+            raise ValidationError(
+                "Horas trabalhadas excedem as horas disponíveis da empresa."
+            )
 
         if not self.contrato_id and self.cliente_id and self.cliente.empresa_id:
             contratos_ativos = Contrato.objects.filter(
