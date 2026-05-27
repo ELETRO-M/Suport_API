@@ -146,7 +146,7 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
                 self.status = self.StatusChoices.EXPIRADO
             else:
                 self.status = self.StatusChoices.ACTIVO
-            if self.horas_contratadas <= self.horas_disponiveis:
+            if self.horas_contratadas <= self.horas_utilizadas:
                 self.status= self.StatusChoices.CONCLUIDO
 
             
