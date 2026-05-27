@@ -16,6 +16,7 @@ from apps.intervencoes.models import (
     ComentarioIntervencao,
     HoraTrabalho,
     Intervencao,
+    HistoricoEstadoIntervencao
 )
 from apps.intervencoes.serializers import (
     AdicionarComentarioSerializer,
@@ -28,6 +29,7 @@ from apps.intervencoes.serializers import (
     IntervencaoDetalheSerializer,
     IntervencaoEscritaSerializer,
     IntervencaoListaSerializer,
+    HistoricoEstadoIntervencaoSerializer
 )
 from apps.notificacoes.models import Notificacao
 
@@ -119,6 +121,21 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial, context={"request": request})
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
+        if 'status' in serializer.validated_data:
+            HistoricoEstadoIntervencao.objects.create(
+                intervencao=obj,
+                nota="Alteração de status",
+                status=serializer.validated_data['status'],
+                alterado_por=request.user
+            )
+        obj.historico_status.add(
+                HistoricoEstadoIntervencao.objects.create(
+                    intervencao=obj,
+                    nota=f"Alteração de {request.data}",
+                    status=serializer.validated_data['status'],
+                    alterado_por=request.user
+                )
+            )
         return resposta_sucesso(data={"id": str(obj.id), "status": obj.status})
 
     def destroy(self, request, *args, **kwargs):
@@ -215,26 +232,34 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             self.permission_denied(request, message="Sem permissão para anexar ficheiros.")
         if request.user.perfil == Usuario.PerfilChoices.CLIENTE and instance.cliente_id != request.user.id:
             self.permission_denied(request, message="Sem permissão para anexar ficheiros.")
-        serializer = CarregarAnexoSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        anexo = AnexoIntervencao.objects.create(
-            intervencao=instance,
-            utilizador=request.user,
-            arquivo=serializer.validated_data["ficheiro"],
-            descricao=serializer.validated_data.get("descricao", ""),
-        )
-        return resposta_sucesso(
-            data={
-                "id": str(anexo.id),
-                "nome_arquivo": anexo.arquivo.name.split("/")[-1],
-                "url": request.build_absolute_uri(anexo.arquivo.url),
-                "tamanho": anexo.tamanho,
-                "data_upload": anexo.data_criacao,
-            },
-            status_code=status.HTTP_201_CREATED,
-        )
+    
 
-'''
+        instance = self.get_object()
+
+        arquivos = request.FILES.getlist("ficheiro")
+
+        anexos = []
+
+        for arquivo in arquivos:
+
+            anexo = AnexoIntervencao.objects.create(
+                intervencao=instance,
+                utilizador=request.user,
+                arquivo=arquivo,
+                descricao=request.data.get("descricao", "")
+            )
+
+            anexos.append({
+                "id": str(anexo.id),
+                "arquivo": anexo.arquivo.url,
+                "nome": anexo.arquivo.name,
+            })
+
+        return resposta_sucesso(
+            data=anexos,
+            status_code=status.HTTP_201_CREATED
+        )
+    '''
 
 @extend_schema(tags=["Relatórios Técnicos"])
 class HoraTrabalhoViewSet(viewsets.ModelViewSet):
@@ -310,3 +335,10 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
 
 TecnicoRelatorioViewSet = HoraTrabalhoViewSet
 '''
+@extend_schema(tags=["Intervenções"])
+class HistoricoViewSet(viewsets.ReadOnlyModelViewSet):
+
+    permission_classes = [IsAuthenticated]
+
+    serializer_class = HistoricoEstadoIntervencaoSerializer
+    queryset = HistoricoEstadoIntervencao.objects.all()

@@ -137,7 +137,6 @@ class IntervencaoDetalheSerializer(IntervencaoListaSerializer):
 class IntervencaoEscritaSerializer(serializers.ModelSerializer):
     cliente_id = serializers.UUIDField(write_only=True, required=False)
     contrato_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
-    # Changed to FileField so Swagger UI renders the upload button correctly
     anexos = serializers.FileField(required=False, write_only=True)
 
     class Meta:
@@ -222,7 +221,18 @@ class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Intervencao
-        fields = ("titulo","actuacao_tipo","descricao", "tecnico_id", "status", "prioridade","data_inicio_intervencao","data_fim_intervencao","horas_trabalhadas")
+        fields = (
+            "titulo",
+            "actuacao_tipo",
+            "descricao", 
+            "tecnico_id", 
+            "status", 
+            "prioridade",
+            "data_inicio_intervencao",
+            "data_fim_intervencao",
+            "horas_trabalhadas",
+
+            )
 
     def validate_tecnico_id(self, value):
         if value is None:
