@@ -101,8 +101,14 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                 raise ValidationError("Erro: o contrato não pertence à empresa do cliente.")
             if self.contrato.status != Contrato.StatusChoices.ACTIVO:
                 raise ValidationError("Erro: o contrato associado não está activo.")
-            if self.horas_trabalhadas > empresa.self.horas_disponiveis:
-                raise ValidationError("Erro: valor de horas trabalhadas não satifaz o contrato")
+            if (
+                    self.contrato
+                    and self.horas_trabalhadas
+                    and self.horas_trabalhadas > self.contrato.horas_disponiveis
+                ):
+                raise ValidationError(
+                    "Erro: valor de horas trabalhadas não satisfaz o contrato."
+                )
 
         if self.status==self.StatusChoices.CONCLUIDO:
             if not self.data_fim_intervencao:
@@ -140,10 +146,6 @@ class Intervencao(ModeloUUIDComTimestamps,SoftDeleteModel):
                 Intervencao.objects.filter(pk=self.pk)
                 .values_list("contrato_id", flat=True)
                 .first()
-            )
-        if self.horas_trabalhadas > empresa.horas_disponiveis:
-            raise ValidationError(
-                "Horas trabalhadas excedem as horas disponíveis da empresa."
             )
 
         if not self.contrato_id and self.cliente_id and self.cliente.empresa_id:
