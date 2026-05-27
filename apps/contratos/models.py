@@ -97,6 +97,7 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
                 raise ValidationError("A data de fim é obrigatória para contrato tipo outros.")
             if not self.tipo_de_pagamento:
                 raise ValidationError("O tipo de pagamento é obrigatório para contrato tipo outros.")
+            
     def calcular_contrato(self):
         config = ConfiguracaoSistema.load()
 
@@ -146,7 +147,8 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
                 self.status = self.StatusChoices.EXPIRADO
             else:
                 self.status = self.StatusChoices.ACTIVO
-            if self.horas_contratadas <= self.horas_utilizadas:
+            horas_utilizadas = self.horas_utilizadas or Decimal("0.00")
+            if self.horas_contratadas <=horas_utilizadas:
                 self.status= self.StatusChoices.CONCLUIDO
 
             
@@ -190,6 +192,7 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
     def save(self, *args, **kwargs):
         
         self.calcular_contrato()
+        
     
         if self.valor_hora not in (None,0.00):
             self.valor_hora = round(Decimal(str(self.valor_hora)), 2)

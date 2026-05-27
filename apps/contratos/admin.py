@@ -6,7 +6,7 @@ from apps.contratos.models import Contrato
 @admin.register(Contrato)
 class ContratoAdmin(admin.ModelAdmin):
     list_display = (
-        "Empresa",
+        "descricao_contrato",
         "tipo_contrato",
         "tipo_de_pagamento",
         "status",

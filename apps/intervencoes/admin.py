@@ -31,6 +31,34 @@ class HoraTrabalhoInline(admin.TabularInline):
 
 @admin.register(Intervencao)
 class IntervencaoAdmin(admin.ModelAdmin):
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+
+        if db_field.name == "cliente":
+
+            contrato_id = request.GET.get("contrato")
+
+            if contrato_id:
+
+                from apps.contratos.models import Contrato
+
+                contrato = Contrato.objects.filter(
+                    id=contrato_id
+                ).first()
+
+                if contrato:
+                    kwargs["queryset"] = Usuario.objects.filter(
+                        empresa=contrato.empresa,
+                        perfil=Usuario.PerfilChoices.CLIENTE,
+                        is_deleted=False,
+                        status=Usuario.StatusChoices.ACTIVO,
+                    )
+
+        return super().formfield_for_foreignkey(
+            db_field,
+            request,
+            **kwargs
+        )
     list_display = ("numero","is_deleted", "titulo", "cliente", "tecnico", "status", "prioridade", "data_abertura")
     list_filter = ("status", "prioridade", "data_abertura")
     search_fields = ("numero", "titulo", "descricao", "cliente__nome", "tecnico__nome")
