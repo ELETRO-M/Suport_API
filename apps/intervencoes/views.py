@@ -164,13 +164,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         tecnico = serializer.validated_data["tecnico_id"]
         instance.tecnico = tecnico
         instance.save(update_fields=["tecnico"])
-        Notificacao.objects.create(
-            utilizador=tecnico,
-            tipo="intervencao_atribuida",
-            titulo="Intervenção atribuída",
-            mensagem=f"A intervenção {instance.numero} foi atribuída a si.",
-            link=f"/intervencoes/{instance.id}",
-        )
+       
         return resposta_sucesso(
             data={"id": str(instance.id), "tecnico_id": str(tecnico.id), "tecnico_nome": tecnico.nome}
         )

@@ -132,6 +132,8 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                         .first()
                     ) or Decimal("0.00")
                     horas_disponiveis_reais += horas_proprias
+            if self.data_inicio_intervencao == self.data_fim_intervencao:
+                raise ValidationError("Erro: não é possível iniciar a intervenção com data igual à data de encerramento.")
 
                 
 

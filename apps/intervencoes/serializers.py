@@ -218,6 +218,13 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
 
 
 class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
+    STATUS_FLOW = (
+        Intervencao.StatusChoices.ABERTO,
+        Intervencao.StatusChoices.EM_ANDAMENTO,
+        Intervencao.StatusChoices.CONCLUIDO,
+        Intervencao.StatusChoices.FECHADO,
+    )
+
     tecnico_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
@@ -242,6 +249,33 @@ class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
             return Usuario.objects.get(id=value, perfil=Usuario.PerfilChoices.TECNICO)
         except Usuario.DoesNotExist as exc:
             raise serializers.ValidationError("TÃ©cnico nÃ£o encontrado.") from exc
+
+    def validate_status(self, value):
+        if not self.instance or value == self.instance.status:
+            return value
+
+        try:
+            status_atual_index = self.STATUS_FLOW.index(self.instance.status)
+            novo_status_index = self.STATUS_FLOW.index(value)
+        except ValueError as exc:
+            raise serializers.ValidationError(
+                "Status inválido para o fluxo da intervenção."
+            ) from exc
+
+        if novo_status_index != status_atual_index + 1:
+            proximo_status_index = status_atual_index + 1
+            status_esperado = (
+                self.STATUS_FLOW[proximo_status_index]
+                if proximo_status_index < len(self.STATUS_FLOW)
+                else None
+            )
+            if status_esperado:
+                raise serializers.ValidationError(
+                    f"Transição inválida. O próximo status deve ser '{status_esperado}'."
+                )
+            raise serializers.ValidationError("Esta intervenção já está fechada.")
+
+        return value
 
     def update(self, instance, validated_data):
         tecnico = validated_data.pop("tecnico_id", None)
