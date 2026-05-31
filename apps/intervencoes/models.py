@@ -270,6 +270,26 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
 
     # ── Save ─────────────────────────────────────────────────────────────────
 
+    def _notificar_tecnico(self, tecnico_anterior_id):
+        """Envia notificação quando um técnico é atribuído ou alterado."""
+        if not self.tecnico_id or self.tecnico_id == tecnico_anterior_id:
+            return
+
+        Notificacao.objects.create(
+            utilizador=self.tecnico,
+            titulo=f"Nova intervenção na empresa {self.cliente.empresa.nome}",
+            mensagem=(
+                f"Foi-lhe atribuída uma nova intervenção.\n"
+                f"- Número: {self.numero}\n"
+                f"- Título: {self.titulo}\n"
+                f"- Prioridade: {self.prioridade}\n"
+                f"- Tipo de actuação: {self.actuacao_tipo}\n"
+                f"- Cliente: {self.cliente.nome} / Empresa: {self.cliente.empresa.nome}"
+            ),
+            tipo="informação",
+            link=f"/intervencoes/{self.id}",
+        )
+
     def save(self, *args, **kwargs):
         
         # Guardar IDs anteriores para comparações
