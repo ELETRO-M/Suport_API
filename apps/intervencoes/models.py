@@ -132,6 +132,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                         .first()
                     ) or Decimal("0.00")
                     horas_disponiveis_reais += horas_proprias
+        
             
 
                 
@@ -267,24 +268,6 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
             if notificacoes:
                 Notificacao.objects.bulk_create(notificacoes)
 
-    def _notificar_tecnico(self, tecnico_anterior_id):
-        """Envia notificação ao técnico apenas quando este é atribuído/alterado."""
-        if self.tecnico_id and self.tecnico_id != tecnico_anterior_id:
-            Notificacao.objects.create(
-                utilizador=self.tecnico,
-                titulo=f"Nova intervenção na empresa {self.cliente.empresa.nome}",
-                mensagem=(
-                    f"Foi-lhe atribuída uma nova intervenção.\n"
-                    f"- Número: {self.numero}\n"
-                    f"- Título: {self.titulo}\n"
-                    f"- Prioridade: {self.prioridade}\n"
-                    f"- Tipo de actuação: {self.actuacao_tipo}\n"
-                    f"- Cliente: {self.cliente.nome} / Empresa: {self.cliente.empresa.nome}"
-                ),
-                tipo="informação",
-               # link=f"{settings.SITE_URL}/api/v1/intervencoes/{self.id}/",
-            )
-
     # ── Save ─────────────────────────────────────────────────────────────────
 
     def save(self, *args, **kwargs):
@@ -302,9 +285,6 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                 contrato_anterior_id = anterior["contrato_id"]
                 tecnico_anterior_id = anterior["tecnico_id"]
 
-        # 1. Auto-atribuir contrato
-        self._auto_atribuir_contrato(kwargs)
-
         # 2. Calcular horas a partir das datas (necessário antes do clean)
         self._calcular_horas_trabalhadas()
 
@@ -320,13 +300,11 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         # 6. Definir data_conclusao se status for final
         status_final = self.status in {self.StatusChoices.FECHADO, self.StatusChoices.CONCLUIDO}
         if status_final and not self.data_conclusao:
-            if not self.data_fim_intervencao:
-                self.data_fim_intervencao = timezone.now()
             self.data_conclusao = timezone.now()
             update_fields = kwargs.get("update_fields")
             if update_fields is not None:
                 kwargs["update_fields"] = set(update_fields) | {
-                    "data_conclusao", "data_fim_intervencao"
+                    "data_conclusao"
                 }
 
         # 7. Gravar

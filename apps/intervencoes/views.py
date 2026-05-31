@@ -164,7 +164,20 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         tecnico = serializer.validated_data["tecnico_id"]
         instance.tecnico = tecnico
         instance.save(update_fields=["tecnico"])
-       
+        instance._notificar_tecnico(tecnico_anterior_id)
+        Notificacao.objects.create(
+                utilizador=tecnico,
+                titulo=f"Nova intervenção na empresa {self.cliente.empresa.nome}",
+                mensagem=(
+                    f"Foi-lhe atribuída uma nova intervenção.\n"
+                    f"- Número: {self.numero}\n"
+                    f"- Título: {self.titulo}\n"
+                    f"- Prioridade: {self.prioridade}\n"
+                    f"- Tipo de actuação: {self.actuacao_tipo}\n"
+                    f"- Cliente: {self.cliente.nome} / Empresa: {self.cliente.empresa.nome}"
+                ),
+                tipo="informação",
+         )
         return resposta_sucesso(
             data={"id": str(instance.id), "tecnico_id": str(tecnico.id), "tecnico_nome": tecnico.nome}
         )
