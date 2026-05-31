@@ -177,14 +177,14 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
     
         Notificacao.objects.create(
                 utilizador=tecnico,
-                titulo=f"Nova intervenção na empresa {self.cliente.empresa.nome}",
+                titulo=f"Nova intervenção na empresa {instance.cliente.empresa.nome}",
                 mensagem=(
                     f"Foi-lhe atribuída uma nova intervenção.\n"
-                    f"- Número: {self.numero}\n"
-                    f"- Título: {self.titulo}\n"
-                    f"- Prioridade: {self.prioridade}\n"
-                    f"- Tipo de actuação: {self.actuacao_tipo}\n"
-                    f"- Cliente: {self.cliente.nome} / Empresa: {self.cliente.empresa.nome}"
+                    f"- Número: {instance.numero}\n"
+                    f"- Título: {instance.titulo}\n"
+                    f"- Prioridade: {instance.prioridade}\n"
+                    f"- Tipo de actuação: {instance.actuacao_tipo}\n"
+                    f"- Cliente: {instance.cliente.nome} / Empresa: {instance.cliente.empresa.nome}"
                 ),
                 tipo="informação",
          )
