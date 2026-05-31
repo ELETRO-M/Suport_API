@@ -110,7 +110,15 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                 raise ValidationError(
                     "Erro: o contrato não pertence à empresa do cliente."
                 )
-            if self.contrato.status != Contrato.StatusChoices.ACTIVO:
+            contrato_anterior_id = None
+            if self.pk:
+                contrato_anterior_id = (
+                    Intervencao.objects.filter(pk=self.pk)
+                    .values_list("contrato_id", flat=True)
+                    .first()
+                )
+            contrato_foi_alterado = not self.pk or contrato_anterior_id != self.contrato_id
+            if contrato_foi_alterado and self.contrato.status != Contrato.StatusChoices.ACTIVO:
                 raise ValidationError("Erro: o contrato associado não está activo.")
 
             if self.horas_trabalhadas:
@@ -303,7 +311,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         self._gerar_numero()
 
         # 4. Validar — todos os valores já estão calculados
-        self.full_clean(exclude=None)
+        self.full_clean(exclude=["contrato"])
 
         # 5. Actualizar estado SLA (efeito secundário, depois da validação)
         self._atualizar_estado_sla(kwargs)

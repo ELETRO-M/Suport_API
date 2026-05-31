@@ -67,7 +67,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "intervencoes_resolvidas": Intervencao.objects.filter(status="resolvido").count(),
             "intervencoes_fechadas": Intervencao.objects.filter(status="fechado").count(),
             "intervencoes_concluidas": Intervencao.objects.filter(status="concluido").count(),
-            "receita_total": Contrato.objects.aggregate(total=Sum("valor_total"))["total"] or 0,
+            "receita_total": Contrato.all_objects.aggregate(total=Sum("valor_total"))["total"] or 0,
             "tecnicos_ativos": Usuario.objects.filter(perfil=Usuario.PerfilChoices.TECNICO, status="activo").count(),
             "grafico_intervencoes_mes": grafico_intervencoes_mes,
             "grafico_horas_tecnico": grafico_horas_tecnico,
@@ -79,7 +79,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=["get"], url_path="dashboard-tecnico")
     def dashboard_tecnico(self, request: Request):
 
-        if request.user.perfil not in [
+        if request.user.perfil not in [                 
             Usuario.PerfilChoices.ADMIN,
             Usuario.PerfilChoices.TECNICO
         ]:

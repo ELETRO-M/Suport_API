@@ -121,21 +121,6 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial, context={"request": request})
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
-        if 'status' in serializer.validated_data:
-            HistoricoEstadoIntervencao.objects.create(
-                intervencao=obj,
-                nota="Alteração de status",
-                status=serializer.validated_data['status'],
-                alterado_por=request.user
-            )
-        obj.historico_status.add(
-                HistoricoEstadoIntervencao.objects.create(
-                    intervencao=obj,
-                    nota=f"Alteração de {request.data}",
-                    status=serializer.validated_data['status'],
-                    alterado_por=request.user
-                )
-            )
         return resposta_sucesso(data={"id": str(obj.id), "status": obj.status})
 
     def destroy(self, request, *args, **kwargs):

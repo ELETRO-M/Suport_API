@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
@@ -250,7 +251,10 @@ class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             if tecnico is not None:
                 instance.tecnico = tecnico
-            instance.save()
+            try:
+                instance.save()
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError(exc.message_dict or exc.messages) from exc
             if previous_status != instance.status:
                 HistoricoEstadoIntervencao.objects.create(
                     intervencao=instance,
