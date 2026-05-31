@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db.models import Avg, Count, Sum
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
@@ -154,8 +156,12 @@ class RelatorioViewSet(viewsets.GenericViewSet):
 
         contratos = Contrato.objects.filter(Empresa=request.user.empresa, status="activo")
 
-        total_horas_contratadas = sum(c.horas_contratadas for c in contratos)
-        total_horas_utilizadas = sum(c.horas_utilizadas for c in contratos)
+        total_horas_contratadas = sum(
+            (c.horas_contratadas or Decimal("0.00")) for c in contratos
+        )
+        total_horas_utilizadas = sum(
+            (c.horas_utilizadas or Decimal("0.00")) for c in contratos
+        )
         total_horas_disponiveis = sum(c.horas_disponiveis for c in contratos)
 
         percentual = (
