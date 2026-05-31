@@ -124,9 +124,19 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(data={"id": str(obj.id), "status": obj.status})
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN :
-            self.permission_denied(request, message="Apenas administradores podem deletar intervenções.")
         instance = self.get_object()
+        pode_apagar = (
+            request.user.perfil == Usuario.PerfilChoices.ADMIN
+            or (
+                request.user.perfil == Usuario.PerfilChoices.CLIENTE
+                and instance.cliente_id == request.user.id
+            )
+        )
+        if not pode_apagar:
+            self.permission_denied(
+                request,
+                message="Apenas administradores ou o cliente que criou a intervenção podem deletar.",
+            )
         instance.delete()
         return resposta_sucesso(message="Intervenção deletada com sucesso")
         '''
