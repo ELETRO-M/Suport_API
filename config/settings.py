@@ -171,11 +171,12 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "CLACS Suporte API",
+    "TITLE": "Suporte API",
     "DESCRIPTION": "API de gestão de suporte técnico.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_FAVICON_HREF": "",
     "ENUM_NAME_OVERRIDES": {
         "IntervecoesStatusEnum": "apps.intervencoes.models.Intervencao.StatusChoices",
         "IntervecoesPrioridadeEnum": "apps.intervencoes.models.Intervencao.PrioridadeChoices",
