@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "rest_framework",
-    "channels",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
@@ -66,21 +65,6 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-REDIS_URL = config("REDIS_URL", default="")
-if REDIS_URL:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {"hosts": [REDIS_URL]},
-        }
-    }
-else:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels.layers.InMemoryChannelLayer",
-        }
-    }
-
 DATABASES = {
     "default": dj_database_url.config(
         default=config("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
@@ -112,6 +96,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
 ]
 SITE_URL=config("SITE_URL",default="http://localhost:8000")
+FIREBASE_CREDENTIALS_JSON = config("FIREBASE_CREDENTIALS_JSON", default="")
+FIREBASE_CREDENTIALS_PATH = config("FIREBASE_CREDENTIALS_PATH", default="")
+FIREBASE_PROJECT_ID = config("FIREBASE_PROJECT_ID", default="")
 
 LANGUAGE_CODE = "pt-pt"
 TIME_ZONE = "Africa/Luanda"
@@ -213,7 +200,7 @@ EMAIL_HOST_USER = config("EMAIL_EMPRESA")
 EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://suport-api-1.onrender.com",
+    "https://suportapi-production.up.railway.app",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]

@@ -175,6 +175,21 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         instance.tecnico = tecnico
         instance.save(update_fields=["tecnico"])
     
+        Notificacao.objects.create(
+            utilizador=tecnico,
+            titulo=f"Nova intervenção na empresa {instance.cliente.empresa.nome}",
+            mensagem=(
+                f"Foi-lhe atribuída uma nova intervenção.\n"
+                f"- Número: {instance.numero}\n"
+                f"- Título: {instance.titulo}\n"
+                f"- Prioridade: {instance.prioridade}\n"
+                f"- Tipo de actuação: {instance.actuacao_tipo}\n"
+                f"- Cliente: {instance.cliente.nome} / Empresa: {instance.cliente.empresa.nome}"
+            ),
+            tipo="informação",
+            link=f"/intervencoes/{instance.id}",
+        )
+
         return resposta_sucesso(
             data={"id": str(instance.id), "tecnico_id": str(tecnico.id), "tecnico_nome": tecnico.nome}
         )

@@ -100,6 +100,7 @@ class HoraTrabalhoAdmin(admin.ModelAdmin):
     list_filter = ("data_trabalho", "tipo")
     search_fields = ("intervencao__numero", "tecnico__nome", "descricao")
     autocomplete_fields = ("intervencao", "tecnico")
+    
 
 
 @admin.register(ComentarioIntervencao)

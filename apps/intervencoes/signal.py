@@ -3,9 +3,8 @@ from django.dispatch import receiver
 from django.conf import settings
 
 from apps.intervencoes.models import AnexoIntervencao, ComentarioIntervencao, Intervencao
-from apps.intervencoes.realtime import enviar_anexo_ws, enviar_comentario_ws
+from apps.configuracoes.firebase import publicar_anexo, publicar_comentario, publicar_notificacao
 from apps.notificacoes.models import Notificacao
-from apps.notificacoes.realtime import enviar_notificacao_ws
 from apps.usuarios.models import Usuario
 
 
@@ -20,18 +19,13 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
             status=Usuario.StatusChoices.ACTIVO
         )
 
-        notificacoes = []
-
         for admin in admins:
-
-            notificacoes.append(
-                Notificacao(
-                    utilizador=admin,
-                    tipo="sistema",
-                    titulo="Nova intervenção",
-                    mensagem=f"A intervenção {instance.titulo} na empresa {instance.cliente.empresa.nome}  pelo cliente {instance.cliente.nome}.",
-                    link=f"{settings.SITE_URL}/api/v1/intervencoes/{instance.id}/",
-                )
+            Notificacao.objects.create(
+                utilizador=admin,
+                tipo="sistema",
+                titulo=f"Nova intervenção na empresa {instance.cliente.empresa.nome}",
+                mensagem=f"A intervenção {instance.titulo} na empresa {instance.cliente.empresa.nome} pelo cliente {instance.cliente.nome}.",
+                link=f"{settings.SITE_URL}/api/v1/intervencoes/{instance.id}/",
             )
             """
         send_mail(
@@ -57,18 +51,14 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
 
         
 
-        notificacoes_criadas = Notificacao.objects.bulk_create(notificacoes)
-        for notificacao in notificacoes_criadas:
-            enviar_notificacao_ws(notificacao)
-
 
 @receiver(post_save, sender=ComentarioIntervencao)
-def emitir_comentario_realtime(sender, instance, created, **kwargs):
+def publicar_comentario_firebase(sender, instance, created, **kwargs):
     if created:
-        enviar_comentario_ws(instance)
+        publicar_comentario(instance)
 
 
 @receiver(post_save, sender=AnexoIntervencao)
-def emitir_anexo_realtime(sender, instance, created, **kwargs):
+def publicar_anexo_firebase(sender, instance, created, **kwargs):
     if created:
-        enviar_anexo_ws(instance)
+        publicar_anexo(instance)

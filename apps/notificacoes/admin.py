@@ -9,6 +9,7 @@ class NotificacaoAdmin(admin.ModelAdmin):
     list_filter = ("tipo", "lida", "data_criacao")
     search_fields = ("utilizador__nome", "utilizador__email", "titulo", "mensagem")
     autocomplete_fields = ("utilizador",)
+    ordering = ("-data_criacao",)
     
     def get_queryset(self, request):
         return Notificacao.all_objects.all()

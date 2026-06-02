@@ -17,28 +17,23 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
             status=Usuario.StatusChoices.ACTIVO
         )
 
-        notificacoes = []
-
-        for admin in admins:
-
-            notificacoes.append(
-                Notificacao(
-                    utilizador=admin,
-                    tipo="sistema",
-                    titulo="Nova cliente cadastrado",
-                    mensagem=f"O cliente {instance.nome} no servidor {instance.ip_servidor} na empresa {instance.empresa.nome} foi cadastrado.",
-                )
-            )
         Notificacao.objects.create(
             utilizador=instance,
             tipo="sistema",
             titulo="Seja bem-vindo(a) ao nosso sistema!",
-            mensagem=f"Seja bem-vindo(a) ao nosso sistema!",
+            mensagem="Seja bem-vindo(a) ao nosso sistema!",
         )
         #EmailService.send_welcome_email(instance)
 
-        Notificacao.objects.bulk_create(notificacoes)
-    if created and instance.perfil == Usuario.PerfilChoices.T:
+        for admin in admins:
+            Notificacao.objects.create(
+                utilizador=admin,
+                tipo="sistema",
+                titulo="Novo cliente cadastrado",
+                mensagem=f"O cliente {instance.nome} na empresa {instance.empresa.nome} foi cadastrado.",
+            )
+
+    if created and instance.perfil == Usuario.PerfilChoices.TECNICO:
 
         admins = Usuario.objects.filter(
             perfil=Usuario.PerfilChoices.ADMIN,
@@ -46,24 +41,21 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
             status=Usuario.StatusChoices.ACTIVO
         )
 
-        notificacoes = []
-
-        for admin in admins:
-
-            notificacoes.append(
-                Notificacao(
-                    utilizador=admin,
-                    tipo="sistema",
-                    titulo="Nova tecnico cadastrado",
-                    mensagem=f"O tecnico {instance.nome} com a especialidade {instance.especialidades.nome}  foi cadastrado.",
-                )
-            )
         Notificacao.objects.create(
             utilizador=instance,
             tipo="sistema",
             titulo="Seja bem-vindo(a) ao nosso sistema!",
-            mensagem=f"Seja bem-vindo(a) ao nosso sistema!",
+            mensagem="Seja bem-vindo(a) ao nosso sistema!",
         )
         #EmailService.send_welcome_email(instance)
 
-        Notificacao.objects.bulk_create(notificacoes)
+        especialidades_list = instance.especialidades if isinstance(instance.especialidades, list) else []
+        especialidades_str = ", ".join(str(e) for e in especialidades_list)
+
+        for admin in admins:
+            Notificacao.objects.create(
+                utilizador=admin,
+                tipo="sistema",
+                titulo="Novo técnico cadastrado",
+                mensagem=f"O técnico {instance.nome} com a(s) especialidade(s) ({especialidades_str}) foi cadastrado.",
+            )
