@@ -129,8 +129,8 @@ cloudinary.config(
 
 _STATIC_BACKEND = (
     "django.contrib.staticfiles.storage.StaticFilesStorage"
-    if DEBUG
-    else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+   # if DEBUG
+    #else "whitenoise.storage.CompressedManifestStaticFilesStorage"
 )
 
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.RawMediaCloudinaryStorage"
