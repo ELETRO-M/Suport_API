@@ -5,6 +5,7 @@ from django.core.mail import BadHeaderError
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
 from django.conf import settings
+import resend
 from django.shortcuts import redirect
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -287,6 +288,7 @@ class TecnicoViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=['Recuperação'])
 class RecuperarConta(viewsets.GenericViewSet):
+    resend_api_key = getattr(settings, "RESEND_API_KEY")
 
     permission_classes = []
     authentication_classes = []
@@ -313,22 +315,19 @@ class RecuperarConta(viewsets.GenericViewSet):
         )
 
         
-        send_mail(
-                subject="Recuperação de Senha - API Gestão de Serviços",
-                message=(
-                    f"Olá, {utilizador.nome}\n\n"
-                    "Recebemos um pedido para redefinir a senha da sua conta.\n\n"
-                    "Clique no link abaixo:\n\n"
-                    f"{link}"
-                ),
-                from_email=getattr(
-                    settings,
-                    "DEFAULT_FROM_EMAIL",
-                    settings.EMAIL_HOST_USER
-                ),
-                recipient_list=[utilizador.email],
-                fail_silently=False,
-            )
+        resend.api_key = settings.RESEND_API_KEY
+
+        resend.Emails.send({
+            "from": settings.DEFAULT_FROM_EMAIL,
+            "to": [utilizador.email],
+            "subject": "Recuperação de Senha - API Gestão de Serviços",
+            "text": (
+                f"Olá, {utilizador.nome}\n\n"
+                "Recebemos um pedido para redefinir a senha da sua conta.\n\n"
+                "Clique no link abaixo:\n\n"
+                f"{link}"
+            ),
+        })
 
     
 
