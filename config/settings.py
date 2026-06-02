@@ -198,6 +198,8 @@ EMAIL_PORT = config("EMAIL_PORT", cast=int)
 EMAIL_USE_TLS = config("EMAIL_USE_TLS",  cast=bool)
 EMAIL_HOST_USER = config("EMAIL_EMPRESA")
 EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=True, cast=bool)
+EMAIL_TIMEOUT = 10
 
 CSRF_TRUSTED_ORIGINS = [
     "https://suportapi-production.up.railway.app",
