@@ -191,18 +191,15 @@ SPECTACULAR_SETTINGS = {
         "UsuarioPerfilEnum": "apps.usuarios.models.Usuario.PerfilChoices",
     },
 }
-# Resend Configuration
-
-
-# SMTP Configuration using Resend by default
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.resend.com"
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
-EMAIL_USE_TLS = False
-EMAIL_HOST_USER = "resend"
-EMAIL_HOST_PASSWORD = config("RESEND_API_KEY")
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="onboarding@resend.dev")
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT", cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=False, cast=bool)
+EMAIL_HOST_USER = config("EMAIL_EMPRESA")
+EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
+
+DEFAULT_FROM_EMAIL = config("EMAIL_EMPRESA")
 EMAIL_TIMEOUT = 10
 
 CSRF_TRUSTED_ORIGINS = [

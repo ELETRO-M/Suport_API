@@ -5,7 +5,6 @@ from django.core.mail import BadHeaderError
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
 from django.conf import settings
-import resend
 from django.shortcuts import redirect
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -300,7 +299,11 @@ class RecuperarConta(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         utilizador = serializer.validated_data["user"]
-        
+        if not utilizador:
+            return Response(
+                {"detail": "Se o email existir, enviaremos um link de recuperação."},
+                status=status.HTTP_200_OK
+            )
 
         uid = urlsafe_base64_encode(force_bytes(utilizador.pk))
         token = default_token_generator.make_token(utilizador)
@@ -313,17 +316,18 @@ class RecuperarConta(viewsets.GenericViewSet):
         
         
 
-        resend.Emails.send({
-            "from": settings.DEFAULT_FROM_EMAIL,
-            "to": [utilizador.email],
-            "subject": "Recuperação de Senha - API Gestão de Serviços",
-            "text": (
+        send_mail(
+            subject="Recuperação de Senha - API Gestão de Serviços",
+            message=(
                 f"Olá, {utilizador.nome}\n\n"
                 "Recebemos um pedido para redefinir a senha da sua conta.\n\n"
                 "Clique no link abaixo:\n\n"
                 f"{link}"
             ),
-        })
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[utilizador.email],
+            fail_silently=False,
+        )
 
     
 
