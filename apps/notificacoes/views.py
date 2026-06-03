@@ -48,6 +48,42 @@ class NotificacaoViewSet(viewsets.GenericViewSet):
         notificacao.save(update_fields=["lida"])
         return resposta_sucesso(message="Notificação marcada como lida")
 
+    @action(detail=False, methods=["post"], url_path="fcm-token")
+    def registrar_fcm_token(self, request):
+        from apps.notificacoes.serializers import FCMTokenSerializer
+        from apps.notificacoes.models import FCMToken
+
+        serializer = FCMTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token = serializer.validated_data["token"]
+        dispositivo_id = serializer.validated_data.get("dispositivo_id")
+
+        fcm_token, created = FCMToken.objects.update_or_create(
+            token=token,
+            defaults={
+                "utilizador": request.user,
+                "dispositivo_id": dispositivo_id
+            }
+        )
+        
+        message = "Token FCM registrado com sucesso" if created else "Token FCM atualizado com sucesso"
+        return resposta_sucesso(message=message)
+
+    @action(detail=False, methods=["delete"], url_path="fcm-token")
+    def remover_fcm_token(self, request):
+        from apps.notificacoes.models import FCMToken
+        from apps.configuracoes.responses import resposta_erro
+        
+        token = request.data.get("token")
+        if not token:
+            return resposta_erro(message="O campo 'token' é obrigatório.", status_code=400)
+            
+        deleted_count, _ = FCMToken.objects.filter(token=token, utilizador=request.user).delete()
+        if deleted_count > 0:
+            return resposta_sucesso(message="Token FCM removido com sucesso")
+        else:
+            return resposta_erro(message="Token FCM não encontrado ou não pertence a este utilizador.", status_code=404)
+
     @action(detail=False, methods=["put"], url_path="marcar-todas-lidas")
     def marcar_todas_lidas(self, request):
         self.get_queryset().update(lida=True)

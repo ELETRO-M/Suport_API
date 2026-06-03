@@ -110,3 +110,61 @@ def publicar_anexo(anexo):
             "data_criacao": anexo.data_criacao.isoformat(),
         },
     )
+
+
+def enviar_notificacao_push(utilizador, titulo, mensagem, data=None):
+    if firebase_admin is None:
+        logger.warning("Firebase Admin SDK não está instalado.")
+        return
+
+    from firebase_admin import messaging
+    from apps.notificacoes.models import FCMToken
+
+    # Obter os tokens FCM associados ao utilizador
+    tokens = list(FCMToken.objects.filter(utilizador=utilizador).values_list("token", flat=True))
+    if not tokens:
+        logger.info("Nenhum token FCM registrado para o utilizador: %s", utilizador.email)
+        return
+
+    # Formatar dados adicionais (os valores do FCM 'data' devem ser obrigatoriamente strings)
+    fcm_data = {}
+    if data:
+        for k, v in data.items():
+            fcm_data[k] = str(v) if v is not None else ""
+
+    # Construir e enviar a mensagem multicast
+    message = messaging.MulticastMessage(
+        notification=messaging.Notification(
+            title=titulo,
+            body=mensagem,
+        ),
+        data=fcm_data,
+        tokens=tokens,
+    )
+
+    try:
+        # Garante a inicialização do Firebase Admin SDK se necessário
+        get_firestore_client()
+
+        response = messaging.send_each_for_multicast(message)
+        logger.info(
+            "Mensagens FCM enviadas: %d com sucesso, %d falhas.",
+            response.success_count,
+            response.failure_count,
+        )
+
+        # Limpeza de tokens inválidos
+        if response.failure_count > 0:
+            stale_tokens = []
+            for index, resp in enumerate(response.responses):
+                if not resp.success:
+                    stale_token = tokens[index]
+                    stale_tokens.append(stale_token)
+            
+            if stale_tokens:
+                FCMToken.objects.filter(token__in=stale_tokens).delete()
+                logger.info("Removidos %d tokens FCM inválidos/antigos.", len(stale_tokens))
+
+    except Exception:
+        logger.exception("Falha ao enviar notificações push com Firebase.")
+
