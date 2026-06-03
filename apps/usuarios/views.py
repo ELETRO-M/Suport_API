@@ -288,7 +288,7 @@ class TecnicoViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=['Recuperação'])
 class RecuperarConta(viewsets.GenericViewSet):
-    resend_api_key = getattr(settings, "RESEND_API_KEY")
+    
 
     permission_classes = []
     authentication_classes = []
@@ -311,7 +311,7 @@ class RecuperarConta(viewsets.GenericViewSet):
         )
 
         
-        resend.api_key = settings.RESEND_API_KEY
+        
 
         resend.Emails.send({
             "from": settings.DEFAULT_FROM_EMAIL,
