@@ -12,6 +12,11 @@ class Notificacao(ModeloUUIDComTimestamps, SoftDeleteModel):
     mensagem = models.TextField()
     link = models.CharField(max_length=255, blank=True)
     lida = models.BooleanField(default=False)
+    
+    # Envio de e-mail desativado temporariamente
+    # enviar_email = models.BooleanField(default=False)
+    # enviado_email = models.BooleanField(default=False)
+
 
 
 class FCMToken(ModeloUUIDComTimestamps):
