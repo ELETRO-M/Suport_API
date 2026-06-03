@@ -300,11 +300,7 @@ class RecuperarConta(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         utilizador = serializer.validated_data["user"]
-        if not utilizador:
-            return Response(
-                {"detail": "Se o email existir, enviaremos um link de recuperação."},
-                status=status.HTTP_200_OK
-            )
+        
 
         uid = urlsafe_base64_encode(force_bytes(utilizador.pk))
         token = default_token_generator.make_token(utilizador)
