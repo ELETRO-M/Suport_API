@@ -315,19 +315,18 @@ class RecuperarConta(viewsets.GenericViewSet):
         )
 
         
-        resend.api_key = settings.RESEND_API_KEY
-
-        resend.Emails.send({
-            "from": settings.DEFAULT_FROM_EMAIL,
-            "to": [utilizador.email],
-            "subject": "Recuperação de Senha - API Gestão de Serviços",
-            "text": (
+        send_mail(
+            subject="Recuperação de Senha - API Gestão de Serviços",
+            message=(
                 f"Olá, {utilizador.nome}\n\n"
                 "Recebemos um pedido para redefinir a senha da sua conta.\n\n"
                 "Clique no link abaixo:\n\n"
                 f"{link}"
             ),
-        })
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[utilizador.email],
+            fail_silently=False,
+        )
 
     
 
