@@ -18,33 +18,37 @@ from apps.intervencoes.models import Intervencao
 
 @extend_schema_field(serializers.URLField())
 class AvatarURLField(serializers.Field):
+
     def to_internal_value(self, data):
+
         if data in (None, ""):
             return ""
 
+        # 📁 Upload de ficheiro
         if hasattr(data, "read"):
             arquivo = serializers.ImageField().to_internal_value(data)
-            nome_arquivo = arquivo.name.replace("\\", "/").split("/")[-1]
-            extensao = f".{nome_arquivo.rsplit('.', 1)[1].lower()}" if "." in nome_arquivo else ""
-            caminho = f"usuarios/avatares/{uuid.uuid4().hex}{extensao}"
-            caminho_guardado = default_storage.save(caminho, arquivo)
-            url = default_storage.url(caminho_guardado)
-            return self._format_url(url)
 
-        return serializers.URLField(allow_blank=True).run_validation(data)
+            nome_arquivo = arquivo.name.replace("\\", "/").split("/")[-1]
+            ext = f".{nome_arquivo.rsplit('.', 1)[1].lower()}" if "." in nome_arquivo else ""
+
+            caminho = f"usuarios/avatares/{uuid.uuid4().hex}{ext}"
+            saved_path = default_storage.save(caminho, arquivo)
+
+            return default_storage.url(saved_path)
+
+        # 🌐 URL externa
+        if isinstance(data, str):
+            data = data.strip()
+
+            if data.startswith("http://") or data.startswith("https://"):
+                return data
+
+        raise serializers.ValidationError("Avatar deve ser um ficheiro ou uma URL válida.")
 
     def to_representation(self, value):
-        return self._format_url(value)
-
-    def _format_url(self, value):
         if not value:
             return ""
-        url = str(value)
-        request = self.context.get("request")
-        if request and url.startswith("/"):
-            return request.build_absolute_uri(url)
-        return url
-
+        return str(value)
 
 class notifySerialazrs(serializers.ModelSerializer):
     class Meta:
