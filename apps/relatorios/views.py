@@ -99,7 +99,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             ).count(),
 
             "intervencoes_concluidas_mes": intervencoes.filter(
-                status=Intervencao.StatusChoices.CONCLUIDO,
+                status=Intervencao.StatusChoices.FECHADO,
                 data_conclusao__year=agora.year,
                 data_conclusao__month=agora.month
             ).count(),
