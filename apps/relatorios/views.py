@@ -175,7 +175,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
             "total_horas_utilizadas": total_horas_utilizadas,
             "total_horas_disponiveis": total_horas_disponiveis,
             "percentual_utilizacao": round(percentual, 2),
-
+            "Tickets Abertos":Intervencao.objects.filter(cliente=request.user).count(),
             "intervencoes_abertas": Intervencao.objects.filter(
                 cliente=request.user,
                 status="aberto"
@@ -188,7 +188,7 @@ class RelatorioViewSet(viewsets.GenericViewSet):
 
             "intervencoes_concluidas": Intervencao.objects.filter(
                 cliente=request.user,
-                status="concluido"
+                status="fechado"
             ).count(),
 
             "grafico_uso_horas": Intervencao.objects.filter(
