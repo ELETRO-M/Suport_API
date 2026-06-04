@@ -1,15 +1,17 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from apps.configuracoes.firebase import publicar_notificacao, enviar_notificacao_push
+from apps.configuracoes.firebase import publicar_notificacao, enviar_notificacao_push, remover_notificacao
 from apps.notificacoes.models import Notificacao
 
 
 @receiver(post_save, sender=Notificacao)
 def publicar_notificacao_firebase(sender, instance, created, **kwargs):
+    # Publicar ou atualizar no Firestore
+    publicar_notificacao(instance)
+    
     if created:
-        publicar_notificacao(instance)
-        # Enviar push notification via FCM
+        # Enviar push notification via FCM apenas na criação
         data = {
             "id": str(instance.id),
             "tipo": instance.tipo,
@@ -21,4 +23,10 @@ def publicar_notificacao_firebase(sender, instance, created, **kwargs):
             mensagem=instance.mensagem,
             data=data
         )
+
+
+@receiver(post_delete, sender=Notificacao)
+def remover_notificacao_firebase(sender, instance, **kwargs):
+    remover_notificacao(instance)
+
 

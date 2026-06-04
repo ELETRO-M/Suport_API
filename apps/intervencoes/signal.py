@@ -1,9 +1,9 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.conf import settings
 
 from apps.intervencoes.models import AnexoIntervencao, ComentarioIntervencao, Intervencao
-from apps.configuracoes.firebase import publicar_anexo, publicar_comentario, publicar_notificacao
+from apps.configuracoes.firebase import publicar_anexo, publicar_comentario, publicar_notificacao, remover_comentario
 from apps.notificacoes.models import Notificacao
 from apps.usuarios.models import Usuario
 
@@ -54,8 +54,12 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=ComentarioIntervencao)
 def publicar_comentario_firebase(sender, instance, created, **kwargs):
-    if created:
-        publicar_comentario(instance)
+    publicar_comentario(instance)
+
+
+@receiver(post_delete, sender=ComentarioIntervencao)
+def remover_comentario_firebase(sender, instance, **kwargs):
+    remover_comentario(instance)
 
 
 @receiver(post_save, sender=AnexoIntervencao)

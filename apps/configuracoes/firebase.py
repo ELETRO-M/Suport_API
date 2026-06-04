@@ -64,7 +64,31 @@ def publicar_documento(path, data):
         logger.exception("Não foi possível publicar no Firebase: %s", path)
 
 
+def remover_documento(path):
+    client = get_firestore_client()
+    if client is None:
+        return
+
+    try:
+        collection_path, document_id = path.rsplit("/", 1)
+        client.collection(collection_path).document(document_id).delete()
+    except Exception:
+        logger.exception("Não foi possível remover no Firebase: %s", path)
+
+
+def remover_notificacao(notificacao):
+    remover_documento(f"notificacoes/{notificacao.utilizador_id}/items/{notificacao.id}")
+
+
+def remover_comentario(comentario):
+    remover_documento(f"intervencoes/{comentario.intervencao_id}/comentarios/{comentario.id}")
+
+
 def publicar_notificacao(notificacao):
+    if getattr(notificacao, "is_deleted", False):
+        remover_notificacao(notificacao)
+        return
+
     publicar_documento(
         f"notificacoes/{notificacao.utilizador_id}/items/{notificacao.id}",
         {
@@ -81,6 +105,10 @@ def publicar_notificacao(notificacao):
 
 
 def publicar_comentario(comentario):
+    if getattr(comentario, "is_deleted", False):
+        remover_comentario(comentario)
+        return
+
     publicar_documento(
         f"intervencoes/{comentario.intervencao_id}/comentarios/{comentario.id}",
         {
