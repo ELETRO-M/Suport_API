@@ -60,7 +60,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     contrato = models.ForeignKey(
         Contrato,
         related_name="intervencoes",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         limit_choices_to={"is_deleted": False, "status": Contrato.StatusChoices.ACTIVO},
