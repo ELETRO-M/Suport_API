@@ -8,6 +8,9 @@ from django.core.validators import MinLengthValidator
 from apps.configuracoes.models import ModeloUUIDComTimestamps, SoftDeleteModel
 
 class empresa(ModeloUUIDComTimestamps, SoftDeleteModel):
+    class StatusChoices(models.TextChoices):
+        ACTIVO = "activo", "Activo"
+        INACTIVO = "inactivo", "Inactivo"
     Email_empresa = models.EmailField(unique=True)
     nome = models.CharField(max_length=255, unique=True)
     nif = models.CharField(max_length=50, unique=True)
@@ -15,9 +18,17 @@ class empresa(ModeloUUIDComTimestamps, SoftDeleteModel):
     postos = models.JSONField(default=dict)
     telefone = models.CharField(max_length=50)
     avatar_url = models.URLField(blank=True)
-    class StatusChoices(models.TextChoices):
-        ACTIVO = "activo", "Activo"
-        INACTIVO = "inactivo", "Inactivo"
+    def delete(self):
+        for  cliente in self.clientes.all():
+            cliente.delete()
+        for contrato in self.contratos.all():
+            contrato.delete()
+    
+        self.status = self.StatusChoices.INACTIVO
+        self.is_deleted = True
+        self.save(update_fields=["is_deleted","status"])
+    
+    
 
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
     def clean(self):
@@ -125,7 +136,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     empresa = models.ForeignKey(
         empresa, 
         related_name="clientes",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
     )
@@ -208,6 +219,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
         )
 
     def delete(self, *args, **kwargs):
+        
         self.is_deleted = True
         self.status = self.StatusChoices.INACTIVO
         type(self).all_objects.filter(pk=self.pk).update(

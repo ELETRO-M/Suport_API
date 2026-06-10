@@ -44,7 +44,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         related_name="intervencoes",
         on_delete=models.CASCADE,
         limit_choices_to={
-            "perfil__in": [Usuario.PerfilChoices.CLIENTE, Usuario.PerfilChoices.ADMIN],
+            "perfil__in": [Usuario.PerfilChoices.CLIENTE],
             "is_deleted": False,
             "status": Usuario.StatusChoices.ACTIVO,
         },

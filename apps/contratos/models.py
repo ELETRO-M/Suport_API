@@ -42,7 +42,7 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
 
     tipo_de_pagamento= models.CharField(max_length=20, choices=TipoPagamento.choices)
     tipo_contrato= models.CharField(max_length=40, choices=Tipo_de_contratos.choices)
-    descricao_contrato = models.TextField()
+    descricao_contrato = models.TextField( blank=True, null=True)
     horas_contratadas = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     horas_utilizadas = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     valor_total = models.DecimalField(max_digits=14, decimal_places=2, blank=True)
@@ -52,6 +52,12 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
     
     observacoes = models.TextField(blank=True)
+    def delete(self):
+        for i in self.intervencoes.all():
+            i.delete()
+        self.status = self.StatusChoices.CANCELADO
+        self.is_deleted = True
+        self.save(update_fields=["is_deleted", "status"])
     def clean(self):
         if self.data_fim and self.data_inicio and self.data_fim < self.data_inicio:
             raise ValidationError("A data de fim deve ser maior que a data de inicio.")
