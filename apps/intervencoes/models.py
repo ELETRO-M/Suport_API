@@ -1,16 +1,22 @@
+import re
+import time
 from datetime import timedelta
 from decimal import Decimal
-from django.core.exceptions import ValidationError
+from urllib.parse import urlparse
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.utils
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
-import re
 
-from apps.sistema.models import ConfiguracaoSistema
-from apps.notificacoes.models import Notificacao
-from apps.usuarios.models import Usuario
 from apps.configuracoes.models import ModeloUUIDComTimestamps, SoftDeleteModel
 from apps.contratos.models import Contrato
+from apps.notificacoes.models import Notificacao
+from apps.sistema.models import ConfiguracaoSistema
+from apps.usuarios.models import Usuario
 
 
 class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
@@ -312,6 +318,13 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         # 7. Gravar
         super().save(*args, **kwargs)
 
+        # 8. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
+        if self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
+            for anexo in self.anexos.all():
+                anexo.arquivo_marcado_url = ""
+                anexo.save(update_fields=["arquivo_marcado_url"])
+                anexo.gerar_marca_dagua()
+
         # 9. Actualizar horas usadas nos contratos afectados
         for contrato_id in {contrato_anterior_id, self.contrato_id}:
             if contrato_id:
@@ -362,11 +375,153 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     arquivo = models.FileField(upload_to="intervencoes/anexos/")
     descricao = models.CharField(max_length=255, blank=True)
     tamanho = models.PositiveIntegerField(default=0)
+    arquivo_marcado_url = models.URLField(blank=True, default="")
+
+    @staticmethod
+    def _extrair_public_id(url):
+        path = urlparse(url).path
+        path = re.sub(r"^/.+?/upload/", "", path)
+        path = re.sub(r"^v\d+/", "", path)
+        return path.rsplit(".", 1)[0]
+
+    @staticmethod
+    def _extrair_resource_type(url):
+        match = re.search(r"/(raw|image|video)/upload/", urlparse(url).path)
+        return match.group(1) if match else "image"
 
     def save(self, *args, **kwargs):
+        is_new = self._state.adding
         if self.arquivo and hasattr(self.arquivo, "size"):
             self.tamanho = self.arquivo.size
         super().save(*args, **kwargs)
+        if is_new and self.intervencao.tecnico_id:
+            self.gerar_marca_dagua()
+
+    FORMATOS_MARCA = {"jpg", "jpeg", "png", "gif", "bmp", "webp", "pdf", "ico"}
+
+    def gerar_marca_dagua(self):
+        tecnico = self.intervencao.tecnico
+        if not tecnico:
+            return
+
+        ext = self.arquivo.name.rsplit(".", 1)[-1].lower()
+        if ext not in self.FORMATOS_MARCA:
+            return
+
+        texto_marca = f"{tecnico.nome} - {tecnico.BI}"
+        wm_public_id = f"{self.arquivo.name.rsplit('.', 1)[0]}_wm"
+
+        try:
+            src_url = cloudinary.utils.private_download_url(
+                self.arquivo.name, ext,
+                resource_type="raw", type="upload",
+                expires_at=int(time.time()) + 120, attachment=False,
+            )
+
+            import io, requests as _requests
+            resp = _requests.get(src_url, timeout=60)
+            if resp.status_code != 200:
+                return
+
+            if ext == "pdf":
+                from pypdf import PdfReader, PdfWriter
+                from reportlab.lib.pagesizes import letter
+                from reportlab.pdfgen import canvas as rl_canvas
+
+                reader = PdfReader(io.BytesIO(resp.content))
+                writer = PdfWriter()
+
+                page_w = float(reader.pages[0].mediabox.width)
+                page_h = float(reader.pages[0].mediabox.height)
+
+                wm_buf = io.BytesIO()
+                c = rl_canvas.Canvas(wm_buf, pagesize=(page_w, page_h))
+                c.setFont("Helvetica-Bold", 9)
+                c.setFillColorRGB(1, 0, 0, 0.30)
+                c.setPageRotation(0)
+                cols = int(page_w // 130) + 2
+                rows = int(page_h // 35) + 2
+                for row in range(rows):
+                    for col in range(cols):
+                        x = col * 130
+                        y = row * 35
+                        c.saveState()
+                        c.translate(x, y)
+                        c.rotate(45)
+                        c.drawString(0, 0, texto_marca)
+                        c.restoreState()
+                c.showPage()
+                c.save()
+                wm_buf.seek(0)
+
+                wm_reader = PdfReader(wm_buf)
+                wm_page = wm_reader.pages[0]
+
+                for page in reader.pages:
+                    page.merge_page(wm_page, over=True)
+                    writer.add_page(page)
+
+                out_buf = io.BytesIO()
+                writer.write(out_buf)
+                out_buf.seek(0)
+
+                result = cloudinary.uploader.upload(
+                    out_buf,
+                    public_id=wm_public_id,
+                    resource_type="image",
+                    overwrite=True,
+                )
+                self.arquivo_marcado_url = result["secure_url"]
+            else:
+                transformation = [
+                    {"overlay": f"text:Arial_24_bold:{texto_marca}"},
+                    {"opacity": 35, "width": 200, "height": 80, "flags": "tiled"},
+                    {"flags": "layer_apply"},
+                    {"fetch_format": ext},
+                ]
+                result = cloudinary.uploader.upload(
+                    resp.content,
+                    public_id=wm_public_id,
+                    resource_type="image",
+                    transformation=transformation,
+                    overwrite=True,
+                )
+                self.arquivo_marcado_url = result["secure_url"]
+
+            super().save(update_fields=["arquivo_marcado_url"])
+        except Exception:
+            pass
+
+    def url_para(self, usuario):
+        if usuario.is_staff or usuario.perfil in (Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.CLIENTE):
+            ext = self.arquivo.name.rsplit(".", 1)[-1]
+            return cloudinary.utils.private_download_url(
+                self.arquivo.name, ext,
+                resource_type="raw", type="upload",
+                expires_at=int(time.time()) + 86400,
+                attachment=False,
+            )
+
+        if not self.arquivo_marcado_url:
+            ext = self.arquivo.name.rsplit(".", 1)[-1]
+            return cloudinary.utils.private_download_url(
+                self.arquivo.name, ext,
+                resource_type="raw", type="upload",
+                expires_at=int(time.time()) + 300,
+                attachment=False,
+            )
+
+        public_id = self._extrair_public_id(self.arquivo_marcado_url)
+        filename = self.arquivo_marcado_url.rsplit("/", 1)[-1]
+        fmt = filename.rsplit(".", 1)[-1] if "." in filename else self.arquivo.name.rsplit(".", 1)[-1]
+        res_type = self._extrair_resource_type(self.arquivo_marcado_url)
+        return cloudinary.utils.private_download_url(
+            public_id, fmt,
+            resource_type=res_type, type="upload",
+            expires_at=int(time.time()) + 300,
+            attachment=False,
+        )
+ 
 
 
 # ── Horas de trabalho ────────────────────────────────────────────────────────

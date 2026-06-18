@@ -95,6 +95,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "perfil",
+            "BI",
             "telefone",
             "empresa",
             "ID_POSTOS",
@@ -131,17 +132,15 @@ class RegistoSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "telefone": {"required": False},
             "empresa": {"required": False},
-            "ip_servidor": {"required": False},
             "especialidades": {"required": False},
             "data_contratacao": {"required": False},
-            
         }
 
     def validate(self, attrs):
         perfil = attrs.get("perfil")
 
         if perfil == Usuario.PerfilChoices.CLIENTE:
-            required_fields = ("telefone", "empresa", "ip_servidor")
+            required_fields = ("telefone", "empresa")
         elif perfil == Usuario.PerfilChoices.TECNICO:
             required_fields = ("telefone",  "especialidades", "data_contratacao")
         else:
@@ -287,6 +286,7 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = (
             "id",
+            "BI",
             "nome",
             "email",
             "telefone",
@@ -344,9 +344,11 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
         fields = (
             "nome",
             "email",
+            "BI",
             "telefone",
             "avatar_url",
             "password",
+
             "especialidades",
             "data_contratacao",
             "status",
@@ -385,6 +387,7 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "perfil",
+            "BI",
             "telefone",
             "avatar_url",
             "preferencias",

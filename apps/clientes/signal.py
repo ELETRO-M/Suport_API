@@ -26,7 +26,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                     utilizador=admin,
                     tipo="sistema",
                     titulo="Nova cliente cadastrado",
-                    mensagem=f"O cliente {instance.nome} no servidor {instance.ip_servidor} na empresa {instance.empresa.nome} foi cadastrado.",
+                    mensagem=f"O cliente {instance.nome} na empresa {instance.empresa.nome} foi cadastrado.",
                 )
             )
         Notificacao.objects.create(

@@ -255,7 +255,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
 
             anexos.append({
                 "id": str(anexo.id),
-                "arquivo": anexo.arquivo.url,
+                "arquivo": anexo.url_para(request.user),
                 "nome": anexo.arquivo.name,
             })
 
@@ -263,7 +263,6 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             data=anexos,
             status_code=status.HTTP_201_CREATED
         )
-    '''
 
 @extend_schema(tags=["Relatórios Técnicos"])
 class HoraTrabalhoViewSet(viewsets.ModelViewSet):
@@ -338,7 +337,7 @@ class HoraTrabalhoViewSet(viewsets.ModelViewSet):
 
 
 TecnicoRelatorioViewSet = HoraTrabalhoViewSet
-'''
+
 @extend_schema(tags=["Intervenções"])
 class HistoricoViewSet(viewsets.ReadOnlyModelViewSet):
 

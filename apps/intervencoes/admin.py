@@ -7,6 +7,7 @@ from apps.intervencoes.models import (
     HoraTrabalho,
     Intervencao,
 )
+from apps.usuarios.models import Usuario
 
 
 class ComentarioIntervencaoInline(admin.TabularInline):
@@ -48,7 +49,7 @@ class IntervencaoAdmin(admin.ModelAdmin):
 
                 if contrato:
                     kwargs["queryset"] = Usuario.objects.filter(
-                        empresa=contrato.empresa,
+                        empresa=contrato.Empresa,
                         perfil=Usuario.PerfilChoices.CLIENTE,
                         is_deleted=False,
                         status=Usuario.StatusChoices.ACTIVO,

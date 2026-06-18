@@ -181,7 +181,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
     
    
 
-@extend_schema(tags=["Perfis"])
+@extend_schema(tags=["Perfis"]) 
 class PerfilViewSet(
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
@@ -268,10 +268,10 @@ class TecnicoViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Apenas administradores podem atualizar técnicos.")
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN and request.user.id != instance.id:
+            self.permission_denied(request, message="Apenas administradores podem atualizar técnicos.")
+        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.pop("partial", False))
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
         return resposta_sucesso(data={"id": str(obj.id), "nome": obj.nome})

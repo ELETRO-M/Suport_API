@@ -29,9 +29,12 @@ class AnexoIntervencaoSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.URLField())
     def get_url(self, obj):
         request = self.context.get("request")
-        if request:
-            return request.build_absolute_uri(obj.arquivo.url)
-        return obj.arquivo.url
+        url = obj.url_para(request.user) if request else obj.arquivo.url
+        if request and url.startswith("http"):
+            return url
+        if request and url.startswith("/"):
+            return request.build_absolute_uri(url)
+        return url
 
 
 class ComentarioIntervencaoSerializer(serializers.ModelSerializer):

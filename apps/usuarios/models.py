@@ -61,10 +61,11 @@ class empresa(ModeloUUIDComTimestamps, SoftDeleteModel):
     def __str__(self):
         return self.nome
     def save(self, *args, **kwargs):
-        try:
-            self.full_clean()
-        except ValidationError as e:
-            raise DRFValidationError(e.message_dict)
+        if self._state.adding:
+            try:
+                self.full_clean()
+            except ValidationError as e:
+                raise DRFValidationError(e.message_dict)
         super().save(*args, **kwargs)
 
 
@@ -145,6 +146,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     telefone = models.CharField(max_length=50, blank=True)
     postos = models.CharField(max_length=50, blank=True)
     avatar_url = models.URLField(blank=True)
+    BI=models.CharField(max_length=15, blank=True)  
     is_deleted=models.BooleanField(default=False)
 
     preferencias = models.JSONField(default=dict, blank=True)
@@ -183,6 +185,8 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                 raise ValidationError({
                     "data_contratacao": "Obrigatório para técnicos.",
                     })
+            if not self.BI:
+                raise ValidationError({"BI":"obrigatorio para o técnico"},)
             if not self.telefone:
                 raise ValidationError({
                     "telefone": "Obrigatório para técnicos.",
@@ -204,10 +208,11 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
                 })
 #____________________________________________________________________________________
     def save(self, *args, **kwargs):
-        try:
-            self.full_clean()
-        except ValidationError as e:
-            raise DRFValidationError(e.message_dict)
+        if self._state.adding:
+            try:
+                self.full_clean()
+            except ValidationError as e:
+                raise DRFValidationError(e.message_dict)
         super().save(*args, **kwargs)
 
     def recuperar(self):
