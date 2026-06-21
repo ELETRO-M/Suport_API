@@ -299,29 +299,26 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         # 3. Gerar número (necessário antes do clean para unicidade)
         self._gerar_numero()
 
-        # 4. Validar — todos os valores já estão calculados
-        update_fields = kwargs.get("update_fields")
-        if update_fields is None or "is_deleted" not in update_fields:
+        # 4. Validar e processar lógica de negócio
+        is_deleting = "is_deleted" in (kwargs.get("update_fields") or {})
+        if not is_deleting:
             self.full_clean(exclude=["contrato"])
+            self._atualizar_estado_sla(kwargs)
 
-        # 5. Actualizar estado SLA (efeito secundário, depois da validação)
-        self._atualizar_estado_sla(kwargs)
+            status_final = self.status in {self.StatusChoices.FECHADO, self.StatusChoices.CONCLUIDO}
+            if status_final and not self.data_conclusao:
+                self.data_conclusao = timezone.now()
+                update_fields = kwargs.get("update_fields")
+                if update_fields is not None:
+                    kwargs["update_fields"] = set(update_fields) | {
+                        "data_conclusao"
+                    }
 
-        # 6. Definir data_conclusao se status for final
-        status_final = self.status in {self.StatusChoices.FECHADO, self.StatusChoices.CONCLUIDO}
-        if status_final and not self.data_conclusao:
-            self.data_conclusao = timezone.now()
-            update_fields = kwargs.get("update_fields")
-            if update_fields is not None:
-                kwargs["update_fields"] = set(update_fields) | {
-                    "data_conclusao"
-                }
-
-        # 7. Gravar
+        # 5. Gravar
         super().save(*args, **kwargs)
 
-        # 8. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
-        if self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
+        # 6. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
+        if not is_deleting and self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
             for anexo in self.anexos.all():
                 anexo.arquivo_marcado_url = ""
                 anexo.save(update_fields=["arquivo_marcado_url"])
