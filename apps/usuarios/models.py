@@ -148,6 +148,7 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
     avatar_url = models.URLField(blank=True)
     BI=models.CharField(max_length=15, blank=True)  
     is_deleted=models.BooleanField(default=False)
+    fcm_token = models.TextField(blank=True, default="")
 
     preferencias = models.JSONField(default=dict, blank=True)
     especialidades = models.JSONField(default=list, blank=True)

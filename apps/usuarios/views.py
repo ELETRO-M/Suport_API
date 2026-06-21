@@ -339,7 +339,7 @@ class RecuperarConta(viewsets.GenericViewSet):
 class reset_password_confirm(viewsets.GenericViewSet):
     permission_classes=[]
     authentication_classes=[]
-    queryset = Usuario.all_objects.all()
+    queryset = Usuario.objects.all()
     serializer_class=ResetSenhaSerializer
 
     def create(self, request):
