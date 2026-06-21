@@ -300,7 +300,9 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         self._gerar_numero()
 
         # 4. Validar — todos os valores já estão calculados
-        self.full_clean(exclude=["contrato"])
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or "is_deleted" not in update_fields:
+            self.full_clean(exclude=["contrato"])
 
         # 5. Actualizar estado SLA (efeito secundário, depois da validação)
         self._atualizar_estado_sla(kwargs)

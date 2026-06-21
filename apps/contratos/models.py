@@ -205,8 +205,10 @@ class Contrato(ModeloUUIDComTimestamps, SoftDeleteModel):
         if self.valor_total not in (None,0.00):
             self.valor_total = round(Decimal(str(self.valor_total)), 2)
 
-        try:
-            self.full_clean()
-        except ValidationError as e:
-            raise DRFValidationError(e.message_dict)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or "is_deleted" not in update_fields:
+            try:
+                self.full_clean()
+            except ValidationError as e:
+                raise DRFValidationError(e.message_dict)
         super().save(*args, **kwargs)

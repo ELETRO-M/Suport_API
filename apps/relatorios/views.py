@@ -290,8 +290,8 @@ class RelatorioViewSet(viewsets.GenericViewSet):
     def relatorio_financeiro(self, request: Request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Sem permissão para este recurso.")
-        contratos = Contrato.objects.all()
-        receita_mes = Contrato.objects.filter(
+        contratos = Contrato.all_objects.all()
+        receita_mes = Contrato.all_objects.filter(
             data_criacao__month=timezone.now().month,
             data_criacao__year=timezone.now().year
         ).aggregate(
