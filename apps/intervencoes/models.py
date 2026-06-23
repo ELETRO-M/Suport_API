@@ -440,12 +440,14 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                 c.setFont("Helvetica-Bold", 9)
                 c.setFillColorRGB(1, 0, 0, 0.30)
                 c.setPageRotation(0)
-                cols = int(page_w // 130) + 2
-                rows = int(page_h // 35) + 2
+                spacing_x = min(80, int(page_w // 4))
+                spacing_y = min(35, int(page_h // 6))
+                cols = int(page_w // spacing_x) + 2
+                rows = int(page_h // spacing_y) + 2
                 for row in range(rows):
                     for col in range(cols):
-                        x = col * 130
-                        y = row * 35
+                        x = col * spacing_x
+                        y = row * spacing_y
                         c.saveState()
                         c.translate(x, y)
                         c.rotate(45)
@@ -475,10 +477,14 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                 self.arquivo_marcado_url = result["secure_url"]
             else:
                 transformation = [
-                    {"overlay": f"text:Arial_24_bold:{texto_marca}"},
-                    {"opacity": 35, "width": 200, "height": 80, "flags": "tiled"},
-                    {"flags": "layer_apply"},
-                    {"fetch_format": ext},
+                    {
+                        "overlay": f"text:Arial_9_bold:{texto_marca}",
+                        "color": "red",
+                        "opacity": 30,
+                        "width": 100,
+                        "height": 35,
+                        "flags": "tiled",
+                    },
                 ]
                 result = cloudinary.uploader.upload(
                     resp.content,
