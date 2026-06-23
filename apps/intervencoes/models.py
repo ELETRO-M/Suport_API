@@ -401,7 +401,10 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     FORMATOS_MARCA = {"jpg", "jpeg", "png", "gif", "bmp", "webp", "pdf", "ico"}
 
     def gerar_marca_dagua(self):
-        tecnico = self.intervencao.tecnico
+        try:
+            tecnico = self.intervencao.tecnico
+        except Usuario.DoesNotExist:
+            tecnico = None
         if not tecnico:
             return
 
@@ -476,21 +479,33 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                 )
                 self.arquivo_marcado_url = result["secure_url"]
             else:
-                transformation = [
-                    {
-                        "overlay": f"text:Arial_9_bold:{texto_marca}",
-                        "color": "red",
-                        "opacity": 30,
-                        "width": 100,
-                        "height": 35,
-                        "flags": "tiled",
-                    },
-                ]
+                from PIL import Image, ImageDraw, ImageFont
+
+                img = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+                w, h = img.size
+                overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+                draw = ImageDraw.Draw(overlay)
+                try:
+                    font = ImageFont.truetype("arial.ttf", 9)
+                except Exception:
+                    font = ImageFont.load_default()
+                spacing_x = min(80, w // 4)
+                spacing_y = min(35, h // 6)
+                cols = w // spacing_x + 2
+                rows = h // spacing_y + 2
+                for row in range(rows):
+                    for col in range(cols):
+                        x = col * spacing_x
+                        y = row * spacing_y
+                        draw.text((x, y), texto_marca, fill=(255, 0, 0, 77), font=font)
+                wm = Image.alpha_composite(img, overlay)
+                out = io.BytesIO()
+                wm.save(out, format="PNG")
+                out.seek(0)
                 result = cloudinary.uploader.upload(
-                    resp.content,
+                    out,
                     public_id=wm_public_id,
                     resource_type="image",
-                    transformation=transformation,
                     overwrite=True,
                 )
                 self.arquivo_marcado_url = result["secure_url"]
