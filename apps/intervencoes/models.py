@@ -443,8 +443,8 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                 c.setFont("Helvetica-Bold", 9)
                 c.setFillColorRGB(1, 0, 0, 0.30)
                 c.setPageRotation(0)
-                spacing_x = min(80, int(page_w // 4))
-                spacing_y = min(35, int(page_h // 6))
+                spacing_x = max(1, int(page_w / 4))
+                spacing_y = max(1, int(page_h / 6))
                 cols = int(page_w // spacing_x) + 2
                 rows = int(page_h // spacing_y) + 2
                 for row in range(rows):
@@ -489,8 +489,8 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                     font = ImageFont.truetype("arial.ttf", 9)
                 except Exception:
                     font = ImageFont.load_default()
-                spacing_x = min(80, w // 4)
-                spacing_y = min(35, h // 6)
+                spacing_x = max(1, w // 4)
+                spacing_y = max(1, h // 6)
                 cols = w // spacing_x + 2
                 rows = h // spacing_y + 2
                 for row in range(rows):
