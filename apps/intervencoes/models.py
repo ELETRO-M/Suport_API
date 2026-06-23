@@ -9,7 +9,7 @@ import cloudinary.uploader
 import cloudinary.utils
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 
 from apps.configuracoes.models import ModeloUUIDComTimestamps, SoftDeleteModel
@@ -208,24 +208,25 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
 
     def _gerar_numero(self):
         """Gera o número único da intervenção."""
-        if not self.numero:
-            date_part = timezone.now().year
-            ultimo = (
-                Intervencao.objects.select_for_update()
-                .filter(data_abertura__year=date_part, numero__startswith=f"INT-{date_part}-")
-                .order_by("-numero")
-                .values_list("numero", flat=True)
-                .first()
+        if self.numero:
+            return
+        date_part = timezone.now().year
+        ultimo = (
+            Intervencao.objects.filter(
+                numero__startswith=f"INT-{date_part}-"
             )
-            if ultimo:
-                try:
-                    last_id = int(ultimo.split("-")[-1]) + 1
-                except (ValueError, IndexError):
-                    last_id = 1
-            else:
+            .order_by("-numero")
+            .values_list("numero", flat=True)
+            .first()
+        )
+        if ultimo:
+            try:
+                last_id = int(ultimo.split("-")[-1]) + 1
+            except (ValueError, IndexError):
                 last_id = 1
-
-            self.numero = f"INT-{date_part}-{last_id:03d}"
+        else:
+            last_id = 1
+        self.numero = f"INT-{date_part}-{last_id:03d}"
 
 
 
@@ -310,11 +311,19 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                         "data_conclusao"
                     }
 
-        # 4. Gravar (número gerado dentro da mesma transação para evitar duplicados)
+        # 4. Gravar com retry em caso de numero duplicado (concorrência)
         if self._state.adding:
-            with transaction.atomic():
+            for _ in range(10):
                 self._gerar_numero()
-                super().save(*args, **kwargs)
+                try:
+                    with transaction.atomic():
+                        super().save(*args, **kwargs)
+                except IntegrityError:
+                    self.numero = ""
+                    continue
+                break
+            else:
+                raise RuntimeError("Não foi possível gerar um número único após 10 tentativas.")
         else:
             super().save(*args, **kwargs)
 
