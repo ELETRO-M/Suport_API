@@ -84,6 +84,15 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return resposta_sucesso(data=serializer.data)
 
+
+    @action(detail=False, methods=["post"], url_path="fcm-token", permission_classes=[IsAuthenticated])
+    def registar_fcm_token(self, request):
+        token = request.data.get("token", "")
+        if not token:
+            return resposta_erro(message="Token obrigatório.")
+        request.user.fcm_token = token
+        request.user.save(update_fields=["fcm_token"])
+        return resposta_sucesso(message="Token registado com sucesso.")
         
 #_________________________________________________________________________________________________________________
     @action(detail=True, methods=["delete"], url_path="register", permission_classes=[IsAuthenticated])
@@ -352,7 +361,7 @@ class reset_password_confirm(viewsets.GenericViewSet):
 @extend_schema(tags=['Empresa'])
 class empresaviewset(viewsets.ModelViewSet):
     permission_classes=[IsAuthenticated]
-    queryset= empresa.all_objects.all()
+    queryset= empresa.objects.all()
     serializer_class= empresdatilserialazrs
 
     def list(self, request):

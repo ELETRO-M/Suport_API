@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 from django.conf import settings
 
@@ -7,14 +8,44 @@ logger = logging.getLogger(__name__)
 
 try:
     import firebase_admin
-    from firebase_admin import credentials, firestore
+    from firebase_admin import credentials, firestore, messaging
 except ImportError:
     firebase_admin = None
     credentials = None
     firestore = None
+    messaging = None
 
 
 _client = None
+
+
+def _carregar_credenciais():
+    """Tenta carregar as credenciais Firebase com suporte a \n literais no private_key."""
+    raw = getattr(settings, "FIREBASE_CREDENTIALS_JSON", "") or ""
+    if not raw:
+        return None
+
+    raw = raw.strip().strip('"').strip("'")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    # Tentar substituir \n literais (comum em env vars)
+    raw = raw.replace("\\n", "\n")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    # Tentar remover quebras de linha e espaços extra
+    raw = raw.replace("\n", "").replace("\r", "")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    return None
 
 
 def _inicializar_firebase():
@@ -22,12 +53,12 @@ def _inicializar_firebase():
         return None
 
     if not firebase_admin._apps:
-        credenciais_json = getattr(settings, "FIREBASE_CREDENTIALS_JSON", "")
         credenciais_path = getattr(settings, "FIREBASE_CREDENTIALS_PATH", "")
         project_id = getattr(settings, "FIREBASE_PROJECT_ID", "")
 
-        if credenciais_json:
-            credenciais = credentials.Certificate(json.loads(credenciais_json))
+        dados = _carregar_credenciais()
+        if dados:
+            credenciais = credentials.Certificate(dados)
             firebase_admin.initialize_app(credenciais)
         elif credenciais_path:
             credenciais = credentials.Certificate(credenciais_path)
@@ -110,3 +141,18 @@ def publicar_anexo(anexo):
             "data_criacao": anexo.data_criacao.isoformat(),
         },
     )
+
+
+def enviar_push_notificacao(utilizador, titulo, corpo, dados=None):
+    if messaging is None or not utilizador.fcm_token:
+        return
+
+    try:
+        mensagem = messaging.Message(
+            notification=messaging.Notification(title=titulo, body=corpo),
+            token=utilizador.fcm_token,
+            data=dados or {},
+        )
+        messaging.send(mensagem)
+    except Exception:
+        logger.exception("Erro ao enviar push para %s", utilizador.email)

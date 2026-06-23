@@ -207,26 +207,25 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                     kwargs["update_fields"] = set(update_fields) | {"contrato"}
 
     def _gerar_numero(self):
-        """Gera o número único da intervenção de forma segura contra concorrência."""
+        """Gera o número único da intervenção."""
         if not self.numero:
-            with transaction.atomic():
-                date_part = timezone.now().year
-                ultimo = (
-                    Intervencao.objects.select_for_update()
-                    .filter(data_abertura__year=date_part, numero__startswith=f"INT-{date_part}-")
-                    .order_by("-numero")
-                    .values_list("numero", flat=True)
-                    .first()
-                )
-                if ultimo:
-                    try:
-                        last_id = int(ultimo.split("-")[-1]) + 1
-                    except (ValueError, IndexError):
-                        last_id = 1
-                else:
+            date_part = timezone.now().year
+            ultimo = (
+                Intervencao.objects.select_for_update()
+                .filter(data_abertura__year=date_part, numero__startswith=f"INT-{date_part}-")
+                .order_by("-numero")
+                .values_list("numero", flat=True)
+                .first()
+            )
+            if ultimo:
+                try:
+                    last_id = int(ultimo.split("-")[-1]) + 1
+                except (ValueError, IndexError):
                     last_id = 1
+            else:
+                last_id = 1
 
-                self.numero = f"INT-{date_part}-{last_id:03d}"
+            self.numero = f"INT-{date_part}-{last_id:03d}"
 
 
 
@@ -296,10 +295,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         # 2. Calcular horas a partir das datas (necessário antes do clean)
         self._calcular_horas_trabalhadas()
 
-        # 3. Gerar número (necessário antes do clean para unicidade)
-        self._gerar_numero()
-
-        # 4. Validar e processar lógica de negócio
+        # 3. Validar e processar lógica de negócio
         is_deleting = "is_deleted" in (kwargs.get("update_fields") or {})
         if not is_deleting:
             self.full_clean(exclude=["contrato"])
@@ -314,8 +310,13 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                         "data_conclusao"
                     }
 
-        # 5. Gravar
-        super().save(*args, **kwargs)
+        # 4. Gravar (número gerado dentro da mesma transação para evitar duplicados)
+        if self._state.adding:
+            with transaction.atomic():
+                self._gerar_numero()
+                super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
 
         # 6. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
         if not is_deleting and self.tecnico_id and tecnico_anterior_id != self.tecnico_id:

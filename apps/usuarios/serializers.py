@@ -65,6 +65,7 @@ class empresdatilserialazrs(serializers.ModelSerializer):
             "endereco",
             "telefone",
             "status",
+            "is_deleted",
             "postos",
             "data_criacao",
             "data_actualizacao"
