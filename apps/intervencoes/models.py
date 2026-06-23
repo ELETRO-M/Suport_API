@@ -440,8 +440,8 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
 
                 wm_buf = io.BytesIO()
                 c = rl_canvas.Canvas(wm_buf, pagesize=(page_w, page_h))
-                c.setFont("Helvetica-Bold", 9)
-                c.setFillColorRGB(1, 0, 0, 0.30)
+                c.setFont("Helvetica-Bold", 14)
+                c.setFillColorRGB(1, 0, 0, 0.50)
                 c.setPageRotation(0)
                 spacing_x = max(1, int(page_w / 4))
                 spacing_y = max(1, int(page_h / 6))
@@ -486,7 +486,7 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                 overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
                 draw = ImageDraw.Draw(overlay)
                 try:
-                    font = ImageFont.truetype("arial.ttf", 9)
+                    font = ImageFont.truetype("arial.ttf", 14)
                 except Exception:
                     font = ImageFont.load_default()
                 spacing_x = max(1, w // 4)
@@ -497,7 +497,7 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                     for col in range(cols):
                         x = col * spacing_x
                         y = row * spacing_y
-                        draw.text((x, y), texto_marca, fill=(255, 0, 0, 77), font=font)
+                        draw.text((x, y), texto_marca, fill=(255, 0, 0, 128), font=font)
                 wm = Image.alpha_composite(img, overlay)
                 out = io.BytesIO()
                 wm.save(out, format="PNG")
