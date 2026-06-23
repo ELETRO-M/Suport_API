@@ -2,7 +2,7 @@ import re
 import time
 from datetime import timedelta
 from decimal import Decimal
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 import cloudinary
 import cloudinary.uploader
@@ -380,7 +380,7 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
 
     @staticmethod
     def _extrair_public_id(url):
-        path = urlparse(url).path
+        path = unquote(urlparse(url).path)
         path = re.sub(r"^/.+?/upload/", "", path)
         path = re.sub(r"^v\d+/", "", path)
         return path.rsplit(".", 1)[0]
@@ -410,7 +410,7 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
             return
 
         texto_marca = f"{tecnico.nome} - {tecnico.BI}"
-        wm_public_id = f"{self.arquivo.name.rsplit('.', 1)[0]}_wm"
+        wm_public_id = re.sub(r"[^a-zA-Z0-9_/.-]", "_", f"{self.arquivo.name.rsplit('.', 1)[0]}_wm")
 
         try:
             src_url = cloudinary.utils.private_download_url(

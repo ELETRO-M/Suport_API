@@ -11,6 +11,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from drf_spectacular.utils import extend_schema_field
 from django.db.models import Sum
+from django.db import IntegrityError
 from apps.usuarios.models import Usuario, empresa
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import Intervencao
@@ -163,9 +164,18 @@ class RegistoSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def validate_email(self, value):
+        email = Usuario.objects.normalize_email(value)
+        if Usuario.all_objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError("Já existe um utilizador com este email.")
+        return email
+
     def create(self, validated_data):
         password = validated_data.pop("password")
-        return Usuario.objects.create_user(password=password, **validated_data)
+        try:
+            return Usuario.objects.create_user(password=password, **validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError({"email": "Já existe um utilizador com este email."})
 
 
 class InicioSessaoSerializer(serializers.Serializer):
@@ -355,13 +365,22 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
             "status",
         )
 
+    def validate_email(self, value):
+        email = Usuario.objects.normalize_email(value)
+        if Usuario.all_objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError("Já existe um utilizador com este email.")
+        return email
+
     def create(self, validated_data):
         password = validated_data.pop("password", "123456")
-        return Usuario.objects.create_user(
-            password=password,
-            perfil=Usuario.PerfilChoices.TECNICO,
-            **validated_data,
-        )
+        try:
+            return Usuario.objects.create_user(
+                password=password,
+                perfil=Usuario.PerfilChoices.TECNICO,
+                **validated_data,
+            )
+        except IntegrityError:
+            raise serializers.ValidationError({"email": "Já existe um utilizador com este email."})
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
