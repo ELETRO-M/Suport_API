@@ -278,46 +278,49 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
 
    
 
-    def save(self, *args, **kwargs):
+def save(self, *args, **kwargs):
+    
+    # Guardar IDs anteriores para comparações
+    contrato_anterior_id = None
+    tecnico_anterior_id = None
+    if self.pk:
+        anterior = (
+            Intervencao.objects.filter(pk=self.pk)
+            .values("contrato_id", "tecnico_id")
+            .first()
+        )
+        if anterior:
+            contrato_anterior_id = anterior["contrato_id"]
+            tecnico_anterior_id = anterior["tecnico_id"]
+
+    # 2. Calcular horas a partir das datas (necessário antes do clean)
+    self._calcular_horas_trabalhadas()
+
+    # 3. Validar e processar lógica de negócio
+    is_deleting = "is_deleted" in (kwargs.get("update_fields") or {})
+    if not is_deleting:
+        update_fields = kwargs.get("update_fields")
         
-        # Guardar IDs anteriores para comparações
-        contrato_anterior_id = None
-        tecnico_anterior_id = None
-        if self.pk:
-            anterior = (
-                Intervencao.objects.filter(pk=self.pk)
-                .values("contrato_id", "tecnico_id")
-                .first()
-            )
-            if anterior:
-                contrato_anterior_id = anterior["contrato_id"]
-                tecnico_anterior_id = anterior["tecnico_id"]
+        exclude_fields = ["contrato"]
+        if update_fields and "cliente" not in update_fields:
+            exclude_fields.append("cliente")
+        
+        self.full_clean(exclude=exclude_fields)
+        self._atualizar_estado_sla(kwargs)
 
-        # 2. Calcular horas a partir das datas (necessário antes do clean)
-        self._calcular_horas_trabalhadas()
+        status_final = self.status in {self.StatusChoices.FECHADO, self.StatusChoices.CONCLUIDO}
+        if status_final and not self.data_conclusao:
+            self.data_conclusao = timezone.now()
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"data_conclusao"}
 
-        # 3. Validar e processar lógica de negócio
-        is_deleting = "is_deleted" in (kwargs.get("update_fields") or {})
-        if not is_deleting:
-            self.full_clean(exclude=["contrato"])
-            self._atualizar_estado_sla(kwargs)
-
-            status_final = self.status in {self.StatusChoices.FECHADO, self.StatusChoices.CONCLUIDO}
-            if status_final and not self.data_conclusao:
-                self.data_conclusao = timezone.now()
-                update_fields = kwargs.get("update_fields")
-                if update_fields is not None:
-                    kwargs["update_fields"] = set(update_fields) | {
-                        "data_conclusao"
-                    }
-
-        # 4. Gravar (número gerado dentro da mesma transação com advisory lock)
-        if self._state.adding:
-            with transaction.atomic():
-                self._gerar_numero()
-                super().save(*args, **kwargs)
-        else:
+    # 4. Gravar (número gerado dentro da mesma transação com advisory lock)
+    if self._state.adding:
+        with transaction.atomic():
+            self._gerar_numero()
             super().save(*args, **kwargs)
+    else:
+        super().save(*args, **kwargs)
 
         # 6. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
         if not is_deleting and self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
@@ -529,7 +532,7 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
             return cloudinary.utils.private_download_url(
                 self.arquivo.name, ext,
                 resource_type="raw", type="upload",
-                expires_at=int(time.time()) + 300,
+                expires_at=int(time.time()) + 86400,
                 attachment=False,
             )
 
@@ -540,7 +543,7 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         return cloudinary.utils.private_download_url(
             public_id, fmt,
             resource_type=res_type, type="upload",
-            expires_at=int(time.time()) + 300,
+            expires_at=int(time.time()) + 86400,
             attachment=False,
         )
  
