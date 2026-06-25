@@ -286,8 +286,8 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
 
    
     def save(self, *args, **kwargs):
-        
-        # Guardar IDs anteriores para comparações
+    
+    # Guardar IDs anteriores para comparações
         contrato_anterior_id = None
         tecnico_anterior_id = None
         if self.pk:
@@ -307,11 +307,13 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         is_deleting = "is_deleted" in (kwargs.get("update_fields") or {})
         if not is_deleting:
             update_fields = kwargs.get("update_fields")
-            
+
             exclude_fields = ["contrato"]
             if update_fields and "cliente" not in update_fields:
                 exclude_fields.append("cliente")
-            
+            if self._state.adding:
+                exclude_fields.append("numero")
+
             self.full_clean(exclude=exclude_fields)
             self._atualizar_estado_sla(kwargs)
 
@@ -337,11 +339,11 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         else:
             super().save(*args, **kwargs)
 
-            # 6. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
-            if not is_deleting and self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
-                for anexo in self.anexos.all():
-                    anexo.arquivo_marcado_url = ""
-                    anexo.save(update_fields=["arquivo_marcado_url"])
+        # 6. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
+        if not is_deleting and self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
+            for anexo in self.anexos.all():
+                anexo.arquivo_marcado_url = ""
+                anexo.save(update_fields=["arquivo_marcado_url"])
                 anexo.gerar_marca_dagua()
 
         # 9. Actualizar horas usadas nos contratos afectados
