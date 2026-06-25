@@ -10,6 +10,7 @@ import cloudinary.utils
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection, models, transaction
+from django.db.utils import IntegrityError
 from django.utils import timezone
 
 from apps.configuracoes.models import ModeloUUIDComTimestamps, SoftDeleteModel
@@ -207,26 +208,33 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
                     kwargs["update_fields"] = set(update_fields) | {"contrato"}
 
     def _gerar_numero(self):
-        """Gera o número único da intervenção usando lock de advisory no PostgreSQL."""
+        """Gera o número único da intervenção com retry até encontrar um livre."""
         if self.numero:
             return
         date_part = timezone.now().year
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [date_part])
-            ultimo = (
-                Intervencao.all_objects.filter(numero__startswith=f"INT-{date_part}-")
-                .order_by("-numero")
-                .values_list("numero", flat=True)
-                .first()
-            )
-            if ultimo:
-                try:
-                    last_id = int(ultimo.split("-")[-1]) + 1
-                except (ValueError, IndexError):
+        for _ in range(100):
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(%s)", [date_part])
+                ultimo = (
+                    Intervencao.all_objects.filter(numero__startswith=f"INT-{date_part}-")
+                    .order_by("-numero")
+                    .values_list("numero", flat=True)
+                    .first()
+                )
+                if ultimo:
+                    try:
+                        last_id = int(ultimo.split("-")[-1]) + 1
+                    except (ValueError, IndexError):
+                        last_id = 1
+                else:
                     last_id = 1
-            else:
-                last_id = 1
-            self.numero = f"INT-{date_part}-{last_id:03d}"
+                numero = f"INT-{date_part}-{last_id:03d}"
+                if not Intervencao.all_objects.filter(numero=numero).exists():
+                    self.numero = numero
+                    return
+        # Safety: should never reach here
+        import uuid
+        self.numero = f"INT-{date_part}-{uuid.uuid4().hex[:6]}"
 
 
 
@@ -277,56 +285,63 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     # ── Save ─────────────────────────────────────────────────────────────────
 
    
-
-def save(self, *args, **kwargs):
-    
-    # Guardar IDs anteriores para comparações
-    contrato_anterior_id = None
-    tecnico_anterior_id = None
-    if self.pk:
-        anterior = (
-            Intervencao.objects.filter(pk=self.pk)
-            .values("contrato_id", "tecnico_id")
-            .first()
-        )
-        if anterior:
-            contrato_anterior_id = anterior["contrato_id"]
-            tecnico_anterior_id = anterior["tecnico_id"]
-
-    # 2. Calcular horas a partir das datas (necessário antes do clean)
-    self._calcular_horas_trabalhadas()
-
-    # 3. Validar e processar lógica de negócio
-    is_deleting = "is_deleted" in (kwargs.get("update_fields") or {})
-    if not is_deleting:
-        update_fields = kwargs.get("update_fields")
+    def save(self, *args, **kwargs):
         
-        exclude_fields = ["contrato"]
-        if update_fields and "cliente" not in update_fields:
-            exclude_fields.append("cliente")
-        
-        self.full_clean(exclude=exclude_fields)
-        self._atualizar_estado_sla(kwargs)
+        # Guardar IDs anteriores para comparações
+        contrato_anterior_id = None
+        tecnico_anterior_id = None
+        if self.pk:
+            anterior = (
+                Intervencao.objects.filter(pk=self.pk)
+                .values("contrato_id", "tecnico_id")
+                .first()
+            )
+            if anterior:
+                contrato_anterior_id = anterior["contrato_id"]
+                tecnico_anterior_id = anterior["tecnico_id"]
 
-        status_final = self.status in {self.StatusChoices.FECHADO, self.StatusChoices.CONCLUIDO}
-        if status_final and not self.data_conclusao:
-            self.data_conclusao = timezone.now()
-            if update_fields is not None:
-                kwargs["update_fields"] = set(update_fields) | {"data_conclusao"}
+        # 2. Calcular horas a partir das datas (necessário antes do clean)
+        self._calcular_horas_trabalhadas()
 
-    # 4. Gravar (número gerado dentro da mesma transação com advisory lock)
-    if self._state.adding:
-        with transaction.atomic():
-            self._gerar_numero()
+        # 3. Validar e processar lógica de negócio
+        is_deleting = "is_deleted" in (kwargs.get("update_fields") or {})
+        if not is_deleting:
+            update_fields = kwargs.get("update_fields")
+            
+            exclude_fields = ["contrato"]
+            if update_fields and "cliente" not in update_fields:
+                exclude_fields.append("cliente")
+            
+            self.full_clean(exclude=exclude_fields)
+            self._atualizar_estado_sla(kwargs)
+
+            status_final = self.status in {self.StatusChoices.FECHADO, self.StatusChoices.CONCLUIDO}
+            if status_final and not self.data_conclusao:
+                self.data_conclusao = timezone.now()
+                if update_fields is not None:
+                    kwargs["update_fields"] = set(update_fields) | {"data_conclusao"}
+
+        # 4. Gravar (número gerado dentro da mesma transação com advisory lock)
+        if self._state.adding:
+            for tentativa in range(3):
+                try:
+                    with transaction.atomic():
+                        self._gerar_numero()
+                        super().save(*args, **kwargs)
+                    break
+                except IntegrityError as e:
+                    if "numero" in str(e) and tentativa < 2:
+                        self.numero = ""
+                        continue
+                    raise
+        else:
             super().save(*args, **kwargs)
-    else:
-        super().save(*args, **kwargs)
 
-        # 6. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
-        if not is_deleting and self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
-            for anexo in self.anexos.all():
-                anexo.arquivo_marcado_url = ""
-                anexo.save(update_fields=["arquivo_marcado_url"])
+            # 6. Se o técnico foi atribuído ou alterado, (re)aplicar marca d'água
+            if not is_deleting and self.tecnico_id and tecnico_anterior_id != self.tecnico_id:
+                for anexo in self.anexos.all():
+                    anexo.arquivo_marcado_url = ""
+                    anexo.save(update_fields=["arquivo_marcado_url"])
                 anexo.gerar_marca_dagua()
 
         # 9. Actualizar horas usadas nos contratos afectados
