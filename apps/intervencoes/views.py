@@ -1,7 +1,10 @@
+from apps.intervencoes import serializers
+from apps.intervencoes import serializers
+from apps.intervencoes import serializers
 from datetime import timedelta
 from typing import cast
 
-
+from apps.configuracoes.whatsapp import enviar_whatsapp
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import parsers, status, viewsets
@@ -100,6 +103,8 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
 
     @extend_schema(request={"multipart/form-data": IntervencaoEscritaSerializer})
     def create(self, request, *args, **kwargs):
+        def perform_create(self, serializer):
+            serializer.save(criado_por=self.request.user)
         if request.user.perfil not in {Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.CLIENTE}:
             self.permission_denied(request, message="Sem permissão para criar intervenções.")
         serializer = self.get_serializer(data=request.data, context={"request": request})
@@ -189,6 +194,20 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             tipo="informação",
             link=f"/intervencoes/{instance.id}",
         )
+        if tecnico.telefone:
+            enviar_whatsapp(
+                numero=tecnico.telefone,
+                texto=(
+                    f"🛠️ *Nova intervenção atribuída*\n\n"
+                    f"Olá, {tecnico.nome}! Foi-lhe atribuída uma nova intervenção.\n\n"
+                    f"🔢 *Número:* {instance.numero}\n"
+                    f"📝 *Título:* {instance.titulo}\n"
+                    f"⚠️ *Prioridade:* {instance.prioridade}\n"
+                    f"🔧 *Actuação:* {instance.actuacao_tipo}\n"
+                    f"👤 *Cliente:* {instance.cliente.nome}\n"
+                    f"🏢 *Empresa:* {instance.cliente.empresa.nome}"
+                ),
+            )
 
         return resposta_sucesso(
             data={"id": str(instance.id), "tecnico_id": str(tecnico.id), "tecnico_nome": tecnico.nome}
@@ -217,6 +236,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
                 mensagem=f"Foi adicionado um comentário na intervenção {instance.numero}.",
                 link=f"/intervencoes/{instance.id}",
             )
+            enviar_whatsapp(numero=f"{instance.telefone}", texto=f"🚨🚨Novo comentário add na intervenção {instance.numero}🚨🚨")
         return resposta_sucesso(
             data={
                 "id": str(comentario.id),

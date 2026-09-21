@@ -67,7 +67,7 @@ ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
-        default=config("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=60,
         ssl_require=not DEBUG,
     )
@@ -99,6 +99,10 @@ SITE_URL=config("SITE_URL",default="http://localhost:8000")
 FIREBASE_CREDENTIALS_JSON = config("FIREBASE_CREDENTIALS_JSON", default="")
 FIREBASE_CREDENTIALS_PATH = config("FIREBASE_CREDENTIALS_PATH", default="")
 FIREBASE_PROJECT_ID = config("FIREBASE_PROJECT_ID", default="")
+
+WHATSAPP_API_URL = config("WHATSAPP_API_URL", default="")
+WHATSAPP_INSTANCE = config("WHATSAPP_INSTANCE", default="")
+WHATSAPP_API_KEY = config("WHATSAPP_API_KEY", default="")
 
 LANGUAGE_CODE = "pt-pt"
 TIME_ZONE = "Africa/Luanda"

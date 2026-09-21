@@ -28,6 +28,7 @@ class ContratoListaSerializer(serializers.ModelSerializer):
             "data_inicio",
             "data_fim",
             "status",
+            "criado_por",
             "descricao_contrato",
             "observacoes",
         )

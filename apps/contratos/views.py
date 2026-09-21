@@ -1,4 +1,6 @@
 
+from apps.contratos import serializers
+from apps.contratos import serializers
 from django.db.models import QuerySet
 import logging
 from typing import Type, cast
@@ -79,6 +81,8 @@ class ContratoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(data=serializer.data)
 
     def create(self, request, *args, **kwargs):
+        def perform_create(self, serializer):
+            serializer.save(criado_por=self.request.user)
         if request.user.perfil not in (Usuario.PerfilChoices.ADMIN, Usuario.PerfilChoices.CLIENTE):
             self.permission_denied(request, message="Permissão negada para este recurso.")
 

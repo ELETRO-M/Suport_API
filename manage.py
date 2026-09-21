@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+from email import contentmanager
 import os
 import sys
 from pathlib import Path
+from apps.configuracoes.whatsapp import enviar_whatsapp
 
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -25,3 +27,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+  

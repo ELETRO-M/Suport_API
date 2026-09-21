@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from apps.configuracoes.whatsapp import enviar_whatsapp
 from apps.contratos.models import Contrato
 from apps.notificacoes.models import Notificacao
 from apps.usuarios.models import Usuario
@@ -16,19 +17,22 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
             is_deleted=False,
             status=Usuario.StatusChoices.ACTIVO
         )
-
-        notificacoes = []
+        criado_por = getattr(instance, "criado_por", None) or "sistema"
+        texto_whatsapp = (
+            "📄 *Novo contrato*\n\n"
+            f"📋 *Tipo:* {instance.tipo_contrato}\n"
+            f"🏢 *Empresa:* {instance.Empresa.nome}\n"
+            f"⌚ *Horas contratadas:* {instance.horas_contratadas}\n"
+            f"🖊 *Criado por:* {criado_por}\n"
+            f"📄 *Descrição:* {instance.descricao_contrato}"
+        )
 
         for admin in admins:
-
-            notificacoes.append(
-                Notificacao(
-                    utilizador=admin,
-                    tipo="sistema",
-                    titulo="Novo contrato",
-                    mensagem=f"Novo contrato {instance.tipo_contrato} criado para a empresa {instance.Empresa.nome}.",
-                    
-                )
+            Notificacao.objects.create(
+                utilizador=admin,
+                tipo="sistema",
+                titulo="Novo contrato",
+                mensagem=f"Novo contrato {instance.tipo_contrato} criado para a empresa {instance.Empresa.nome}.",
             )
-
-        Notificacao.objects.bulk_create(notificacoes)
+            if admin.telefone:
+                enviar_whatsapp(numero=admin.telefone, texto=texto_whatsapp)

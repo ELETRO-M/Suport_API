@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 from apps.configuracoes.firebase import publicar_notificacao, enviar_notificacao_push, remover_notificacao
+from apps.configuracoes.whatsapp import enviar_whatsapp
 from apps.notificacoes.models import Notificacao
 
 
@@ -23,6 +24,12 @@ def publicar_notificacao_firebase(sender, instance, created, **kwargs):
             mensagem=instance.mensagem,
             data=data
         )
+        # Notificar também por WhatsApp, se o utilizador tiver telefone
+        if instance.utilizador.telefone:
+            enviar_whatsapp(
+                numero=instance.utilizador.telefone,
+                texto=f"{instance.titulo}\n\n{instance.mensagem}",
+            )
 
 
 @receiver(post_delete, sender=Notificacao)

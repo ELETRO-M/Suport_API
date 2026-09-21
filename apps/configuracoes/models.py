@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 
 
@@ -7,6 +8,14 @@ class ModeloUUIDComTimestamps(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_actualizacao = models.DateTimeField(auto_now=True)
+    criado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="%(class)s_criados",
+        editable=False,
+    )
 
     class Meta:
         abstract = True

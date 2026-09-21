@@ -65,7 +65,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         blank=True,
         limit_choices_to={"is_deleted": False, "status": Contrato.StatusChoices.ACTIVO},
     )
-    estado = models.CharField(choices=Estado.choices, default=Estado.ACTIVO)
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVO)
     actuacao_tipo = models.CharField(
         max_length=20, choices=ActuacaoTipo.choices, default=ActuacaoTipo.REMOTO
     )
