@@ -17,6 +17,7 @@ from apps.contratos.views import ContratoViewSet
 from apps.clientes.views import ClienteViewSet
 from apps.intervencoes.views import  IntervencaoViewSet, HistoricoViewSet
 from apps.notificacoes.views import NotificacaoViewSet
+from apps.tarefas.views import TarefaViewSet
 from apps.relatorios.views import RelatorioViewSet
 from apps.sistema.views import ConfiguracaoSistemaViewSet
 
@@ -29,6 +30,7 @@ router.register(r"intervencoes", IntervencaoViewSet, basename="intervencoes")
 router.register(r"intervencoes-historicos", HistoricoViewSet, basename="historico")
 router.register(r"tecnicos", TecnicoViewSet, basename="tecnicos")
 router.register(r"relatorios", RelatorioViewSet, basename="relatorios")
+router.register(r"tarefas", TarefaViewSet, basename="tarefas")
 router.register(r"notificacoes", NotificacaoViewSet, basename="notificacoes")
 router.register(r"recuperar", RecuperarConta, basename="recuperar")
 router.register(r'reset-password', reset_password_confirm, basename='restpassword' )

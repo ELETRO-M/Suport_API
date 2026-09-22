@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.db import IntegrityError
 from apps.usuarios.models import Usuario, empresa as Empresa
+from apps.usuarios.serializers import AvatarURLField
 from apps.contratos.models import Contrato
 from django.conf import settings
 from drf_spectacular.utils import extend_schema_field
@@ -39,7 +40,7 @@ class ClienteEmpresaSerializer(serializers.ModelSerializer):
 class ClienteListaSerializer(serializers.ModelSerializer):
     contratos_ativos = serializers.SerializerMethodField()
     empresa = ClienteEmpresaSerializer(read_only=True)
-    
+    avatar_url = serializers.URLField(required=False, read_only=True, help_text="URL do avatar.")
 
     class Meta:
         model = Usuario
@@ -49,6 +50,7 @@ class ClienteListaSerializer(serializers.ModelSerializer):
             "email",
             "perfil",
             "telefone",
+            "avatar_url",
             "empresa",
             "ID_POSTOS",
             "status",
@@ -102,6 +104,7 @@ class ClienteDetalheSerializer(ClienteListaSerializer):
 
 class ClienteEscritaSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
+    avatar_url = AvatarURLField(required=False)
 
     class Meta:
         model = Usuario
@@ -109,6 +112,7 @@ class ClienteEscritaSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "telefone",
+            "avatar_url",
             "empresa",
             "ID_POSTOS",
             "password",

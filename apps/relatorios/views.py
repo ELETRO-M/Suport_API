@@ -1,16 +1,18 @@
 from decimal import Decimal
 
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Count, F, Sum
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 
 from apps.usuarios.models import Usuario, empresa
 from apps.configuracoes.responses import resposta_sucesso
+from apps.configuracoes.schema import resposta_erro as esquema_erro, resposta_sucesso as esquema_resposta
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import HoraTrabalho, Intervencao
+from apps.tarefas.models import Tarefa
 from django.db.models.functions import TruncMonth, TruncWeek
 from django.utils import timezone
 
@@ -19,7 +21,7 @@ class RelatorioSerializer(serializers.Serializer):
     pass
 
 
-@extend_schema(tags=["Admin"])
+@extend_schema(tags=["Relatórios"])
 class RelatorioViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Intervencao.objects.none()
@@ -311,6 +313,136 @@ class RelatorioViewSet(viewsets.GenericViewSet):
                 for item in contratos.order_by("data_fim")[:10]
             ],
             "previsao_receita": contratos.aggregate(total=Sum("valor_total"))["total"] or 0,
+        }
+        return resposta_sucesso(data=data)
+
+    @extend_schema(
+        summary="Relatório de tarefas",
+        operation_id="relatorio_tarefas",
+        description=(
+            "Relatório das tarefas internas da equipa. O **admin** vê todas as tarefas; o **técnico** "
+            "vê apenas as que lhe estão atribuídas. Inclui totais por estado/prioridade, taxa de "
+            "cumprimento de prazo e tempo médio de conclusão."
+        ),
+        parameters=[
+            OpenApiParameter(name="atribuido_a_id", description="Filtra pelo responsável (ID).", required=False),
+            OpenApiParameter(name="intervencao_id", description="Filtra pela intervenção associada (ID).", required=False),
+            OpenApiParameter(
+                name="estado",
+                description="Filtra pelo estado.",
+                required=False,
+                enum=["pendente", "em_progresso", "concluida", "cancelada", "expirado"],
+            ),
+            OpenApiParameter(
+                name="prioridade",
+                description="Filtra pela prioridade.",
+                required=False,
+                enum=["baixa", "media", "alta", "urgente"],
+            ),
+            OpenApiParameter(name="data_inicio", description="Data de criação mínima (YYYY-MM-DD).", required=False),
+            OpenApiParameter(name="data_fim", description="Data de criação máxima (YYYY-MM-DD).", required=False),
+        ],
+        responses={
+            200: esquema_resposta(
+                serializers.DictField(),
+                "Relatório de tarefas.",
+                "RelatorioTarefas",
+                exemplos=[
+                    OpenApiExample(
+                        "Exemplo",
+                        value={
+                            "total_tarefas": 10,
+                            "por_estado": [{"estado": "pendente", "total": 3}],
+                            "por_prioridade": [{"prioridade": "alta", "total": 4}],
+                            "total_concluidas": 5,
+                            "concluidas_no_prazo": 4,
+                            "expiradas": 1,
+                            "taxa_cumprimento_prazo": 80.0,
+                            "tempo_medio_conclusao_horas": 24.5,
+                            "tarefas": [{"id": "uuid", "numero": "TAR-2026-001", "titulo": "…"}],
+                        },
+                    )
+                ],
+            ),
+            403: esquema_erro("Sem permissão para este relatório."),
+        },
+    )
+    @action(detail=False, methods=["get"], url_path="tarefas")
+    def relatorio_tarefas(self, request: Request):
+        if request.user.perfil not in [
+            Usuario.PerfilChoices.ADMIN,
+            Usuario.PerfilChoices.TECNICO,
+        ]:
+            self.permission_denied(request, message="Sem permissão para este relatório.")
+
+        queryset = Tarefa.objects.all()
+        if request.user.perfil == Usuario.PerfilChoices.TECNICO:
+            queryset = queryset.filter(atribuido_a=request.user)
+        if request.query_params.get("atribuido_a_id"):
+            queryset = queryset.filter(atribuido_a_id=request.query_params["atribuido_a_id"])
+        if request.query_params.get("intervencao_id"):
+            queryset = queryset.filter(intervencao_id=request.query_params["intervencao_id"])
+        if request.query_params.get("estado"):
+            queryset = queryset.filter(estado=request.query_params["estado"])
+        if request.query_params.get("prioridade"):
+            queryset = queryset.filter(prioridade=request.query_params["prioridade"])
+        if request.query_params.get("data_inicio"):
+            queryset = queryset.filter(data_criacao__date__gte=request.query_params["data_inicio"])
+        if request.query_params.get("data_fim"):
+            queryset = queryset.filter(data_criacao__date__lte=request.query_params["data_fim"])
+
+        concluidas = queryset.filter(estado=Tarefa.EstadoChoices.CONCLUIDA)
+        concluidas_no_prazo = concluidas.filter(
+            data_conclusao__isnull=False,
+            data_fim__isnull=False,
+            data_conclusao__lte=F("data_fim"),
+        ).count()
+        total_concluidas = concluidas.count()
+
+        taxa_cumprimento = (
+            round(concluidas_no_prazo * 100.0 / total_concluidas, 2)
+            if total_concluidas
+            else 0
+        )
+
+        duracao_media = concluidas.filter(
+            data_conclusao__isnull=False,
+            data_inicio__isnull=False,
+        ).annotate(duracao=F("data_conclusao") - F("data_inicio")).aggregate(
+            media=Avg("duracao")
+        )["media"]
+
+        tempo_medio_conclusao_horas = (
+            round(duracao_media.total_seconds() / 3600, 2) if duracao_media else 0
+        )
+
+        data = {
+            "total_tarefas": queryset.count(),
+            "por_estado": list(queryset.values("estado").annotate(total=Count("id"))),
+            "por_prioridade": list(queryset.values("prioridade").annotate(total=Count("id"))),
+            "total_concluidas": total_concluidas,
+            "concluidas_no_prazo": concluidas_no_prazo,
+            "expiradas": queryset.filter(estado=Tarefa.EstadoChoices.EXPIRADO).count(),
+            "taxa_cumprimento_prazo": taxa_cumprimento,
+            "tempo_medio_conclusao_horas": tempo_medio_conclusao_horas,
+            "tarefas": [
+                {
+                    "id": str(item.id),
+                    "numero": item.numero,
+                    "titulo": item.titulo,
+                    "estado": item.estado,
+                    "prioridade": item.prioridade,
+                    "atribuido_a": item.atribuido_a.nome if item.atribuido_a else None,
+                    "criado_por": item.criado_por.nome if item.criado_por else None,
+                    "intervencao": item.intervencao.numero if item.intervencao else None,
+                    "data_inicio": item.data_inicio,
+                    "data_fim": item.data_fim,
+                    "data_conclusao": item.data_conclusao,
+                    "prazo_restante_horas": item.prazo["restantes_horas"] if item.prazo else None,
+                    "expirado": bool(item.prazo and item.prazo["expirado"]),
+                }
+                for item in queryset.select_related("atribuido_a", "criado_por", "intervencao")[:100]
+            ],
         }
         return resposta_sucesso(data=data)
     

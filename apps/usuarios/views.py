@@ -17,8 +17,9 @@ from rest_framework import mixins, status, viewsets,serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiExample, extend_schema
 from apps.usuarios.models import Usuario, empresa
 from apps.usuarios.serializers import (
     empresdatilserialazrs,
@@ -32,9 +33,17 @@ from apps.usuarios.serializers import (
     TecnicoEscritaSerializer,
     TecnicoListaSerializer,
     RecuperaSerializer,
-    ResetSenhaSerializer
+    ResetSenhaSerializer,
+    UtilizadorRegistadoSerializer,
+    UtilizadorCriadoSerializer
 )
 from apps.configuracoes.responses import resposta_erro, resposta_sucesso
+from apps.configuracoes.whatsapp import enviar_whatsapp
+from apps.configuracoes.schema import (
+    resposta_criar as esquema_criar,
+    resposta_erro as esquema_erro,
+    resposta_sucesso as esquema_resposta,
+)
 @extend_schema(tags=["Autenticação"])
 class AutenticacaoViewSet(viewsets.GenericViewSet):
     queryset = Usuario.objects.all()
@@ -101,6 +110,36 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         return resposta_sucesso(message="Usuário deletado com sucesso")
 #__________________________________________________________________________________________________________
+    @extend_schema(
+        summary="Registar utilizador (admin, técnico ou cliente)",
+        description=(
+            "Cria um utilizador. **Apenas administradores.** Aceita `multipart/form-data` para "
+            "fazer upload da imagem do avatar (`avatar_url`); também pode ser enviada uma URL. "
+            "Para `perfil=técnico` são obrigatórios `telefone`, `especialidades` e `data_contratacao`; "
+            "para `perfil=cliente`, `telefone` e `empresa`."
+        ),
+        request={"multipart/form-data": RegistoSerializer, "application/json": RegistoSerializer},
+        responses={
+            201: esquema_criar(
+                UtilizadorRegistadoSerializer,
+                "Utilizador criado.",
+                "UtilizadorRegistado",
+                exemplos=[
+                    OpenApiExample(
+                        "Exemplo",
+                        value={
+                            "usuario_id": "uuid",
+                            "email": "novo@sosticket.ao",
+                            "perfil": "tecnico",
+                            "avatar_url": "https://res.cloudinary.com/.../avatar.png",
+                        },
+                    )
+                ],
+            ),
+            400: esquema_erro("Dados inválidos."),
+            403: esquema_erro("Apenas administradores."),
+        },
+    )
     @action(detail=False, methods=["post"], url_path="register", permission_classes=[IsAuthenticated])
     def register(self, request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
@@ -201,6 +240,17 @@ class PerfilViewSet(
         serializer = self.get_serializer(request.user)
         return resposta_sucesso(data=serializer.data)
 
+    @extend_schema(
+        summary="Atualizar o meu perfil",
+        description=(
+            "Atualiza o perfil do utilizador autenticado. Aceita `multipart/form-data` para fazer "
+            "upload da imagem do avatar (`avatar_url`)."
+        ),
+        request={"multipart/form-data": PerfilSerializer, "application/json": PerfilSerializer},
+        responses={
+            200: esquema_resposta(PerfilSerializer, "Perfil atualizado.", "PerfilAtualizado"),
+        },
+    )
     def update(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.user, data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
@@ -256,6 +306,23 @@ class TecnicoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(obj)
         return resposta_sucesso(data=serializer.data)
 
+    @extend_schema(
+        summary="Criar técnico",
+        description=(
+            "Cria um técnico. **Apenas administradores.** Aceita `multipart/form-data` para fazer "
+            "upload da imagem do avatar (`avatar_url`)."
+        ),
+        request={"multipart/form-data": TecnicoEscritaSerializer, "application/json": TecnicoEscritaSerializer},
+        responses={
+            201: esquema_criar(
+                UtilizadorCriadoSerializer,
+                "Técnico criado.",
+                "TecnicoCriado",
+            ),
+            400: esquema_erro("Dados inválidos."),
+            403: esquema_erro("Apenas administradores podem criar técnicos."),
+        },
+    )
     def create(self, request, *args, **kwargs):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas administradores podem criar técnicos.")
@@ -267,6 +334,23 @@ class TecnicoViewSet(viewsets.ModelViewSet):
             status_code=status.HTTP_201_CREATED,
         )
 
+    @extend_schema(
+        summary="Atualizar técnico",
+        description=(
+            "Atualiza um técnico. **Apenas administradores.** Aceita `multipart/form-data` "
+            "para alterar a imagem do avatar (`avatar_url`)."
+        ),
+        request={"multipart/form-data": TecnicoEscritaSerializer, "application/json": TecnicoEscritaSerializer},
+        responses={
+            200: esquema_resposta(
+                UtilizadorCriadoSerializer,
+                "Técnico atualizado.",
+                "TecnicoAtualizado",
+            ),
+            404: esquema_erro("Técnico não encontrado."),
+            403: esquema_erro("Apenas administradores podem atualizar técnicos."),
+        },
+    )
     def update(self, request, *args, **kwargs):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas administradores podem atualizar técnicos.")
@@ -291,6 +375,8 @@ class RecuperarConta(viewsets.GenericViewSet):
 
     permission_classes = []
     authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "recuperacao"
     queryset = Usuario.all_objects.all()
     serializer_class = RecuperaSerializer
 
@@ -300,9 +386,8 @@ class RecuperarConta(viewsets.GenericViewSet):
 
         utilizador = serializer.validated_data["user"]
         if not utilizador:
-            return Response(
-                {"detail": "Se o email existir, enviaremos um link de recuperação."},
-                status=status.HTTP_200_OK
+            return resposta_sucesso(
+                message="Enviámos um email para recuperar a conta"
             )
 
         uid = urlsafe_base64_encode(force_bytes(utilizador.pk))
@@ -312,35 +397,27 @@ class RecuperarConta(viewsets.GenericViewSet):
             f"{settings.SITE_URL}"
             f"{reverse('restpassword-list')}?uid={uid}&token={token}"
         )
-
-        
-        
-
-        send_mail(
-            subject="Recuperação de Senha - API Gestão de Serviços",
-            message=(
-                f"Olá, {utilizador.nome}\n\n"
-                "Recebemos um pedido para redefinir a senha da sua conta.\n\n"
-                "Clique no link abaixo:\n\n"
-                f"{link}"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[utilizador.email],
-            fail_silently=False,
-        )
-
-    
+        enviar_whatsapp(numero=utilizador.telefone,texto=(
+        f"Olá, {utilizador.nome}!\n\n"
+        "Recebemos um pedido para redefinir a senha da sua conta.\n"
+        "Se foi você quem solicitou, clique no link abaixo para criar uma nova senha:\n\n"
+        f"{link}\n\n"
+        "Este link é válido por tempo limitado, por motivos de segurança.\n\n"
+        "Se não foi você quem pediu esta alteração, pode ignorar este email —\n"
+        "a sua senha atual continua a funcionar normalmente.\n\n"
+        "—\n"
+        "Equipa Gestão de Serviços"
+    ))
 
         return resposta_sucesso(
-            message="Enviámos um email para recuperar a conta",
-            data={
-                "INFO":f"User: {utilizador.nome}, ID:{utilizador.id}"
-            }
+            message="Enviámos um email para recuperar a conta"
         )
 @extend_schema(tags=['Recuperação'])
 class reset_password_confirm(viewsets.GenericViewSet):
     permission_classes=[]
     authentication_classes=[]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "recuperacao"
     queryset = Usuario.all_objects.all()
     serializer_class=ResetSenhaSerializer
 

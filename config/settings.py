@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.contratos",
     "apps.intervencoes",
     "apps.relatorios",
+    "apps.tarefas",
     "apps.notificacoes",
     "apps.sistema",
 ]
@@ -167,7 +168,12 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.configuracoes.exceptions.manipulador_excecao_personalizado",
+    "DEFAULT_THROTTLE_RATES": {
+        "recuperacao": config("THROTTLE_RECUPERACAO", default="5/hour"),
+    },
 }
+
+PASSWORD_RESET_TIMEOUT = 3600
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("ACCESS_TOKEN_LIFETIME_MINUTES", default=60, cast=int)),
@@ -179,11 +185,38 @@ SIMPLE_JWT = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Suporte API",
-    "DESCRIPTION": "API de gestão de suporte técnico.",
+    "DESCRIPTION": (
+        "API de gestão de suporte técnico.\n\n"
+        "**Autenticação:** utilize o endpoint `POST /api/v1/auth/login/` para obter os tokens "
+        "`access_token` e `refresh_token`, e autentique os pedidos com o cabeçalho "
+        "`Authorization: Bearer <access_token>`.\n\n"
+        "**Perfis de utilizador:**\n"
+        "- **admin** — gestão total: cria/atribui/elimina tarefas, gere intervenções e clientes.\n"
+        "- **tecnico** — vê e gerencia apenas os seus recursos atribuídos.\n"
+        "- **cliente** — acompanha os seus próprios recursos."
+    ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": True,
+    "POSTPROCESSING_HOOKS": ["config.schema.ordenar_paths"],
     "SWAGGER_UI_FAVICON_HREF": "",
+    "TAGS": [
+       
+        {"name": "Autenticação", "description": "Login, registo e renovação de tokens."},
+        {"name": "Perfis", "description": "Gestão do próprio perfil do utilizador."},
+        {"name": "Tecnicos", "description": "Listagem de técnicos por parte dos administradores."},
+        {"name": "Empresa", "description": "Dados da empresa."},
+        {"name": "Clientes", "description": "Gestão de clientes."},
+        {"name": "Contratos", "description": "Gestão de contratos."},
+        {"name": "Intervenções", "description": "Gestão de intervenções e atribuição de técnicos."},
+        
+        {"name": "Tarefas", "description": "Tarefas internas da equipa com prazo e expiração."},
+        {"name": "Notificações", "description": "Notificações internas do utilizador."},
+        {"name": "Configurações", "description": "Configurações gerais do sistema."},
+        {"name": "Recuperação", "description": "Recuperação e redefinição de palavra-passe."},
+        {"name": "Relatórios", "description": "Relatórios e estatísticas administrativas."},
+    ],
     "ENUM_NAME_OVERRIDES": {
         "IntervecoesStatusEnum": "apps.intervencoes.models.Intervencao.StatusChoices",
         "IntervecoesPrioridadeEnum": "apps.intervencoes.models.Intervencao.PrioridadeChoices",
@@ -193,6 +226,7 @@ SPECTACULAR_SETTINGS = {
         "ContratoPagamentoEnum": "apps.contratos.models.Contrato.TipoPagamento",
         "UsuarioStatusEnum": "apps.usuarios.models.Usuario.StatusChoices",
         "UsuarioPerfilEnum": "apps.usuarios.models.Usuario.PerfilChoices",
+        "TarefaEstadoEnum": "apps.tarefas.models.Tarefa.EstadoChoices",
     },
 }
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

@@ -16,7 +16,9 @@ from apps.contratos.models import Contrato
 from apps.intervencoes.models import Intervencao
 
 
-@extend_schema_field(serializers.URLField())
+@extend_schema_field(
+    serializers.FileField(help_text="Imagem do avatar (multipart/form-data). Também aceita uma URL remota.")
+)
 class AvatarURLField(serializers.Field):
 
     def to_internal_value(self, data):
@@ -89,7 +91,7 @@ class EmpresaSerializer(serializers.ModelSerializer):
 
 class UsuarioSerializer(serializers.ModelSerializer):
     empresa = EmpresaSerializer(read_only=True)
-    avatar_url = AvatarURLField(required=False)
+    avatar_url = serializers.URLField(required=False, read_only=True, help_text="URL do avatar.")
     #notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
     
     class Meta:
@@ -285,6 +287,7 @@ class AlterarSenhaSerializer(serializers.Serializer):
 class TecnicoListaSerializer(serializers.ModelSerializer):
     intervencoes_ativas = serializers.SerializerMethodField()
     total_horas_mes = serializers.SerializerMethodField()
+    avatar_url = serializers.URLField(required=False, read_only=True, help_text="URL do avatar.")
     #notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
 
     class Meta:
@@ -294,6 +297,7 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
             "nome",
             "email",
             "telefone",
+            "avatar_url",
             "especialidades",
             "status",
             "intervencoes_ativas",
@@ -375,12 +379,9 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
 
 
 class PerfilPainelSerializer(serializers.ModelSerializer):
-    from drf_spectacular.utils import extend_schema_field
-    from rest_framework import serializers
     contratos_ativos = serializers.SerializerMethodField()
     intervencoes_abertas = serializers.SerializerMethodField()
-    avatar_url = AvatarURLField(required=False)
-    
+    avatar_url = serializers.URLField(required=False, read_only=True, help_text="URL do avatar.")
 
     class Meta:
         model = Usuario
@@ -409,3 +410,16 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
         if obj.perfil == Usuario.PerfilChoices.TECNICO:
             return Intervencao.objects.filter(tecnico=obj, status__in=["aberto", "em_andamento"]).count()
         return Intervencao.objects.filter(status__in=["aberto", "em_andamento"]).count()
+
+
+class UtilizadorRegistadoSerializer(serializers.Serializer):
+    usuario_id = serializers.UUIDField(help_text="ID do utilizador criado.")
+    email = serializers.EmailField()
+    perfil = serializers.CharField()
+    avatar_url = serializers.URLField(required=False, help_text="URL do avatar após o upload.")
+
+
+class UtilizadorCriadoSerializer(serializers.Serializer):
+    id = serializers.UUIDField(help_text="ID do utilizador criado.")
+    nome = serializers.CharField()
+    email = serializers.EmailField()

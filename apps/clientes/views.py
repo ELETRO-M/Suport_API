@@ -2,7 +2,13 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from apps.usuarios.models import Usuario
+from apps.usuarios.serializers import UtilizadorCriadoSerializer
 from apps.configuracoes.responses import resposta_sucesso
+from apps.configuracoes.schema import (
+    resposta_criar as esquema_criar,
+    resposta_erro as esquema_erro,
+    resposta_sucesso as esquema_resposta,
+)
 from apps.clientes.serializers import (
     ClienteDetalheSerializer,
     ClienteEscritaSerializer,
@@ -51,6 +57,23 @@ class ClienteViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(obj)
         return resposta_sucesso(data=serializer.data)
 
+    @extend_schema(
+        summary="Criar cliente",
+        description=(
+            "Cria um cliente. **Apenas administradores.** Aceita `multipart/form-data` para fazer "
+            "upload da imagem do avatar (`avatar_url`)."
+        ),
+        request={"multipart/form-data": ClienteEscritaSerializer, "application/json": ClienteEscritaSerializer},
+        responses={
+            201: esquema_criar(
+                UtilizadorCriadoSerializer,
+                "Cliente criado.",
+                "ClienteCriado",
+            ),
+            400: esquema_erro("Dados inválidos."),
+            403: esquema_erro("Apenas administradores podem criar clientes."),
+        },
+    )
     def create(self, request, *args, **kwargs):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas administradores podem criar clientes.")
@@ -62,6 +85,22 @@ class ClienteViewSet(viewsets.ModelViewSet):
             status_code=status.HTTP_201_CREATED,
         )
 
+    @extend_schema(
+        summary="Atualizar cliente",
+        description=(
+            "Atualiza um cliente. O **admin** pode atualizar qualquer cliente; o **cliente** apenas a "
+            "própria conta. Aceita `multipart/form-data` para alterar a imagem do avatar (`avatar_url`)."
+        ),
+        request={"multipart/form-data": ClienteEscritaSerializer, "application/json": ClienteEscritaSerializer},
+        responses={
+            200: esquema_resposta(
+                UtilizadorCriadoSerializer,
+                "Cliente atualizado.",
+                "ClienteAtualizado",
+            ),
+            403: esquema_erro("Alteração de perfil não permitida."),
+        },
+    )
     def update(self, request, *args, **kwargs):
         
         if request.user.perfil != Usuario.PerfilChoices.ADMIN and (
