@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from django.conf import settings
 
@@ -9,8 +9,33 @@ from apps.notificacoes.models import Notificacao
 from apps.usuarios.models import Usuario
 
 
+@receiver(pre_save, sender=Intervencao)
+def guardar_intervencao_anterior(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            instance._intervencao_anterior = Intervencao.all_objects.get(pk=instance.pk)
+        except Intervencao.DoesNotExist:
+            instance._intervencao_anterior = None
+
+
 @receiver(post_save, sender=Intervencao)
 def criar_notificacao_admins(sender, instance, created, **kwargs):
+
+    if not created:
+        anterior = getattr(instance, "_intervencao_anterior", None)
+        ator = getattr(instance, "_utilizador_acao", None)
+        if (
+            anterior
+            and instance.status != anterior.status
+            and instance.status in {
+                Intervencao.StatusChoices.CONCLUIDO,
+                Intervencao.StatusChoices.FECHADO,
+            }
+            and ator
+            and ator.perfil == Usuario.PerfilChoices.TECNICO
+        ):
+            _notificar_validar(instance, ator)
+        return
 
     if created:
 
@@ -78,6 +103,41 @@ def publicar_comentario_firebase(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=ComentarioIntervencao)
 def remover_comentario_firebase(sender, instance, **kwargs):
     remover_comentario(instance)
+
+
+def _notificar_validar(instance, ator):
+    admins = Usuario.objects.filter(
+        perfil=Usuario.PerfilChoices.ADMIN,
+        is_deleted=False,
+        status=Usuario.StatusChoices.ACTIVO,
+    )
+
+    status_texto = dict(Intervencao.StatusChoices.choices).get(instance.status, instance.status)
+    titulo = "Intervenção concluída — aguarda validação"
+    mensagem = (
+        f"A intervenção {instance.numero} ({instance.titulo}) foi concluída pelo técnico "
+        f"{ator.nome} e aguarda validação."
+    )
+    texto = (
+        f"🔔 *Intervenção concluída — aguarda validação*\n\n"
+        f"🆔 *Nº:* {instance.numero}\n"
+        f"📋 *Título:* {instance.titulo}\n"
+        f"👷 *Técnico:* {ator.nome}\n"
+        f"📊 *Status:* {status_texto}\n"
+        f"🕐 *Concluída em:* {instance.data_conclusao.strftime('%d/%m/%Y %H:%M') if instance.data_conclusao else '—'}\n\n"
+        f"_Valide a conclusão pelo sistema._"
+    )
+
+    for admin in admins:
+        Notificacao.objects.create(
+            utilizador=admin,
+            tipo="sistema",
+            titulo=titulo,
+            mensagem=mensagem,
+            link=f"{settings.SITE_URL}/api/v1/intervencoes/{instance.id}/",
+        )
+        if admin.telefone:
+            enviar_whatsapp(numero=admin.telefone, texto=texto)
 
 
 @receiver(post_save, sender=AnexoIntervencao)

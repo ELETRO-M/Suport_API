@@ -123,23 +123,29 @@ def notificar_tarefa(sender, instance, created, **kwargs):
 
     if novo_estado == Tarefa.EstadoChoices.CONCLUIDA:
         if ator and ator.perfil == Usuario.PerfilChoices.TECNICO:
-            destino = instance.criado_por
-            titulo = "Tarefa concluída pelo técnico"
+            admins = Usuario.objects.filter(
+                perfil=Usuario.PerfilChoices.ADMIN,
+                is_deleted=False,
+                status=Usuario.StatusChoices.ACTIVO,
+            )
+            titulo = "Tarefa concluída — aguarda validação"
             mensagem = (
-                f"A tarefa {instance.numero} foi concluída pelo técnico {ator.nome}.\n\n"
-                f"{_detalhe_completo(instance, ator)}"
+                f"A tarefa {instance.numero} foi concluída pelo técnico {ator.nome} "
+                f"e aguarda validação.\n\n{_detalhe_completo(instance, ator)}"
             )
             texto = (
-                f"🎉 *Tarefa concluída pelo técnico*\n\n"
+                f"🔔 *Tarefa concluída — aguarda validação*\n\n"
                 f"{ator.nome} concluiu a tarefa:\n\n{_detalhe_completo(instance, ator)}"
             )
+            for admin in admins:
+                _notificar(instance, admin, titulo, mensagem, texto)
         else:
             destino = instance.atribuido_a
             titulo = "Tarefa concluída"
             mensagem = f"A tarefa {instance.numero} foi concluída.\n\n{_detalhe_completo(instance)}"
             texto = f"🎉 *Tarefa concluída*\n\n{_detalhe_completo(instance)}"
-        if destino and destino.id != getattr(ator, "id", None):
-            _notificar(instance, destino, titulo, mensagem, texto)
+            if destino and destino.id != getattr(ator, "id", None):
+                _notificar(instance, destino, titulo, mensagem, texto)
 
     elif novo_estado == Tarefa.EstadoChoices.CANCELADA:
         destino = instance.atribuido_a

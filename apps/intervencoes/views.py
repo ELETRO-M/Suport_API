@@ -125,6 +125,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             self.permission_denied(request, message="Clientes não podem actualizar intervenções.")
         serializer = self.get_serializer(instance, data=request.data, partial=partial, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        instance._utilizador_acao = request.user
         obj = serializer.save()
         return resposta_sucesso(data={"id": str(obj.id), "status": obj.status})
 

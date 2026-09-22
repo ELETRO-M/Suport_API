@@ -77,7 +77,7 @@ class Tarefa(ModeloUUIDComTimestamps, SoftDeleteModel):
             with transaction.atomic():
                 date_part = timezone.now().year
                 ultimo = (
-                    Tarefa.objects.select_for_update()
+                    Tarefa.all_objects.select_for_update()
                     .filter(data_criacao__year=date_part, numero__startswith=f"TAR-{date_part}-")
                     .order_by("-numero")
                     .values_list("numero", flat=True)
