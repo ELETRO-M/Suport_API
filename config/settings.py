@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "cloudinary",
     "cloudinary_storage",
+    "channels",
     "apps.usuarios",
     "apps.clientes",
     "apps.contratos",
@@ -210,6 +211,22 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+
+WHATSAPP_WEBHOOK_TOKEN = config("WHATSAPP_WEBHOOK_TOKEN", default="")
+
+REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379/0")
+
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_URL]},
+        },
+    }
 
 
 

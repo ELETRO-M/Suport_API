@@ -1,6 +1,8 @@
 from decimal import Decimal
-
+from django.conf import settings
 from django.db import models
+
+from apps.configuracoes.models import ModeloUUIDComTimestamps
 
 
 
@@ -21,3 +23,33 @@ class ConfiguracaoSistema(models.Model):
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+
+
+class Conversa(ModeloUUIDComTimestamps):
+    numero = models.CharField(max_length=30, unique=True)
+    nome = models.CharField(max_length=255, blank=True)
+    ultima_mensagem = models.TextField(blank=True)
+    ultima_mensagem_em = models.DateTimeField(null=True, blank=True)
+    nao_lidas = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-ultima_mensagem_em"]
+
+
+class Mensagem(ModeloUUIDComTimestamps):
+    class Direcao(models.TextChoices):
+        ENTRADA = "entrada", "Entrada"
+        SAIDA = "saida", "Saída"
+
+    conversa = models.ForeignKey(Conversa, related_name="mensagens", on_delete=models.CASCADE)
+    wa_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    direcao = models.CharField(max_length=10, choices=Direcao.choices)
+    texto = models.TextField()
+    enviado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    class Meta:
+        ordering = ["data_criacao"]

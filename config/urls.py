@@ -18,7 +18,7 @@ from apps.clientes.views import ClienteViewSet
 from apps.intervencoes.views import  IntervencaoViewSet, HistoricoViewSet
 from apps.notificacoes.views import NotificacaoViewSet
 from apps.relatorios.views import RelatorioViewSet
-from apps.sistema.views import ConfiguracaoSistemaViewSet
+from apps.sistema.views import ConfiguracaoSistemaViewSet, WebhookWhatsApp
 
 
 router = DefaultRouter()
@@ -39,6 +39,7 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/v1/configuracoes", ConfiguracaoSistemaViewSet.as_view({"get": "list", "put": "update"}), name="configuracoes"),
+    path("api/v1/webhook/whatsapp", WebhookWhatsApp.as_view(), name="webhook-whatsapp"),
     path("api/v1/perfil", PerfilViewSet.as_view({"get": "list", "put": "update"}), name="perfil"),
     path("api/v1/perfil/password", PerfilViewSet.as_view({"put": "password"}), name="perfil-password"),
     path("api/v1/", include(router.urls)),
