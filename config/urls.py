@@ -39,7 +39,9 @@ router.register(r"empresas", empresaviewset, basename="empresas")
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/schema", SpectacularAPIView.as_view(), name="schema-sem-slash"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/docs", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui-sem-slash"),
     path("api/v1/configuracoes", ConfiguracaoSistemaViewSet.as_view({"get": "list", "put": "update"}), name="configuracoes"),
     path("api/v1/perfil", PerfilViewSet.as_view({"get": "list", "put": "update"}), name="perfil"),
     path("api/v1/perfil/password", PerfilViewSet.as_view({"put": "password"}), name="perfil-password"),
