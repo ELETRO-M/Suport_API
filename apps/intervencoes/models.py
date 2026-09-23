@@ -55,7 +55,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        limit_choices_to={"perfil": Usuario.PerfilChoices.TECNICO, "is_deleted": False},
+        limit_choices_to={"perfil": [Usuario.PerfilChoices.TECNICO, Usuario.PerfilChoices.ADMIN], "is_deleted": False},
     )
     contrato = models.ForeignKey(
         Contrato,
@@ -206,7 +206,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
             with transaction.atomic():
                 date_part = timezone.now().year
                 ultimo = (
-                    Intervencao.objects.select_for_update()
+                    Intervencao.all_objects.select_for_update()
                     .filter(data_abertura__year=date_part, numero__startswith=f"INT-{date_part}-")
                     .order_by("-numero")
                     .values_list("numero", flat=True)

@@ -254,6 +254,17 @@ class IntervencaoAtualizacaoSerializer(serializers.ModelSerializer):
         if not self.instance or value == self.instance.status:
             return value
 
+        e_admin = (
+            self.context.get("request")
+            and self.context["request"].user.perfil == Usuario.PerfilChoices.ADMIN
+        )
+        if e_admin:
+            if value not in self.STATUS_FLOW:
+                raise serializers.ValidationError(
+                    "Status inválido para o fluxo da intervenção."
+                )
+            return value
+
         try:
             status_atual_index = self.STATUS_FLOW.index(self.instance.status)
             novo_status_index = self.STATUS_FLOW.index(value)

@@ -83,7 +83,22 @@ def notificar_tarefa(sender, instance, created, **kwargs):
     ator = getattr(instance, "_utilizador_acao", None)
 
     if created:
-        if instance.atribuido_a_id:
+        admins = Usuario.objects.filter(
+            perfil=Usuario.PerfilChoices.ADMIN,
+            is_deleted=False,
+            status=Usuario.StatusChoices.ACTIVO,
+        )
+        for admin in admins:
+            _notificar(
+                instance,
+                admin,
+                titulo="Nova tarefa criada",
+                mensagem=f"Foi criada uma nova tarefa.\n\n{_detalhe_completo(instance)}",
+                texto_whatsapp=(
+                    f"📌 *Nova tarefa criada*\n\n{_detalhe_completo(instance)}"
+                ),
+            )
+        if instance.atribuido_a_id and instance.atribuido_a.perfil != Usuario.PerfilChoices.ADMIN:
             _notificar(
                 instance,
                 instance.atribuido_a,

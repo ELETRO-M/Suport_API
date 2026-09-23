@@ -292,8 +292,8 @@ class TarefaViewSet(viewsets.ModelViewSet):
         summary="Concluir tarefa",
         operation_id="tarefas_concluir",
         description=(
-            "Marca a tarefa como `concluida`. Pode ser feito pelo **técnico atribuído** ou pelo "
-            "**admin que criou a tarefa**. Gera notificação (app + WhatsApp) à contraparte."
+            "Marca a tarefa como `concluida`. Pode ser feito pelo **técnico atribuído** ou por "
+            "**qualquer administrador**. Gera notificação (app + WhatsApp) à contraparte."
         ),
         responses={
             200: resposta_sucesso(
@@ -301,7 +301,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
                 "Tarefa concluída.",
                 "TarefaConcluida",
             ),
-            403: resposta_erro("Apenas o técnico atribuído ou o admin que criou pode concluir."),
+            403: resposta_erro("Apenas o técnico atribuído ou um administrador pode concluir."),
         },
     )
     @action(detail=True, methods=["post"], url_path="concluir")
@@ -311,14 +311,11 @@ class TarefaViewSet(viewsets.ModelViewSet):
             request.user.perfil == Usuario.PerfilChoices.TECNICO
             and instance.atribuido_a_id == request.user.id
         )
-        pode_admin = (
-            request.user.perfil == Usuario.PerfilChoices.ADMIN
-            and instance.criado_por_id == request.user.id
-        )
+        pode_admin = request.user.perfil == Usuario.PerfilChoices.ADMIN
         if not (pode_tecnico or pode_admin):
             self.permission_denied(
                 request,
-                message="Apenas o técnico atribuído ou o admin que criou pode concluir.",
+                message="Apenas o técnico atribuído ou um administrador pode concluir.",
             )
         instance.estado = Tarefa.EstadoChoices.CONCLUIDA
         if not instance.data_conclusao:
