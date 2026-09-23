@@ -237,7 +237,11 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
                 mensagem=f"Foi adicionado um comentário na intervenção {instance.numero}.",
                 link=f"/intervencoes/{instance.id}",
             )
-            enviar_whatsapp(numero=f"{instance.telefone}", texto=f"🚨🚨Novo comentário add na intervenção {instance.numero}🚨🚨")
+            if utilizador_destino.telefone:
+                enviar_whatsapp(
+                    numero=utilizador_destino.telefone,
+                    texto=f"🚨🚨Novo comentário add na intervenção {instance.numero}🚨🚨",
+                )
         return resposta_sucesso(
             data={
                 "id": str(comentario.id),
