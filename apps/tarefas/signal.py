@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from apps.configuracoes.whatsapp import enviar_whatsapp
+from apps.configuracoes.whatsapp import enviar_whatsapp_async
 from apps.notificacoes.models import Notificacao
 from apps.tarefas.models import ComentarioTarefa, Tarefa
 from apps.usuarios.models import Usuario
@@ -65,7 +65,7 @@ def _notificar(tarefa, utilizador, titulo, mensagem, texto_whatsapp):
         link=f"/tarefas/{tarefa.id}",
     )
     if utilizador.telefone:
-        enviar_whatsapp(numero=utilizador.telefone, texto=texto_whatsapp)
+        enviar_whatsapp_async(numero=utilizador.telefone, texto=texto_whatsapp)
 
 
 @receiver(pre_save, sender=Tarefa)

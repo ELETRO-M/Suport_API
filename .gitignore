@@ -2,6 +2,7 @@
 .deps/
 .tmp/
 .venv/
+venv/
 __pycache__/
 *.pyc
 media/
@@ -10,3 +11,6 @@ staticfiles/
 db.sqlite
 db.sqlite3
 docker-compose.yml
+backup.sql
+dados.json
+dados.json.bak

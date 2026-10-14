@@ -3,7 +3,7 @@ from django.dispatch import receiver
 
 from apps.notificacoes.models import Notificacao
 from apps.usuarios.models import Usuario
-from apps.configuracoes.whatsapp import enviar_whatsapp
+from apps.configuracoes.whatsapp import enviar_whatsapp_async
 
 
 @receiver(post_save, sender=Usuario)
@@ -23,7 +23,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
             titulo="Seja bem-vindo(a) ao nosso sistema!",
             mensagem="Seja bem-vindo(a) ao nosso sistema!",
         )
-        enviar_whatsapp(numero=f"{instance.telefone}", texto="""👋 **Olá! Seja bem-vindo ao SOSTICKET!** 🎫
+        enviar_whatsapp_async(numero=f"{instance.telefone}", texto="""👋 **Olá! Seja bem-vindo ao SOSTICKET!** 🎫
 
 Estamos felizes por ter você conosco! O **SOSTICKET** é a nossa plataforma de suporte, criada para tornar o atendimento mais rápido, organizado e eficiente.
 
@@ -49,7 +49,7 @@ Envie a sua solicitação e nossa equipa estará pronta para atender você.
                 titulo="Novo cliente cadastrado",
                 mensagem=f"O cliente {instance.nome} na empresa {instance.empresa.nome} foi cadastrado.",
             )
-            enviar_whatsapp(numero=f"{admin.telefone}", texto = (
+            enviar_whatsapp_async(numero=f"{admin.telefone}", texto = (
     "🔔 *Novo cliente cadastrado*\n\n"
     f"👤 *Cliente:* {instance.nome}\n"
     f"🏢 *Empresa:* {instance.empresa.nome}\n\n"
@@ -72,7 +72,7 @@ Envie a sua solicitação e nossa equipa estará pronta para atender você.
             titulo="Seja bem-vindo(a) ao nosso sistema!",
             mensagem="Seja bem-vindo(a) ao nosso sistema!",
         )
-        enviar_whatsapp(
+        enviar_whatsapp_async(
             numero=instance.telefone,
             texto=(
                 f"👋 *Olá, {instance.nome}!*\n\n"
@@ -92,7 +92,7 @@ Envie a sua solicitação e nossa equipa estará pronta para atender você.
                 titulo="Novo técnico cadastrado",
                 mensagem=f"O técnico {instance.nome} com a(s) especialidade(s) ({especialidades_str}) foi cadastrado.",
             )
-            enviar_whatsapp(
+            enviar_whatsapp_async(
         numero=admin.telefone,  # ajusta ao campo onde guardas o número
         texto=(
             f"🛠️ *NOVO TECNICO ADICIONADO PELO*\n\n"

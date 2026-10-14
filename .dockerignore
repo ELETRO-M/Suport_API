@@ -14,3 +14,9 @@ staticfiles
 *.md
 tmp_*.py
 .dockerignore
+backup.sql
+dados.json
+dados.json.bak
+schema.yml
+*.sql
+*.bak

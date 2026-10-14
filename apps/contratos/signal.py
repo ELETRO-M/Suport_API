@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.configuracoes.whatsapp import enviar_whatsapp
+from apps.configuracoes.whatsapp import enviar_whatsapp_async
 from apps.contratos.models import Contrato
 from apps.notificacoes.models import Notificacao
 from apps.usuarios.models import Usuario
@@ -35,4 +35,4 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
                 mensagem=f"Novo contrato {instance.tipo_contrato} criado para a empresa {instance.Empresa.nome}.",
             )
             if admin.telefone:
-                enviar_whatsapp(numero=admin.telefone, texto=texto_whatsapp)
+                enviar_whatsapp_async(numero=admin.telefone, texto=texto_whatsapp)

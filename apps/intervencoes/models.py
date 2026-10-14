@@ -294,7 +294,11 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         self._gerar_numero()
 
         # 4. Validar — todos os valores já estão calculados
-        self.full_clean(exclude=["contrato"])
+        #    As FKs relacionados (cliente/tecnico/contrato) são validadas pelos
+        #    serializers no momento da criação/edição. Não se voltam a validar
+        #    aqui porque, com o tempo, o utilizador/contrato pode ter sido
+        #    desactivado (soft-delete) e isso bloquearia gravações legítimas.
+        self.full_clean(exclude=["contrato", "cliente", "tecnico"])
 
         # 5. Actualizar estado SLA (efeito secundário, depois da validação)
         self._atualizar_estado_sla(kwargs)
