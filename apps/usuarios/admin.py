@@ -8,6 +8,8 @@ from apps.usuarios.models import Usuario, empresa as Empresa
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        return Empresa.all_objects.all() 
     list_display = ("nome", "status", "is_deleted", "data_criacao", "data_actualizacao")
     list_filter = ("status", "is_deleted")
     search_fields = ("nome",)

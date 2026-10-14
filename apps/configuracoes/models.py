@@ -45,7 +45,7 @@ class SoftDeleteModel(models.Model):
 
     def delete(self, *args, **kwargs):
         self.is_deleted = True
-        self.save(update_fields=["is_deleted"])
+        type(self).all_objects.filter(pk=self.pk).update(is_deleted=True)
 
     def hard_delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)

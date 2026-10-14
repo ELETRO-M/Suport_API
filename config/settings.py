@@ -66,9 +66,11 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+DATABASE_URL = config("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+
 DATABASES = {
     "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        default=DATABASE_URL,
         conn_max_age=60,
         ssl_require=not DEBUG,
     )
