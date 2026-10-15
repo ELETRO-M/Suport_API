@@ -18,7 +18,7 @@ ALLOWED_HOSTS = config(
 ) + ["suport-api-1.onrender.com", "localhost", "127.0.0.1"]
 CORS_ALLOW_ALL_ORIGINS = True
 
-SITE_URL = config("SITE_URL", default="http://localhost:8000")
+#SITE_URL = config("SITE_URL", default="http://localhost:8000")
 
 INSTALLED_APPS = [
     "apps.configuracoes",
@@ -231,6 +231,7 @@ SPECTACULAR_SETTINGS = {
         "TarefaEstadoEnum": "apps.tarefas.models.Tarefa.EstadoChoices",
     },
 }
+"""
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_PORT = config("EMAIL_PORT", cast=int)
@@ -241,7 +242,7 @@ EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
 
 DEFAULT_FROM_EMAIL = config("EMAIL_EMPRESA")
 EMAIL_TIMEOUT = 10
-
+"""
 CSRF_TRUSTED_ORIGINS = [
     "https://suportapi-production.up.railway.app",
     "http://localhost:8000",
