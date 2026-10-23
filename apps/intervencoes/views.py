@@ -4,7 +4,7 @@ from apps.intervencoes import serializers
 from datetime import timedelta
 from typing import cast
 
-from apps.configuracoes.whatsapp import enviar_whatsapp_async
+from apps.configuracoes.notificar import notificar_async
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import parsers, status, viewsets
@@ -196,7 +196,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             link=f"/intervencoes/{instance.id}",
         )
         if tecnico.telefone:
-            enviar_whatsapp_async(
+            notificar_async(
                 numero=tecnico.telefone,
                 texto=(
                     f"🛠️ *Nova intervenção atribuída*\n\n"
@@ -238,7 +238,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
                 link=f"/intervencoes/{instance.id}",
             )
             if utilizador_destino.telefone:
-                enviar_whatsapp_async(
+                notificar_async(
                     numero=utilizador_destino.telefone,
                     texto=f"🚨🚨Novo comentário add na intervenção {instance.numero}🚨🚨",
                 )

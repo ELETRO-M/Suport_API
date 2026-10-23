@@ -38,7 +38,7 @@ from apps.usuarios.serializers import (
     UtilizadorCriadoSerializer
 )
 from apps.configuracoes.responses import resposta_erro, resposta_sucesso
-from apps.configuracoes.whatsapp import enviar_whatsapp_async
+from apps.configuracoes.notificar import notificar_async
 from apps.configuracoes.schema import (
     resposta_criar as esquema_criar,
     resposta_erro as esquema_erro,
@@ -397,7 +397,7 @@ class RecuperarConta(viewsets.GenericViewSet):
             f"{settings.SITE_URL}"
             f"{reverse('restpassword-list')}?uid={uid}&token={token}"
         )
-        enviar_whatsapp_async(numero=utilizador.telefone,texto=(
+        notificar_async(numero=utilizador.telefone,texto=(
         f"Olá, {utilizador.nome}!\n\n"
         "Recebemos um pedido para redefinir a senha da sua conta.\n"
         "Se foi você quem solicitou, clique no link abaixo para criar uma nova senha:\n\n"

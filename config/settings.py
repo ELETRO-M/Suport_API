@@ -107,6 +107,11 @@ WHATSAPP_API_URL = config("WHATSAPP_API_URL", default="")
 WHATSAPP_INSTANCE = config("WHATSAPP_INSTANCE", default="")
 WHATSAPP_API_KEY = config("WHATSAPP_API_KEY", default="")
 
+SMS_HUB_URL = config("SMS_HUB_URL", default="")
+SMS_HUB_AUTH_ID = config("SMS_HUB_AUTH_ID", default="")
+SMS_HUB_SECRET_KEY = config("SMS_HUB_SECRET_KEY", default="")
+SMS_HUB_SENDER = config("SMS_HUB_SENDER", default="")
+
 LANGUAGE_CODE = "pt-pt"
 TIME_ZONE = "Africa/Luanda"
 USE_I18N = True

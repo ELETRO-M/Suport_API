@@ -1,15 +1,14 @@
 import logging
 import os
-import re
 import threading
 import time
 
 import requests
 from django.conf import settings
 
-logger = logging.getLogger(__name__)
+from apps.configuracoes.telefone import normalizar_numero
 
-CODIGO_PAIS = "244"  # Angola
+logger = logging.getLogger(__name__)
 
 TIMEOUT_SEGUNDOS = 15
 TIMEOUT_DOCUMENTO_SEGUNDOS = 30
@@ -34,32 +33,6 @@ MIMETYPES = {
     ".rar": "application/vnd.rar",
     ".mp4": "video/mp4",
 }
-
-
-def _normalizar_numero(numero: str) -> str:
-    """
-    Deixa apenas dígitos e garante o código do país (Angola) no início.
-
-    Aceita, por exemplo: "+244 923 456 789", "923456789", "0923456789",
-    "00244923456789" e devolve sempre "244923456789".
-    """
-    numero = re.sub(r"\D", "", str(numero or ""))
-    if not numero:
-        return ""
-
-    if numero.startswith("00"):
-        numero = numero[2:]
-
-    if numero.startswith(CODIGO_PAIS):
-        return numero
-
-    if numero.startswith("0"):
-        numero = numero.lstrip("0")
-
-    if len(numero) == 9:
-        return CODIGO_PAIS + numero
-
-    return numero
 
 
 def _post_com_retry(url: str, payload: dict, headers: dict, timeout: int) -> dict:
@@ -102,7 +75,7 @@ def enviar_whatsapp(numero: str, texto: str) -> dict:
       {"ok": True,  "dados": {...}, "erro": None}
       {"ok": False, "dados": None,  "erro": "descrição"}
     """
-    numero = _normalizar_numero(numero)
+    numero = normalizar_numero(numero)
 
     if not numero or not texto:
         return {"ok": False, "dados": None, "erro": "Número ou texto vazio"}
@@ -127,7 +100,7 @@ def enviar_whatsapp_documento(
       {"ok": True,  "dados": {...}, "erro": None}
       {"ok": False, "dados": None,  "erro": "descrição"}
     """
-    numero = _normalizar_numero(numero)
+    numero = normalizar_numero(numero)
 
     if not numero or not arquivo_url:
         return {"ok": False, "dados": None, "erro": "Número ou arquivo vazio"}

@@ -44,3 +44,5 @@ class RespostaErroPadrao(serializers.Serializer):
 
 def resposta_erro(descricao="Ocorreu um erro."):
     return OpenApiResponse(response=RespostaErroPadrao, description=descricao)
+
+    #ola  jjj

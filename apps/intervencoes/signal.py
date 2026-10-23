@@ -4,7 +4,7 @@ from django.conf import settings
 
 from apps.intervencoes.models import AnexoIntervencao, ComentarioIntervencao, Intervencao
 from apps.configuracoes.firebase import publicar_anexo, publicar_comentario, publicar_notificacao, remover_comentario
-from apps.configuracoes.whatsapp import enviar_whatsapp_async, enviar_whatsapp_documento_async
+from apps.configuracoes.notificar import notificar_async, notificar_documento_async
 from apps.notificacoes.models import Notificacao
 from apps.usuarios.models import Usuario
 
@@ -47,7 +47,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
         )
 
         if instance.cliente.empresa and instance.cliente.empresa.telefone:
-            enviar_whatsapp_async(
+            notificar_async(
                 numero=instance.cliente.empresa.telefone,
                 texto=(
                     f"🔧 *Nova intervenção criada no SOSTICKET*\n\n"
@@ -71,7 +71,7 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
             if admin.telefone:
                 tecnico_nome = instance.tecnico.nome if instance.tecnico else "Ainda não atribuído"
                 contrato_info = instance.contrato.tipo_contrato if instance.contrato else "Sem contrato"
-                enviar_whatsapp_async(
+                notificar_async(
                     numero=admin.telefone,
                     texto=(
                         f"🚨 *NOVA INTERVENÇÃO* 🚨\n\n"
@@ -137,7 +137,7 @@ def _notificar_validar(instance, ator):
             link=f"{settings.SITE_URL}/api/v1/intervencoes/{instance.id}/",
         )
         if admin.telefone:
-            enviar_whatsapp_async(numero=admin.telefone, texto=texto)
+            notificar_async(numero=admin.telefone, texto=texto)
 
 
 @receiver(post_save, sender=AnexoIntervencao)
@@ -187,7 +187,7 @@ def _notificar_anexo(instance):
     )
 
     for numero in numeros:
-        enviar_whatsapp_documento_async(
+        notificar_documento_async(
             numero=numero,
             arquivo_url=instance.arquivo.url,
             nome_arquivo=nome_arquivo,
