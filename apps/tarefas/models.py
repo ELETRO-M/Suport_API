@@ -11,6 +11,7 @@ class Tarefa(ModeloUUIDComTimestamps, SoftDeleteModel):
         PENDENTE = "pendente", "Pendente"
         EM_PROGRESSO = "em_progresso", "Em progresso"
         CONCLUIDA = "concluida", "Concluída"
+        VERiFICADO="verificado", "verificado"
         CANCELADA = "cancelada", "Cancelada"
         EXPIRADO = "expirado", "Expirado"
 
