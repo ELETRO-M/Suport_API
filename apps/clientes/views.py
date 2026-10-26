@@ -79,7 +79,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
             self.permission_denied(request, message="Apenas administradores podem criar clientes.")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        obj = serializer.save()
+        obj = serializer.save(criado_por=request.user)
         return resposta_sucesso(
             data={"id": str(obj.id), "nome": obj.nome, "email": obj.email},
             status_code=status.HTTP_201_CREATED,

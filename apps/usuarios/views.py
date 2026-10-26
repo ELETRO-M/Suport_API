@@ -147,7 +147,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
 
         serializer = RegistoSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        utilizador = serializer.save()
+        utilizador = serializer.save(criado_por=request.user)
        
       
         data = {
@@ -328,7 +328,7 @@ class TecnicoViewSet(viewsets.ModelViewSet):
             self.permission_denied(request, message="Apenas administradores podem criar técnicos.")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        obj = serializer.save()
+        obj = serializer.save(criado_por=request.user)
         return resposta_sucesso(
             data={"id": str(obj.id), "nome": obj.nome, "email": obj.email},
             status_code=status.HTTP_201_CREATED,
@@ -461,7 +461,7 @@ class empresaviewset(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             self.permission_denied(request, message="Apenas administradores podem atualizar empresas.")
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop('partial', True)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)

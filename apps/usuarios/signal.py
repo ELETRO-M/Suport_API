@@ -98,7 +98,7 @@ Envie a sua solicitação e nossa equipa estará pronta para atender você.
             f"🛠️ *NOVO TECNICO ADICIONADO PELO*\n\n"
             f"👤 *Técnico:* {instance.nome}\n"
             f"🖊 *Criado por:* {instance.criado_por}\n"
-            f"🏢 *Empresa:* {admin.empresa.nome if admin.empresa else '—'}\n"
+            
             f"📞 *Contacto:* {instance.telefone}\n\n"
             "O técnico já pode receber tickets."
         ),
