@@ -24,6 +24,8 @@ def criar_notificacao_admins(sender, instance, created, **kwargs):
     if not created:
         anterior = getattr(instance, "_intervencao_anterior", None)
         ator = getattr(instance, "_utilizador_acao", None)
+        if anterior:
+            _notificar_cliente_alteracao(instance, anterior, ator)
         if (
             anterior
             and instance.status != anterior.status
@@ -103,6 +105,100 @@ def publicar_comentario_firebase(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=ComentarioIntervencao)
 def remover_comentario_firebase(sender, instance, **kwargs):
     remover_comentario(instance)
+
+
+def _formatar_data(valor):
+    return valor.strftime("%d/%m/%Y %H:%M") if valor else "—"
+
+
+def _notificar_cliente_alteracao(instance, anterior, ator):
+    cliente = instance.cliente
+    if not cliente or (ator and cliente.id == ator.id):
+        return
+
+    alteracoes = []
+
+    if instance.tecnico_id != anterior.tecnico_id:
+        if instance.tecnico:
+            alteracoes.append(f"👷 Técnico atribuído: {instance.tecnico.nome}")
+        else:
+            alteracoes.append("👷 Técnico removido")
+
+    if instance.status != anterior.status:
+        alteracoes.append(
+            f"📊 Status: {anterior.get_status_display()} → {instance.get_status_display()}"
+        )
+
+    if instance.estado != anterior.estado:
+        alteracoes.append(
+            f"🚦 Estado: {anterior.get_estado_display()} → {instance.get_estado_display()}"
+        )
+
+    if instance.prioridade != anterior.prioridade:
+        alteracoes.append(
+            f"⚠️ Prioridade: {anterior.get_prioridade_display()} → {instance.get_prioridade_display()}"
+        )
+
+    if instance.actuacao_tipo != anterior.actuacao_tipo:
+        alteracoes.append(
+            f"🔧 Tipo de atuação: {anterior.get_actuacao_tipo_display()} → {instance.get_actuacao_tipo_display()}"
+        )
+
+    if instance.data_inicio_intervencao != anterior.data_inicio_intervencao:
+        alteracoes.append(
+            f"🕐 Início: {_formatar_data(instance.data_inicio_intervencao)}"
+        )
+
+    if instance.data_fim_intervencao != anterior.data_fim_intervencao:
+        alteracoes.append(
+            f"🕐 Fim: {_formatar_data(instance.data_fim_intervencao)}"
+        )
+
+    if instance.titulo != anterior.titulo:
+        alteracoes.append(f"📋 Título: {instance.titulo}")
+
+    if instance.descricao != anterior.descricao:
+        alteracoes.append("📝 Descrição atualizada")
+
+    if instance.contrato_id != anterior.contrato_id:
+        contrato = instance.contrato.tipo_contrato if instance.contrato else "Sem contrato"
+        alteracoes.append(f"📄 Contrato: {contrato}")
+
+    if not alteracoes:
+        return
+
+    empresa_nome = cliente.empresa.nome if cliente.empresa else "—"
+    titulo = f"Intervenção {instance.numero} atualizada"
+    mensagem = (
+        f"A intervenção {instance.numero} ({instance.titulo}) foi atualizada.\n"
+        + "\n".join(f"- {alteracao}" for alteracao in alteracoes)
+    )
+
+    Notificacao.objects.create(
+        utilizador=cliente,
+        tipo="atualizacao_intervencao",
+        titulo=titulo,
+        mensagem=mensagem,
+        link=f"/intervencoes/{instance.id}",
+    )
+
+    texto = (
+        f"🔔 *Intervenção atualizada*\n\n"
+        f"🆔 *Nº:* {instance.numero}\n"
+        f"📋 *Título:* {instance.titulo}\n"
+        f"🏢 *Empresa:* {empresa_nome}\n\n"
+        + "\n".join(alteracoes)
+        + f"\n\n👤 *Atualizado por:* {ator.nome if ator else 'Sistema'}"
+    )
+
+    numeros = set()
+    if cliente.telefone:
+        numeros.add(cliente.telefone)
+    if cliente.empresa and cliente.empresa.telefone:
+        numeros.add(cliente.empresa.telefone)
+
+    for numero in numeros:
+        notificar_async(numero=numero, texto=texto)
 
 
 def _notificar_validar(instance, ator):

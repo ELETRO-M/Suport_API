@@ -179,6 +179,7 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         tecnico = serializer.validated_data["tecnico_id"]
         instance.tecnico = tecnico
+        instance._utilizador_acao = request.user
         instance.save(update_fields=["tecnico"])
     
         Notificacao.objects.create(
