@@ -431,7 +431,7 @@ class reset_password_confirm(viewsets.GenericViewSet):
 @extend_schema(tags=['Empresa'])
 class empresaviewset(viewsets.ModelViewSet):
     permission_classes=[IsAuthenticated]
-    queryset= empresa.all_objects.all()
+    queryset= empresa.objects.all()
     serializer_class= empresdatilserialazrs
 
     def list(self, request):
@@ -467,5 +467,12 @@ class empresaviewset(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
         return resposta_sucesso(data={"id": str(obj.id), "nome": obj.nome})
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Apenas administradores podem remover empresas.")
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return resposta_sucesso(message="Empresa deletada com sucesso")
     
 
