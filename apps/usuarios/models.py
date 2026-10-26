@@ -49,6 +49,14 @@ class empresa(ModeloUUIDComTimestamps, SoftDeleteModel):
        
     def __str__(self):
         return self.nome
+
+    def delete(self, *args, **kwargs):
+        self.is_deleted = True
+        self.status = self.StatusChoices.INACTIVO
+        type(self).all_objects.filter(pk=self.pk).update(
+            is_deleted=True,
+            status=self.StatusChoices.INACTIVO,
+        )
     def save(self, *args, **kwargs):
         try:
             self.full_clean()
