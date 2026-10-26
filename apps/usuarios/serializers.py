@@ -1,7 +1,9 @@
+import io
 import uuid
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -11,13 +13,23 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from drf_spectacular.utils import extend_schema_field
 from django.db.models import Sum
+from PIL import Image, ImageOps, UnidentifiedImageError
 from apps.usuarios.models import Usuario, empresa
 from apps.contratos.models import Contrato
 from apps.intervencoes.models import Intervencao
 
 
+AVATAR_MAX_SIZE = (512, 512)
+AVATAR_WEBP_QUALITY = 85
+
+
 @extend_schema_field(
-    serializers.FileField(help_text="Imagem do avatar (multipart/form-data). Também aceita uma URL remota.")
+    serializers.FileField(
+        help_text=(
+            "Imagem do avatar (multipart/form-data). É redimensionada para no máximo "
+            "512×512 e convertida para WebP. Também aceita uma URL remota."
+        )
+    )
 )
 class AvatarURLField(serializers.Field):
 
@@ -30,11 +42,39 @@ class AvatarURLField(serializers.Field):
         if hasattr(data, "read"):
             arquivo = serializers.ImageField().to_internal_value(data)
 
-            nome_arquivo = arquivo.name.replace("\\", "/").split("/")[-1]
-            ext = f".{nome_arquivo.rsplit('.', 1)[1].lower()}" if "." in nome_arquivo else ""
+            try:
+                arquivo.seek(0)
+                imagem = Image.open(arquivo)
+                imagem = ImageOps.exif_transpose(imagem)
+                if imagem.mode in ("RGBA", "LA") or (
+                    imagem.mode == "P" and "transparency" in imagem.info
+                ):
+                    imagem = imagem.convert("RGBA")
+                else:
+                    imagem = imagem.convert("RGB")
+                imagem.thumbnail(AVATAR_MAX_SIZE, Image.Resampling.LANCZOS)
 
-            caminho = f"usuarios/avatares/{uuid.uuid4().hex}{ext}"
-            saved_path = default_storage.save(caminho, arquivo)
+                buffer = io.BytesIO()
+                imagem.save(
+                    buffer,
+                    format="WEBP",
+                    quality=AVATAR_WEBP_QUALITY,
+                    method=6,
+                )
+            except (
+                UnidentifiedImageError,
+                OSError,
+                ValueError,
+                Image.DecompressionBombError,
+            ) as exc:
+                raise serializers.ValidationError(
+                    "Não foi possível processar a imagem do avatar."
+                ) from exc
+
+            caminho = f"usuarios/avatares/{uuid.uuid4().hex}.webp"
+            saved_path = default_storage.save(
+                caminho, ContentFile(buffer.getvalue())
+            )
 
             return default_storage.url(saved_path)
 

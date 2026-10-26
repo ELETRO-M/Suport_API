@@ -115,6 +115,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         description=(
             "Cria um utilizador. **Apenas administradores.** Aceita `multipart/form-data` para "
             "fazer upload da imagem do avatar (`avatar_url`); também pode ser enviada uma URL. "
+            "A imagem enviada é redimensionada para no máximo 512×512 e convertida para WebP. "
             "Para `perfil=técnico` são obrigatórios `telefone`, `especialidades` e `data_contratacao`; "
             "para `perfil=cliente`, `telefone` e `empresa`."
         ),
@@ -131,7 +132,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
                             "usuario_id": "uuid",
                             "email": "novo@sosticket.ao",
                             "perfil": "tecnico",
-                            "avatar_url": "https://res.cloudinary.com/.../avatar.png",
+                            "avatar_url": "https://res.cloudinary.com/.../avatar.webp",
                         },
                     )
                 ],
@@ -244,7 +245,8 @@ class PerfilViewSet(
         summary="Atualizar o meu perfil",
         description=(
             "Atualiza o perfil do utilizador autenticado. Aceita `multipart/form-data` para fazer "
-            "upload da imagem do avatar (`avatar_url`)."
+            "upload da imagem do avatar (`avatar_url`). A imagem é redimensionada para no máximo "
+            "512×512 e convertida para WebP."
         ),
         request={"multipart/form-data": PerfilSerializer, "application/json": PerfilSerializer},
         responses={
@@ -310,7 +312,8 @@ class TecnicoViewSet(viewsets.ModelViewSet):
         summary="Criar técnico",
         description=(
             "Cria um técnico. **Apenas administradores.** Aceita `multipart/form-data` para fazer "
-            "upload da imagem do avatar (`avatar_url`)."
+            "upload da imagem do avatar (`avatar_url`). A imagem é redimensionada para no máximo "
+            "512×512 e convertida para WebP."
         ),
         request={"multipart/form-data": TecnicoEscritaSerializer, "application/json": TecnicoEscritaSerializer},
         responses={
@@ -338,7 +341,8 @@ class TecnicoViewSet(viewsets.ModelViewSet):
         summary="Atualizar técnico",
         description=(
             "Atualiza um técnico. **Apenas administradores.** Aceita `multipart/form-data` "
-            "para alterar a imagem do avatar (`avatar_url`)."
+            "para alterar a imagem do avatar (`avatar_url`). A imagem é redimensionada para no "
+            "máximo 512×512 e convertida para WebP."
         ),
         request={"multipart/form-data": TecnicoEscritaSerializer, "application/json": TecnicoEscritaSerializer},
         responses={

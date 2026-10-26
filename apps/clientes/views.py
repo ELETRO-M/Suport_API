@@ -61,7 +61,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         summary="Criar cliente",
         description=(
             "Cria um cliente. **Apenas administradores.** Aceita `multipart/form-data` para fazer "
-            "upload da imagem do avatar (`avatar_url`)."
+            "upload da imagem do avatar (`avatar_url`). A imagem é redimensionada para no máximo "
+            "512×512 e convertida para WebP."
         ),
         request={"multipart/form-data": ClienteEscritaSerializer, "application/json": ClienteEscritaSerializer},
         responses={
@@ -89,7 +90,8 @@ class ClienteViewSet(viewsets.ModelViewSet):
         summary="Atualizar cliente",
         description=(
             "Atualiza um cliente. O **admin** pode atualizar qualquer cliente; o **cliente** apenas a "
-            "própria conta. Aceita `multipart/form-data` para alterar a imagem do avatar (`avatar_url`)."
+            "própria conta. Aceita `multipart/form-data` para alterar a imagem do avatar (`avatar_url`). "
+            "A imagem é redimensionada para no máximo 512×512 e convertida para WebP."
         ),
         request={"multipart/form-data": ClienteEscritaSerializer, "application/json": ClienteEscritaSerializer},
         responses={
