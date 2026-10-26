@@ -1,10 +1,16 @@
+import logging
+
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
+from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
+
+
+logger = logging.getLogger(__name__)
 
 
 def manipulador_excecao_personalizado(exc, context):
@@ -18,6 +24,7 @@ def manipulador_excecao_personalizado(exc, context):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         elif isinstance(exc, IntegrityError):
+            logger.exception("Erro de integridade na base de dados.")
             mensagem = str(exc).lower()
             if "duplicate" in mensagem or "unique constraint" in mensagem:
                 resposta = Response(
@@ -54,7 +61,7 @@ def manipulador_excecao_personalizado(exc, context):
     if isinstance(exc, DjangoValidationError) and "detalhes_django" in locals():
         detalhes = detalhes_django
     elif isinstance(exc, IntegrityError):
-        detalhes = None
+        detalhes = str(exc) if settings.DEBUG else None
 
     resposta.data = {
         "success": False,

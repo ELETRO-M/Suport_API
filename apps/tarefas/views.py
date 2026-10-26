@@ -1,3 +1,4 @@
+import logging
 from typing import cast
 
 from django.utils import timezone
@@ -28,7 +29,11 @@ from apps.tarefas.serializers import (
     TarefaEscritaSerializer,
     TarefaListaSerializer,
 )
+from apps.tarefas.signal import processar_alertas_inicio
 from apps.usuarios.models import Usuario
+
+
+logger = logging.getLogger(__name__)
 
 
 filtro_estado = OpenApiParameter(
@@ -65,6 +70,10 @@ class TarefaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Tarefa.objects.none()
+        try:
+            processar_alertas_inicio()
+        except Exception:
+            logger.exception("Falha ao processar alertas de início de tarefas.")
         request = cast(Request, self.request)
         queryset = Tarefa.objects.select_related("atribuido_a", "criado_por", "intervencao").prefetch_related(
             "comentarios",
@@ -279,7 +288,9 @@ class TarefaViewSet(viewsets.ModelViewSet):
         destino = serializer.validated_data["atribuido_a_id"]
         instance.atribuido_a = destino
         instance._utilizador_acao = request.user
-        instance.save(update_fields=["atribuido_a", "data_actualizacao"])
+        instance.save(
+            update_fields=["atribuido_a", "data_actualizacao", "lembrete_inicio_enviado"]
+        )
         return resposta_view(
             data={
                 "id": str(instance.id),
@@ -361,19 +372,29 @@ class TarefaViewSet(viewsets.ModelViewSet):
         return resposta_view(data={"id": str(instance.id), "estado": instance.estado})
 
     @extend_schema(
-        summary="Listar e adicionar comentários",
-        operation_id="tarefas_comentarios",
-        description=(
-            "`GET` lista os comentários da tarefa; `POST` adiciona um comentário. "
-            "Ao comentar, a contraparte (técnico atribuído ou admin criador) é notificada (app + WhatsApp)."
-        ),
-        request=AdicionarComentarioSerializer,
+        summary="Listar comentários da tarefa",
+        operation_id="tarefas_comentarios_listar",
+        methods=["GET"],
+        description="Lista os comentários da tarefa.",
         responses={
             200: resposta_sucesso(
                 ComentarioResumoSerializer(many=True),
                 "Lista de comentários.",
                 "Comentarios",
             ),
+            403: resposta_erro("Sem permissão nesta tarefa."),
+        },
+    )
+    @extend_schema(
+        summary="Adicionar comentário à tarefa",
+        operation_id="tarefas_comentarios_adicionar",
+        methods=["POST"],
+        description=(
+            "Adiciona um comentário à tarefa. A contraparte (técnico atribuído ou admin criador) "
+            "é notificada (app + WhatsApp)."
+        ),
+        request=AdicionarComentarioSerializer,
+        responses={
             201: resposta_criar(
                 ComentarioResumoSerializer,
                 "Comentário adicionado.",

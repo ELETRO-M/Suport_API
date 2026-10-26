@@ -1,10 +1,16 @@
+from datetime import timedelta
+
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.utils import timezone
 
-from apps.configuracoes.notificar import notificar_async
+from apps.configuracoes.notificar import notificar_async, notificar_documento_async
 from apps.notificacoes.models import Notificacao
 from apps.tarefas.models import ComentarioTarefa, Tarefa
 from apps.usuarios.models import Usuario
+
+
+ANTECEDENCIA_ALERTA_INICIO = timedelta(hours=2)
 
 
 def _fmt_data(data):
@@ -68,13 +74,106 @@ def _notificar(tarefa, utilizador, titulo, mensagem, texto_whatsapp):
         notificar_async(numero=utilizador.telefone, texto=texto_whatsapp)
 
 
+def _anexos_resumo(tarefa):
+    total = tarefa.anexos.count()
+    if not total:
+        return ""
+    return f"\n\n📎 *Anexos:* {total} documento(s) enviado(s) em seguida."
+
+
+def _enviar_anexos(tarefa, utilizador):
+    if not utilizador or not utilizador.telefone:
+        return
+    for anexo in tarefa.anexos.all():
+        if not anexo.arquivo:
+            continue
+        try:
+            arquivo_url = anexo.arquivo.url
+        except (ValueError, AttributeError):
+            continue
+        nome_arquivo = anexo.arquivo.name.rsplit("/", 1)[-1]
+        notificar_documento_async(
+            numero=utilizador.telefone,
+            arquivo_url=arquivo_url,
+            nome_arquivo=nome_arquivo,
+            descricao=anexo.descricao or f"Anexo da tarefa {tarefa.numero}",
+        )
+
+
+def enviar_alerta_inicio(tarefa):
+    tecnico = tarefa.atribuido_a
+    if not tecnico:
+        return False
+    inicio = _fmt_data(tarefa.data_inicio)
+    prioridade = dict(Tarefa.PrioridadeChoices.choices).get(
+        tarefa.prioridade, tarefa.prioridade
+    )
+    _notificar(
+        tarefa,
+        tecnico,
+        titulo="Tarefa começa em menos de 2 horas",
+        mensagem=(
+            f"A tarefa {tarefa.numero} tem início marcado para {inicio}.\n\n"
+            f"Título: {tarefa.titulo}\n"
+            f"Prioridade: {prioridade}"
+        ),
+        texto_whatsapp=(
+            f"⏰ *Tarefa começa em menos de 2 horas*\n\n"
+            f"Olá, {tecnico.nome}!\n\n"
+            f"🔢 *Número:* {tarefa.numero}\n"
+            f"📌 *Título:* {tarefa.titulo}\n"
+            f"🚦 *Início:* {inicio}\n"
+            f"⚠️ *Prioridade:* {prioridade}"
+        ),
+    )
+    return True
+
+
+def processar_alertas_inicio():
+    agora = timezone.now()
+    limite = agora + ANTECEDENCIA_ALERTA_INICIO
+    tarefas = (
+        Tarefa.objects.filter(
+            data_inicio__isnull=False,
+            data_inicio__gte=agora,
+            data_inicio__lte=limite,
+            atribuido_a__isnull=False,
+            lembrete_inicio_enviado=False,
+            estado__in=(
+                Tarefa.EstadoChoices.PENDENTE,
+                Tarefa.EstadoChoices.EM_PROGRESSO,
+            ),
+        )
+        .select_related("atribuido_a", "intervencao", "criado_por")
+        .order_by("data_inicio")
+    )
+    total = 0
+    for tarefa in tarefas.iterator():
+        reclamada = Tarefa.objects.filter(
+            pk=tarefa.pk, lembrete_inicio_enviado=False
+        ).update(lembrete_inicio_enviado=True)
+        if not reclamada:
+            continue
+        if enviar_alerta_inicio(tarefa):
+            total += 1
+    return total
+
+
 @receiver(pre_save, sender=Tarefa)
 def guardar_tarefa_anterior(sender, instance, **kwargs):
-    if instance.pk:
-        try:
-            instance._tarefa_anterior = Tarefa.all_objects.get(pk=instance.pk)
-        except Tarefa.DoesNotExist:
-            instance._tarefa_anterior = None
+    if not instance.pk:
+        return
+    try:
+        anterior = Tarefa.all_objects.get(pk=instance.pk)
+    except Tarefa.DoesNotExist:
+        instance._tarefa_anterior = None
+        return
+    instance._tarefa_anterior = anterior
+    if (
+        anterior.data_inicio != instance.data_inicio
+        or anterior.atribuido_a_id != instance.atribuido_a_id
+    ):
+        instance.lembrete_inicio_enviado = False
 
 
 @receiver(post_save, sender=Tarefa)
@@ -107,8 +206,10 @@ def notificar_tarefa(sender, instance, created, **kwargs):
                 texto_whatsapp=(
                     f"✅ *Nova tarefa atribuída*\n\n"
                     f"Olá, {instance.atribuido_a.nome}!\n\n{_detalhe_completo(instance)}"
+                    f"{_anexos_resumo(instance)}"
                 ),
             )
+            _enviar_anexos(instance, instance.atribuido_a)
         return
 
     if anterior is None:
@@ -127,8 +228,10 @@ def notificar_tarefa(sender, instance, created, **kwargs):
             texto_whatsapp=(
                 f"✅ *Nova tarefa atribuída*\n\n"
                 f"Olá, {instance.atribuido_a.nome}!\n\n{_detalhe_completo(instance)}"
+                f"{_anexos_resumo(instance)}"
             ),
         )
+        _enviar_anexos(instance, instance.atribuido_a)
 
     estado_mudou = instance.estado != anterior.estado
     if not estado_mudou:

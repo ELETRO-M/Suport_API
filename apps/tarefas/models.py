@@ -53,6 +53,10 @@ class Tarefa(ModeloUUIDComTimestamps, SoftDeleteModel):
     data_inicio = models.DateTimeField(null=True, blank=True)
     data_fim = models.DateTimeField(null=True, blank=True)
     data_conclusao = models.DateTimeField(null=True, blank=True)
+    lembrete_inicio_enviado = models.BooleanField(
+        default=False,
+        help_text="Indica se o alerta de início (2 horas antes) já foi enviado ao técnico.",
+    )
 
     class Meta:
         ordering = ("-data_criacao",)
