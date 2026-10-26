@@ -278,7 +278,9 @@ class TecnicoViewSet(viewsets.ModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return Usuario.objects.none()
         queryset = (
-            Usuario.objects.filter(perfil=Usuario.PerfilChoices.TECNICO)
+            Usuario.objects.filter(
+                perfil__in=[Usuario.PerfilChoices.TECNICO, Usuario.PerfilChoices.ADMIN]
+            )
             .annotate(total_horas_mes=Sum("horas_registadas__horas"))
             .order_by("nome")
         )
