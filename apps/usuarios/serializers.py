@@ -253,9 +253,9 @@ class RecuperaSerializer(serializers.Serializer):
     def validate(self, attrs):
         email = attrs.get("email")
 
-        utilizador = Usuario.objects.filter(email=email, is_deleted=False).first()
+        utilizador = Usuario.all_objects.filter(email=email, is_deleted=True).first()
         if not utilizador:
-            raise serializers.ValidationError("Não existe nenhuma conta associada a este email.")
+            raise serializers.ValidationError("Não existe nenhuma conta apagada associada a este email.")
 
         attrs["user"] = utilizador
         return attrs
