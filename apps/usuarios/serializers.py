@@ -250,11 +250,12 @@ class InicioSessaoSerializer(serializers.Serializer):
 class RecuperaSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-
     def validate(self, attrs):
         email = attrs.get("email")
 
-        utilizador = Usuario.all_objects.filter(email=email).first()
+        utilizador = Usuario.objects.filter(email=email, is_deleted=False).first()
+        if not utilizador:
+            raise serializers.ValidationError("Não existe nenhuma conta associada a este email.")
 
         attrs["user"] = utilizador
         return attrs
