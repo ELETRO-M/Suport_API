@@ -403,17 +403,29 @@ class RecuperarConta(viewsets.GenericViewSet):
             f"{settings.SITE_URL}"
             f"{reverse('restpassword-list')}?uid={uid}&token={token}"
         )
-        notificar_async(numero=utilizador.telefone,texto=(
-        f"Olá, {utilizador.nome}!\n\n"
-        "Recebemos um pedido para redefinir a senha da sua conta.\n"
-        "Se foi você quem solicitou, clique no link abaixo para criar uma nova senha:\n\n"
-        f"{link}\n\n"
-        "Este link é válido por tempo limitado, por motivos de segurança.\n\n"
-        "Se não foi você quem pediu esta alteração, pode ignorar este email —\n"
-        "a sua senha atual continua a funcionar normalmente.\n\n"
-        "—\n"
-        "Equipa Gestão de Serviços"
-    ))
+
+        mensagem = (
+            f"Olá, {utilizador.nome}!\n\n"
+            "Recebemos um pedido para redefinir a senha da sua conta.\n"
+            "Se foi você quem solicitou, clique no link abaixo para criar uma nova senha:\n\n"
+            f"{link}\n\n"
+            "Este link é válido por tempo limitado, por motivos de segurança.\n\n"
+            "Se não foi você quem pediu esta alteração, pode ignorar este email - "
+            "a sua senha atual continua a funcionar normalmente.\n\n"
+            "Equipa Gestão de Serviços"
+        )
+
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
+        if from_email and from_email.endswith("@gmail.com"):
+            from_email = "onboarding@resend.dev"
+
+        send_mail(
+            subject="Recuperação de conta",
+            message=mensagem,
+            from_email=from_email,
+            recipient_list=[utilizador.email],
+            fail_silently=True,
+        )
 
         return resposta_sucesso(
             message="Enviámos um email para recuperar a conta"
