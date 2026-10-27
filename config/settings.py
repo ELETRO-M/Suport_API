@@ -103,6 +103,10 @@ FIREBASE_CREDENTIALS_JSON = config("FIREBASE_CREDENTIALS_JSON", default="")
 FIREBASE_CREDENTIALS_PATH = config("FIREBASE_CREDENTIALS_PATH", default="")
 FIREBASE_PROJECT_ID = config("FIREBASE_PROJECT_ID", default="")
 
+RESEND_API_KEY = config("RESEND_API_KEY", default="")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="onboarding@resend.dev")
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="apps.configuracoes.resend_backend.ResendEmailBackend")
+
 WHATSAPP_API_URL = config("WHATSAPP_API_URL", default="")
 WHATSAPP_INSTANCE = config("WHATSAPP_INSTANCE", default="")
 WHATSAPP_API_KEY = config("WHATSAPP_API_KEY", default="")
