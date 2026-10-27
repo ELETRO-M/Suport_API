@@ -68,13 +68,21 @@ ASGI_APPLICATION = "config.asgi.application"
 
 DATABASE_URL = config("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=60,
-        ssl_require=not DEBUG,
-    )
-}
+if not DATABASE_URL or not str(DATABASE_URL).strip():
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=str(DATABASE_URL).strip(),
+            conn_max_age=60,
+            ssl_require=not DEBUG,
+        )
+    }
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 TEMPLATES = [
