@@ -10,6 +10,8 @@ class ResendEmailBackend(BaseEmailBackend):
 
         resend.api_key = getattr(settings, "RESEND_API_KEY", "")
         from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
+        if from_email and from_email.endswith("@gmail.com"):
+            from_email = "onboarding@resend.dev"
 
         count = 0
         for message in email_messages:
