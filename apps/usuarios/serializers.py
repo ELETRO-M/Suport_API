@@ -348,10 +348,7 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
         )
     @extend_schema_field(serializers.IntegerField())
     def get_intervencoes_ativas(self, obj):
-        return Intervencao.objects.filter(
-            tecnico=obj,
-            status__in=["aberto", "em_andamento", "resolvido"],
-        ).count()
+        return Intervencao.objects.filter(tecnico=obj).count()
 
     @extend_schema_field(serializers.IntegerField())
     def get_total_horas_mes(self, obj):
