@@ -9,9 +9,7 @@ class ResendEmailBackend(BaseEmailBackend):
             return 0
 
         resend.api_key = getattr(settings, "RESEND_API_KEY", "")
-        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
-        if from_email and from_email.endswith("@gmail.com"):
-            from_email = "onboarding@resend.dev"
+        default_from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
 
         count = 0
         for message in email_messages:
@@ -20,6 +18,7 @@ class ResendEmailBackend(BaseEmailBackend):
                 if not to_list:
                     continue
 
+                from_email = message.from_email or default_from_email
                 params = {
                     "from": from_email,
                     "to": to_list,

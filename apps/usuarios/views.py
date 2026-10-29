@@ -415,14 +415,10 @@ class RecuperarConta(viewsets.GenericViewSet):
             "Equipa Gestão de Serviços"
         )
 
-        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
-        if from_email and from_email.endswith("@gmail.com"):
-            from_email = "onboarding@resend.dev"
-
         send_mail(
             subject="Recuperação de conta",
             message=mensagem,
-            from_email=from_email,
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev"),
             recipient_list=[utilizador.email],
             fail_silently=True,
         )

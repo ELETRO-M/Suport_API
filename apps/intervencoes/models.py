@@ -55,7 +55,7 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        limit_choices_to={"perfil": [Usuario.PerfilChoices.TECNICO, Usuario.PerfilChoices.ADMIN], "is_deleted": False},
+        limit_choices_to={"perfil__in": [Usuario.PerfilChoices.TECNICO, Usuario.PerfilChoices.ADMIN], "is_deleted": False},
     )
     contrato = models.ForeignKey(
         Contrato,
@@ -387,7 +387,10 @@ class HoraTrabalho(ModeloUUIDComTimestamps):
         Usuario,
         related_name="horas_registadas",
         on_delete=models.CASCADE,
-        limit_choices_to={"perfil": Usuario.PerfilChoices.TECNICO},
+        limit_choices_to={
+            "perfil__in": [Usuario.PerfilChoices.TECNICO, Usuario.PerfilChoices.ADMIN],
+            "is_deleted": False,
+        },
     )
     horas = models.DecimalField(max_digits=8, decimal_places=2)
     data_trabalho = models.DateField()
