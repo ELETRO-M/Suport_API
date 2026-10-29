@@ -49,7 +49,7 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
     queryset = Usuario.objects.all()
 
     def get_permissions(self):
-        if self.action in {"register", "login", "refresh", "reset_password"}:
+        if self.action in {"login", "refresh", "reset_password"}:
             return []
         return [IsAuthenticated()]
 
@@ -75,25 +75,6 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
         return UsuarioSerializer
         
 
-    @action(detail=False, methods=["get"], url_path="register", permission_classes=[IsAuthenticated])
-    def lista(self, request, *args, **kwargs):
-        queryset=Usuario.all_objects.all()  
-        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
-            self.permission_denied(request, message="Sem permissão para este recurso.")
-        
-        queryset = self.filter_queryset(queryset)
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            paginated_data = self.get_paginated_response(serializer.data).data
-            
-            return resposta_sucesso(data=paginated_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return resposta_sucesso(data=serializer.data)
-
-        
 #_________________________________________________________________________________________________________________
     @action(detail=True, methods=["delete"], url_path="register", permission_classes=[IsAuthenticated])
     def delete_usuario(self, request, *args, **kwargs):
@@ -141,10 +122,19 @@ class AutenticacaoViewSet(viewsets.GenericViewSet):
             403: esquema_erro("Apenas administradores."),
         },
     )
-    @action(detail=False, methods=["post"], url_path="register", permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["get", "post"], url_path="register", permission_classes=[IsAuthenticated])
     def register(self, request):
         if request.user.perfil != Usuario.PerfilChoices.ADMIN:
             raise PermissionDenied("Permissão Negada.")
+
+        if request.method == "GET":
+            queryset = self.filter_queryset(Usuario.all_objects.all())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = UsuarioSerializer(page, many=True)
+                return resposta_sucesso(data=self.get_paginated_response(serializer.data).data)
+            serializer = UsuarioSerializer(queryset, many=True)
+            return resposta_sucesso(data=serializer.data)
 
         serializer = RegistoSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
