@@ -11,6 +11,9 @@ class ConfiguracaoSistema(models.Model):
     fuso_horario = models.CharField(max_length=100, default="Africa/Luanda")
     email_notificacoes = models.BooleanField(default=True)
     prazo_padrao_intervencao = models.PositiveIntegerField(default=48)
+    sla_urgente = models.PositiveIntegerField(default=4)
+    sla_alta = models.PositiveIntegerField(default=24)
+    sla_baixa = models.PositiveIntegerField(default=72)
     taxa_hora= models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
     taxa_mensal= models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
     taxa_anual = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
@@ -74,3 +77,12 @@ class Mensagem(ModeloUUIDComTimestamps):
 
     class Meta:
         ordering = ["data_criacao"]
+
+
+class RespostaRapida(ModeloUUIDComTimestamps):
+    titulo = models.CharField(max_length=100)
+    texto = models.TextField()
+    ativa = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("titulo",)

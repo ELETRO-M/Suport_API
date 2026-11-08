@@ -97,13 +97,21 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     @property
     def sla(self):
         config = ConfiguracaoSistema.load()
-        prazo_final = self.data_abertura + timedelta(hours=config.prazo_padrao_intervencao)
+        horas = {
+            "urgente": getattr(config, "sla_urgente", 4),
+            "alta": getattr(config, "sla_alta", 24),
+            "media": config.prazo_padrao_intervencao,
+            "baixa": getattr(config, "sla_baixa", 72),
+        }.get(self.prioridade, config.prazo_padrao_intervencao)
+        prazo_final = self.data_abertura + timedelta(hours=horas)
         diferenca = prazo_final - timezone.now()
         horas_restantes = max(diferenca.total_seconds() / 3600, 0)
         return {
             "prazo_final": prazo_final,
             "horas_restantes": round(horas_restantes, 2),
             "expirado": timezone.now() > prazo_final,
+            "horas_prazo": horas,
+            "prioridade": self.prioridade,
         }
 
     def clean(self):

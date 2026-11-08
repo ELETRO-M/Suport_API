@@ -5,10 +5,17 @@ from rest_framework.response import Response
 
 from apps.configuracoes.responses import resposta_sucesso
 from apps.sistema import evolution
-from apps.sistema.models import Conversa, Mensagem
-from apps.sistema.serializers import ConversaSerializer, MensagemSerializer
+from apps.sistema.models import Conversa, Mensagem, RespostaRapida
+from apps.sistema.serializers import ConversaSerializer, MensagemSerializer, RespostaRapidaSerializer
 from apps.sistema.whatsapp import registar_mensagem
 from apps.usuarios.models import Usuario
+
+
+class RespostaRapidaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RespostaRapidaSerializer
+    filterset_fields = ("ativa",)
+    search_fields = ("titulo", "texto")
 
 
 class ConversaViewSet(viewsets.ModelViewSet):

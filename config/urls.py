@@ -22,6 +22,7 @@ from apps.sistema.views import ConfiguracaoSistemaViewSet, WebhookWhatsApp
 from apps.sistema.whatsapp_api import (
     ConversaViewSet,
     MensagemViewSet,
+    RespostaRapidaViewSet,
     enviar_cloudinary,
     enviar_media,
     enviar_texto,
@@ -42,6 +43,7 @@ router.register(r'reset-password', reset_password_confirm, basename='restpasswor
 router.register(r"empresas", empresaviewset, basename="empresas")
 router.register(r"whatsapp/conversas", ConversaViewSet, basename="whatsapp-conversas")
 router.register(r"whatsapp/mensagens", MensagemViewSet, basename="whatsapp-mensagens")
+router.register(r"respostas-rapidas", RespostaRapidaViewSet, basename="respostas-rapidas")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

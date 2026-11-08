@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sistema.models import ConfiguracaoSistema, Conversa, Mensagem
+from apps.sistema.models import ConfiguracaoSistema, Conversa, Mensagem, RespostaRapida
 
 
 class ConfiguracaoSistemaSerializer(serializers.ModelSerializer):
@@ -45,3 +45,9 @@ class MensagemSerializer(serializers.ModelSerializer):
             "file_name", "mimetype", "media_url", "enviado_por", "enviado_por_nome", "data_criacao",
         )
         read_only_fields = fields
+
+
+class RespostaRapidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespostaRapida
+        fields = ("id", "titulo", "texto", "ativa", "data_criacao")
