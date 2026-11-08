@@ -53,10 +53,22 @@ class WebhookWhatsApp(APIView):
         data = corpo.get("data", {})
         key = data.get("key", {})
 
-        jid = key.get("remoteJid", "")
-        if jid.endswith("@lid"):  # versões recentes podem enviar o número real aqui
-            jid = key.get("remoteJidAlt", jid)
-        if not jid.endswith("@s.whatsapp.net"):  # ignora grupos e estados
+        # Numero real do contacto. A Evolution/Baileys pode mandar:
+        #  - 2449...@s.whatsapp.net
+        #  - 2449...:12@s.whatsapp.net  (sufixo de dispositivo)
+        #  - <id>@lid                   (endereçamento novo; o telefone vem em remoteJidAlt)
+        jid = str(key.get("remoteJid") or "")
+        if jid.endswith("@lid"):
+            jid = str(key.get("remoteJidAlt") or key.get("senderPn") or key.get("participantPn") or "")
+        if not jid:
+            return Response({"ignorado": True})
+        dominio = jid.split("@")[-1] if "@" in jid else ""
+        if dominio not in ("s.whatsapp.net", "c.us"):  # ignora grupos, canais e estados
+            return Response({"ignorado": True})
+
+        from apps.sistema.evolution import normalizar_numero
+        numero = normalizar_numero(jid.split("@")[0].split(":")[0])
+        if not numero:
             return Response({"ignorado": True})
 
         msg = data.get("message", {})
@@ -78,7 +90,7 @@ class WebhookWhatsApp(APIView):
                 media_url = ""
 
         registar_mensagem(
-            numero=jid.split("@")[0],
+            numero=numero,
             texto=texto,
             direcao=Mensagem.Direcao.SAIDA if key.get("fromMe") else Mensagem.Direcao.ENTRADA,
             wa_id=key.get("id"),

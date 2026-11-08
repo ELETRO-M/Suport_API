@@ -3,12 +3,27 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.configuracoes.pagination import PaginacaoPadraoResultados
 from apps.configuracoes.responses import resposta_sucesso
 from apps.sistema import evolution
 from apps.sistema.models import Conversa, Mensagem, RespostaRapida
 from apps.sistema.serializers import ConversaSerializer, MensagemSerializer, RespostaRapidaSerializer
 from apps.sistema.whatsapp import registar_mensagem
 from apps.usuarios.models import Usuario
+
+
+class PaginacaoConversas(PaginacaoPadraoResultados):
+    """A caixa de entrada precisa de todas as conversas, nao das 10 primeiras."""
+    page_size = 100
+    page_size_query_param = "limit"
+    max_page_size = 500
+
+
+class PaginacaoMensagens(PaginacaoPadraoResultados):
+    """Historico do chat: pagina grande e o cliente pede o limite que precisa."""
+    page_size = 200
+    page_size_query_param = "limit"
+    max_page_size = 500
 
 
 class RespostaRapidaViewSet(viewsets.ModelViewSet):
@@ -21,9 +36,11 @@ class RespostaRapidaViewSet(viewsets.ModelViewSet):
 class ConversaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = ConversaSerializer
+    pagination_class = PaginacaoConversas
     filterset_fields = ("numero", "tecnico", "cliente")
     search_fields = ("numero", "nome")
     ordering_fields = ("ultima_mensagem_em", "data_criacao")
+    ordering = ("-ultima_mensagem_em",)
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -63,8 +80,10 @@ class ConversaViewSet(viewsets.ModelViewSet):
 class MensagemViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = MensagemSerializer
+    pagination_class = PaginacaoMensagens
     filterset_fields = ("conversa", "direcao", "tipo")
-    ordering = ("data_criacao",)
+    # mais recentes primeiro: a pagina 1 traz o fim da conversa (o frontend ordena ascendente)
+    ordering = ("-data_criacao",)
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
