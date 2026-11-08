@@ -19,6 +19,13 @@ from apps.intervencoes.views import  IntervencaoViewSet, HistoricoViewSet
 from apps.notificacoes.views import NotificacaoViewSet
 from apps.relatorios.views import RelatorioViewSet
 from apps.sistema.views import ConfiguracaoSistemaViewSet, WebhookWhatsApp
+from apps.calendario.views import (
+    CalendarioExtraViewSet,
+    CategoriaViewSet,
+    DocumentoViewSet,
+    ObrigacaoViewSet,
+    TarefaViewSet,
+)
 from apps.sistema.whatsapp_api import (
     ConversaViewSet,
     MensagemViewSet,
@@ -41,6 +48,11 @@ router.register(r"notificacoes", NotificacaoViewSet, basename="notificacoes")
 router.register(r"recuperar", RecuperarConta, basename="recuperar")
 router.register(r'reset-password', reset_password_confirm, basename='restpassword' )
 router.register(r"empresas", empresaviewset, basename="empresas")
+router.register(r"fiscal/categorias", CategoriaViewSet, basename="fiscal-categorias")
+router.register(r"fiscal/obrigacoes", ObrigacaoViewSet, basename="fiscal-obrigacoes")
+router.register(r"fiscal/tarefas", TarefaViewSet, basename="fiscal-tarefas")
+router.register(r"fiscal/documentos", DocumentoViewSet, basename="fiscal-documentos")
+router.register(r"fiscal/calendario", CalendarioExtraViewSet, basename="fiscal-calendario")
 router.register(r"whatsapp/conversas", ConversaViewSet, basename="whatsapp-conversas")
 router.register(r"whatsapp/mensagens", MensagemViewSet, basename="whatsapp-mensagens")
 router.register(r"respostas-rapidas", RespostaRapidaViewSet, basename="respostas-rapidas")
