@@ -77,6 +77,7 @@ class IntervencaoListaSerializer(serializers.ModelSerializer):
             "cliente_nome",
             "tecnico_id",
             "tecnico_nome",
+            "modo_atribuicao",
             "contrato_id",
             "status",
             "estado",
@@ -142,6 +143,7 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
     cliente_id = serializers.UUIDField(write_only=True, required=False)
     contrato_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     tecnico_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    modo_atribuicao = serializers.ChoiceField(choices=Intervencao.ModoAtribuicaoChoices.choices, required=False)
     anexos = serializers.FileField(required=False, write_only=True)
 
     class Meta:
@@ -152,6 +154,7 @@ class IntervencaoEscritaSerializer(serializers.ModelSerializer):
             "cliente_id",
             "contrato_id",
             "tecnico_id",
+            "modo_atribuicao",
             "prioridade",
             "anexos",
         )

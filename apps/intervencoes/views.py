@@ -63,8 +63,10 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(data_abertura__date__lte=params["data_fim"])
 
         utilizador = request.user
+        if params.get("modo_atribuicao"):
+            queryset = queryset.filter(modo_atribuicao=params["modo_atribuicao"])
         if utilizador.perfil == Usuario.PerfilChoices.TECNICO:
-            queryset = queryset.filter(tecnico=utilizador)
+            queryset = queryset.filter(Q(tecnico=utilizador) | Q(modo_atribuicao="broadcast", tecnico__isnull=True))
         elif utilizador.perfil == Usuario.PerfilChoices.CLIENTE:
             queryset = queryset.filter(cliente=utilizador)
         return queryset.order_by("-data_abertura")
@@ -193,6 +195,17 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(
             data={"id": str(instance.id), "tecnico_id": str(tecnico.id), "tecnico_nome": tecnico.nome}
         )
+
+    @action(detail=True, methods=["post"], url_path="assumir")
+    def assumir(self, request, pk=None):
+        if request.user.perfil != Usuario.PerfilChoices.TECNICO:
+            self.permission_denied(request, message="Apenas técnicos podem assumir intervenções.")
+        instance = self.get_object()
+        if instance.modo_atribuicao != "broadcast" or instance.tecnico_id:
+            return resposta_sucesso(data={"id": str(instance.id), "tecnico_id": str(instance.tecnico_id or "")})
+        instance.tecnico = request.user
+        instance.save(update_fields=["tecnico"])
+        return resposta_sucesso(data={"id": str(instance.id), "tecnico_id": str(request.user.id), "tecnico_nome": request.user.nome})
 
     @action(detail=True, methods=["post"], url_path="comentarios")
     def comentarios(self, request, pk=None):

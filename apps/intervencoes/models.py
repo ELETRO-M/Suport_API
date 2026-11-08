@@ -43,6 +43,10 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         ALTA = "alta", "Alta"
         URGENTE = "urgente", "Urgente"
 
+    class ModoAtribuicaoChoices(models.TextChoices):
+        INDIVIDUAL = "individual", "Individual"
+        BROADCAST = "broadcast", "Todos (assumir)"
+
     numero = models.CharField(max_length=30, unique=True, blank=True)
     titulo = models.CharField(max_length=255)
     descricao = models.TextField()
@@ -63,6 +67,10 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         null=True,
         blank=True,
         limit_choices_to={"perfil": Usuario.PerfilChoices.TECNICO, "is_deleted": False},
+    )
+    modo_atribuicao = models.CharField(
+        max_length=15, choices=ModoAtribuicaoChoices.choices,
+        default=ModoAtribuicaoChoices.INDIVIDUAL,
     )
     contrato = models.ForeignKey(
         Contrato,
