@@ -36,23 +36,27 @@ def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None,
         conversa.nao_lidas += 1
     conversa.save()
 
-    async_to_sync(get_channel_layer().group_send)(
-        "whatsapp_chat",
-        {
-            "type": "chat.mensagem",
-            "dados": {
-                "conversa_id": str(conversa.id),
-                "numero": conversa.numero,
-                "nome": conversa.nome,
-                "texto": texto,
-                "direcao": direcao,
-                "tipo": tipo,
-                "file_name": file_name,
-                "mimetype": mimetype,
-                "media_url": media_url,
-                "enviado_por": usuario.nome if usuario else None,
-                "data_hora": timezone.now().isoformat(),
+    # Broadcast para o WebSocket: nunca deve derrubar o webhook se o Redis estiver fora
+    try:
+        async_to_sync(get_channel_layer().group_send)(
+            "whatsapp_chat",
+            {
+                "type": "chat.mensagem",
+                "dados": {
+                    "conversa_id": str(conversa.id),
+                    "numero": conversa.numero,
+                    "nome": conversa.nome,
+                    "texto": texto,
+                    "direcao": direcao,
+                    "tipo": tipo,
+                    "file_name": file_name,
+                    "mimetype": mimetype,
+                    "media_url": media_url,
+                    "enviado_por": usuario.nome if usuario else None,
+                    "data_hora": timezone.now().isoformat(),
+                },
             },
-        },
-    )
+        )
+    except Exception:
+        pass
     return msg
