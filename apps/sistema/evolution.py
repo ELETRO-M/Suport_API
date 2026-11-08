@@ -89,7 +89,11 @@ def subir_cloudinary(conteudo: bytes, nome="arquivo") -> str:
         api_secret=dj("CLOUDINARY_API_SECRET", default="wJH5akhlGNv1Ltg-OURGSpTODTQ"),
         secure=True,
     )
-    res = cloudinary.uploader.upload(conteudo, folder="whatsapp", public_id=f"arq-{nome}", resource_type="auto")
+    # public_id unico: evita que dois ficheiros com o mesmo nome se sobreponham
+    import uuid
+    base = re.sub(r"[^\w.-]", "_", str(nome or "arquivo").rsplit(".", 1)[0])[:40] or "arquivo"
+    public_id = f"arq-{base}-{uuid.uuid4().hex[:8]}"
+    res = cloudinary.uploader.upload(conteudo, folder="whatsapp", public_id=public_id, resource_type="auto")
     return res.get("secure_url", "")
 
 
