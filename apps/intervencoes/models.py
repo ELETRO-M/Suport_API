@@ -214,7 +214,8 @@ class Intervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         date_part = timezone.now().year
         for _ in range(100):
             with connection.cursor() as cursor:
-                cursor.execute("SELECT pg_advisory_xact_lock(%s)", [date_part])
+                if connection.vendor == "postgresql":
+                    cursor.execute("SELECT pg_advisory_xact_lock(%s)", [date_part])
                 ultimo = (
                     Intervencao.all_objects.filter(numero__startswith=f"INT-{date_part}-")
                     .order_by("-numero")
