@@ -19,7 +19,12 @@ def _key():
 
 
 def normalizar_numero(num) -> str:
-    return re.sub(r"\D", "", str(num or ""))
+    n = re.sub(r"\D", "", str(num or ""))
+    if len(n) == 9 and n[0] == "9":
+        return "244" + n
+    if len(n) == 10 and n[0] == "0":
+        return "244" + n[1:]
+    return n
 
 
 def _request(method, path, **kwargs):
@@ -37,12 +42,12 @@ def _request(method, path, **kwargs):
 
 
 def enviar_texto(numero, texto):
-    return _request("POST", f"/message/sendText/{_inst()}", json={"number": numero, "text": texto})
+    return _request("POST", f"/message/sendText/{_inst()}", json={"number": normalizar_numero(numero), "text": texto})
 
 
 def enviar_media(numero, media=None, url=None, mediatype="document",
                  mimetype="application/pdf", filename="documento.pdf", caption=None):
-    payload = {"number": numero, "mediatype": mediatype, "mimetype": mimetype, "fileName": filename}
+    payload = {"number": normalizar_numero(numero), "mediatype": mediatype, "mimetype": mimetype, "fileName": filename}
     if url:
         payload["media"] = url  # Evolution espera URL dentro de media
     if media:
