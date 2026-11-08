@@ -218,18 +218,20 @@ EVOLUTION_BASE_URL = config("EVOLUTION_BASE_URL", default="https://whatsapp-api.
 EVOLUTION_INSTANCE = config("EVOLUTION_INSTANCE", default="hunter-7121b9c32eecee07e41087f83ed0c650")
 EVOLUTION_APIKEY = config("EVOLUTION_APIKEY", default="DE5DAE35-30FF-4C20-B475-D8876093A0C2")
 
-REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379/0")
+REDIS_URL = config("REDIS_URL", default="")
 
-if DEBUG:
-    CHANNEL_LAYERS = {
-        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
-    }
-else:
+# Redis só quando REDIS_URL está definido (ex.: Railway).
+# Sem Redis usa memória: funciona em ASGI com um único processo (daphne).
+if REDIS_URL:
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {"hosts": [REDIS_URL]},
         },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
     }
 
 
