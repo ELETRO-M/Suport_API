@@ -44,12 +44,7 @@ class WebhookWhatsApp(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        token_esperado = settings.WHATSAPP_WEBHOOK_TOKEN
-        # Token opcional (doc Electrosoft não exige): só valida se estiver definido
-        if token_esperado:
-            token = request.headers.get("X-Webhook-Token", "")
-            if not hmac.compare_digest(token, token_esperado):
-                return Response(status=403)
+        # Sem token (doc Electrosoft não exige header) — aberto por spec
 
         corpo = request.data
         if corpo.get("event") != "messages.upsert":
