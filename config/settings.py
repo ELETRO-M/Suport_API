@@ -213,6 +213,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 WHATSAPP_WEBHOOK_TOKEN = config("WHATSAPP_WEBHOOK_TOKEN", default="")
+EVOLUTION_BASE_URL = config("EVOLUTION_BASE_URL", default="https://whatsapp-api.electrosoftwares.com")
+EVOLUTION_INSTANCE = config("EVOLUTION_INSTANCE", default="hunter-7121b9c32eecee07e41087f83ed0c650")
+EVOLUTION_APIKEY = config("EVOLUTION_APIKEY", default="DE5DAE35-30FF-4C20-B475-D8876093A0C2")
 
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379/0")
 

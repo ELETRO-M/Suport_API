@@ -33,6 +33,14 @@ class Conversa(ModeloUUIDComTimestamps):
     ultima_mensagem = models.TextField(blank=True)
     ultima_mensagem_em = models.DateTimeField(null=True, blank=True)
     nao_lidas = models.PositiveIntegerField(default=0)
+    tecnico = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="conversas_whatsapp",
+    )
+    cliente = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="conversas_whatsapp_cliente",
+    )
 
     class Meta:
         ordering = ["-ultima_mensagem_em"]
@@ -43,10 +51,22 @@ class Mensagem(ModeloUUIDComTimestamps):
         ENTRADA = "entrada", "Entrada"
         SAIDA = "saida", "Saída"
 
+    class Tipo(models.TextChoices):
+        CONVERSATION = "conversation", "Texto"
+        DOCUMENT = "document", "Documento"
+        IMAGE = "image", "Imagem"
+        VIDEO = "video", "Video"
+        AUDIO = "audio", "Audio"
+        STICKER = "sticker", "Sticker"
+        UNKNOWN = "unknown", "Desconhecido"
+
     conversa = models.ForeignKey(Conversa, related_name="mensagens", on_delete=models.CASCADE)
     wa_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     direcao = models.CharField(max_length=10, choices=Direcao.choices)
     texto = models.TextField()
+    tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.CONVERSATION)
+    file_name = models.CharField(max_length=255, blank=True, default="")
+    mimetype = models.CharField(max_length=100, blank=True, default="")
     enviado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
     )

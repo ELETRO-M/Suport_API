@@ -63,11 +63,9 @@ class WebhookWhatsApp(APIView):
             return Response({"ignorado": True})
 
         msg = data.get("message", {})
-        texto = (
-            msg.get("conversation")
-            or msg.get("extendedTextMessage", {}).get("text")
-            or f"[{data.get('messageType', 'mídia')}]"
-        )
+        from apps.sistema.evolution import extrair_mensagem
+        texto, tipo, file_name, mimetype = extrair_mensagem(msg)
+        texto = texto or f"[{data.get('messageType', 'mídia')}]"
 
         registar_mensagem(
             numero=jid.split("@")[0],
@@ -75,5 +73,6 @@ class WebhookWhatsApp(APIView):
             direcao=Mensagem.Direcao.SAIDA if key.get("fromMe") else Mensagem.Direcao.ENTRADA,
             wa_id=key.get("id"),
             nome=data.get("pushName", ""),
+            tipo=tipo, file_name=file_name, mimetype=mimetype,
         )
         return resposta_sucesso(message="sucesso na Requisição")

@@ -5,14 +5,16 @@ from django.utils import timezone
 from .models import Conversa, Mensagem
 
 
-def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None):
+def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None,
+                      tipo="conversation", file_name="", mimetype=""):
     conversa, _ = Conversa.objects.get_or_create(numero=numero)
     entrada = direcao == Mensagem.Direcao.ENTRADA
 
     if wa_id:
         msg, criada = Mensagem.objects.get_or_create(
             wa_id=wa_id,
-            defaults=dict(conversa=conversa, direcao=direcao, texto=texto, enviado_por=usuario),
+            defaults=dict(conversa=conversa, direcao=direcao, texto=texto, enviado_por=usuario,
+                          tipo=tipo, file_name=file_name, mimetype=mimetype),
         )
         if not criada:
             # a Evolution devolve as mensagens enviadas pela API no webhook: evita duplicados
@@ -22,7 +24,8 @@ def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None)
             return msg
     else:
         msg = Mensagem.objects.create(
-            conversa=conversa, direcao=direcao, texto=texto, enviado_por=usuario
+            conversa=conversa, direcao=direcao, texto=texto, enviado_por=usuario,
+            tipo=tipo, file_name=file_name, mimetype=mimetype,
         )
 
     if nome and entrada and not conversa.nome:

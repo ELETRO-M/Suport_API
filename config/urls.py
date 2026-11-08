@@ -19,6 +19,13 @@ from apps.intervencoes.views import  IntervencaoViewSet, HistoricoViewSet
 from apps.notificacoes.views import NotificacaoViewSet
 from apps.relatorios.views import RelatorioViewSet
 from apps.sistema.views import ConfiguracaoSistemaViewSet, WebhookWhatsApp
+from apps.sistema.whatsapp_api import (
+    ConversaViewSet,
+    MensagemViewSet,
+    enviar_cloudinary,
+    enviar_media,
+    enviar_texto,
+)
 
 
 router = DefaultRouter()
@@ -33,6 +40,8 @@ router.register(r"notificacoes", NotificacaoViewSet, basename="notificacoes")
 router.register(r"recuperar", RecuperarConta, basename="recuperar")
 router.register(r'reset-password', reset_password_confirm, basename='restpassword' )
 router.register(r"empresas", empresaviewset, basename="empresas")
+router.register(r"whatsapp/conversas", ConversaViewSet, basename="whatsapp-conversas")
+router.register(r"whatsapp/mensagens", MensagemViewSet, basename="whatsapp-mensagens")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -40,6 +49,9 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/v1/configuracoes", ConfiguracaoSistemaViewSet.as_view({"get": "list", "put": "update"}), name="configuracoes"),
     path("api/v1/webhook/whatsapp", WebhookWhatsApp.as_view(), name="webhook-whatsapp"),
+    path("api/v1/whatsapp/enviar", enviar_texto, name="whatsapp-enviar"),
+    path("api/v1/whatsapp/enviar-media", enviar_media, name="whatsapp-enviar-media"),
+    path("api/v1/whatsapp/enviar-cloudinary", enviar_cloudinary, name="whatsapp-enviar-cloudinary"),
     path("api/v1/perfil", PerfilViewSet.as_view({"get": "list", "put": "update"}), name="perfil"),
     path("api/v1/perfil/password", PerfilViewSet.as_view({"put": "password"}), name="perfil-password"),
     path("api/v1/", include(router.urls)),
