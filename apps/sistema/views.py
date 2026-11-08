@@ -63,9 +63,22 @@ class WebhookWhatsApp(APIView):
             return Response({"ignorado": True})
 
         msg = data.get("message", {})
-        from apps.sistema.evolution import extrair_mensagem
+        from apps.sistema.evolution import extrair_mensagem, subir_cloudinary
         texto, tipo, file_name, mimetype = extrair_mensagem(msg)
         texto = texto or f"[{data.get('messageType', 'mídia')}]"
+
+        # Ficheiro com base64 (foto/documento/áudio/vídeo) → Cloudinary, pra preview no chat
+        media_url = ""
+        base64 = msg.get("base64") or data.get("base64") or ""
+        if base64 and tipo in ("document", "image", "video", "audio"):
+            try:
+                import base64 as b64mod
+                raw = base64.split(",", 1)[-1] if "," in base64 else base64
+                if len(raw) > 20:
+                    blob = b64mod.b64decode(raw, validate=False)
+                    media_url = subir_cloudinary(blob, file_name or f"{tipo}.bin")
+            except Exception:
+                media_url = ""
 
         registar_mensagem(
             numero=jid.split("@")[0],
@@ -73,6 +86,6 @@ class WebhookWhatsApp(APIView):
             direcao=Mensagem.Direcao.SAIDA if key.get("fromMe") else Mensagem.Direcao.ENTRADA,
             wa_id=key.get("id"),
             nome=data.get("pushName", ""),
-            tipo=tipo, file_name=file_name, mimetype=mimetype,
+            tipo=tipo, file_name=file_name, mimetype=mimetype, media_url=media_url,
         )
         return resposta_sucesso(message="sucesso na Requisição")

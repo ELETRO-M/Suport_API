@@ -105,7 +105,11 @@ def enviar_media(request):
         key = (res["data"].get("key") or {})
         registar_mensagem(evolution.normalizar_numero(numero), request.data.get("caption", ""),
                           Mensagem.Direcao.SAIDA, wa_id=key.get("id"),
-                          usuario=request.user)
+                          usuario=request.user,
+                          tipo=request.data.get("mediatype", "document"),
+                          file_name=request.data.get("fileName", "documento.pdf"),
+                          mimetype=request.data.get("mimetype", "application/pdf"),
+                          media_url=url or "")
     return resposta_sucesso(data=res)
 
 
@@ -125,4 +129,11 @@ def enviar_cloudinary(request):
     res = evolution.enviar_media(numero, url=url, mediatype=mt, mimetype=tipo,
                                  filename=getattr(ficheiro, "name", "documento"),
                                  caption=request.data.get("caption"))
+    if res["status_code"] in (200, 201) and isinstance(res["data"], dict):
+        key = (res["data"].get("key") or {})
+        registar_mensagem(evolution.normalizar_numero(numero), request.data.get("caption", "") or "",
+                          Mensagem.Direcao.SAIDA, wa_id=key.get("id"),
+                          usuario=request.user, tipo=mt,
+                          file_name=getattr(ficheiro, "name", "documento"), mimetype=tipo,
+                          media_url=url)
     return resposta_sucesso(data={"cloudinaryUrl": url, "evolution": res})

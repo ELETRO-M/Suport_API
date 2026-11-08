@@ -67,6 +67,7 @@ class Mensagem(ModeloUUIDComTimestamps):
     tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.CONVERSATION)
     file_name = models.CharField(max_length=255, blank=True, default="")
     mimetype = models.CharField(max_length=100, blank=True, default="")
+    media_url = models.URLField(blank=True, default="")
     enviado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
     )

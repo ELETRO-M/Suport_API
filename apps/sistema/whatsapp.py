@@ -6,7 +6,7 @@ from .models import Conversa, Mensagem
 
 
 def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None,
-                      tipo="conversation", file_name="", mimetype=""):
+                      tipo="conversation", file_name="", mimetype="", media_url=""):
     conversa, _ = Conversa.objects.get_or_create(numero=numero)
     entrada = direcao == Mensagem.Direcao.ENTRADA
 
@@ -14,7 +14,7 @@ def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None,
         msg, criada = Mensagem.objects.get_or_create(
             wa_id=wa_id,
             defaults=dict(conversa=conversa, direcao=direcao, texto=texto, enviado_por=usuario,
-                          tipo=tipo, file_name=file_name, mimetype=mimetype),
+                          tipo=tipo, file_name=file_name, mimetype=mimetype, media_url=media_url),
         )
         if not criada:
             # a Evolution devolve as mensagens enviadas pela API no webhook: evita duplicados
@@ -25,7 +25,7 @@ def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None,
     else:
         msg = Mensagem.objects.create(
             conversa=conversa, direcao=direcao, texto=texto, enviado_por=usuario,
-            tipo=tipo, file_name=file_name, mimetype=mimetype,
+            tipo=tipo, file_name=file_name, mimetype=mimetype, media_url=media_url,
         )
 
     if nome and entrada and not conversa.nome:
@@ -46,6 +46,10 @@ def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None,
                 "nome": conversa.nome,
                 "texto": texto,
                 "direcao": direcao,
+                "tipo": tipo,
+                "file_name": file_name,
+                "mimetype": mimetype,
+                "media_url": media_url,
                 "enviado_por": usuario.nome if usuario else None,
                 "data_hora": timezone.now().isoformat(),
             },
