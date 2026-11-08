@@ -43,6 +43,8 @@ def registar_mensagem(numero, texto, direcao, wa_id=None, nome="", usuario=None,
             {
                 "type": "chat.mensagem",
                 "dados": {
+                    "id": str(msg.id),
+                    "wa_id": wa_id or "",
                     "conversa_id": str(conversa.id),
                     "numero": conversa.numero,
                     "nome": conversa.nome,
