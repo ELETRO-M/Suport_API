@@ -144,3 +144,31 @@ def enviar_cloudinary(request):
                           file_name=getattr(ficheiro, "name", "documento"), mimetype=tipo,
                           media_url=url)
     return resposta_sucesso(data={"cloudinaryUrl": url, "evolution": res})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def enviar_audio(request):
+    """Nota de voz gravada no browser: multipart numero + ficheiro."""
+    numero = (request.data.get("numero") or "").strip()
+    ficheiro = request.FILES.get("ficheiro")
+    if not evolution.normalizar_numero(numero) or not ficheiro:
+        return Response({"success": False, "message": "Envie numero + ficheiro (form)"}, status=400)
+
+    conteudo = ficheiro.read()
+    nome = getattr(ficheiro, "name", "audio.webm")
+    tipo = ficheiro.content_type or "audio/webm"
+
+    try:
+        url = evolution.subir_cloudinary(conteudo, nome)
+    except Exception as e:
+        return Response({"success": False, "message": f"Falha Cloudinary: {e}"}, status=502)
+
+    res = evolution.enviar_audio(numero, url=url, conteudo=conteudo, mimetype=tipo, filename=nome)
+    if res["status_code"] in (200, 201) and isinstance(res["data"], dict):
+        key = (res["data"].get("key") or {})
+        registar_mensagem(evolution.normalizar_numero(numero), "",
+                          Mensagem.Direcao.SAIDA, wa_id=key.get("id"),
+                          usuario=request.user, tipo="audio",
+                          file_name=nome, mimetype=tipo, media_url=url)
+    return resposta_sucesso(data={"cloudinaryUrl": url, "evolution": res})

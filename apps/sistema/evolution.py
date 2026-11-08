@@ -57,6 +57,23 @@ def enviar_media(numero, media=None, url=None, mediatype="document",
     return _request("POST", f"/message/sendMedia/{_inst()}", json=payload)
 
 
+def enviar_audio(numero, url=None, conteudo=None, mimetype="audio/webm",
+                 filename="audio.webm", caption=None):
+    """Nota de voz (PTT). Tenta sendWhatsAppAudio; se falhar, envia como media de audio."""
+    b64 = None
+    if conteudo:
+        import base64 as b64mod
+        b64 = b64mod.b64encode(conteudo).decode()
+
+    res = _request("POST", f"/message/sendWhatsAppAudio/{_inst()}",
+                   json={"number": normalizar_numero(numero), "audio": b64 or url})
+    if res["status_code"] in (200, 201):
+        return res
+
+    return enviar_media(numero, media=b64, url=url, mediatype="audio",
+                        mimetype=mimetype, filename=filename, caption=caption)
+
+
 def find_messages(numero=None):
     if numero:
         payload = {"where": {"remoteJid": f"{numero}@s.whatsapp.net"}, "options": {"limit": 50}}
