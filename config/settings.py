@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     "corsheaders",
+    "channels",
     "cloudinary",
     "cloudinary_storage",
     "apps.usuarios",
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     "apps.relatorios",
     "apps.notificacoes",
     "apps.sistema",
+    "apps.whatsapp",
 ]
 
 MIDDLEWARE = [
@@ -105,6 +107,15 @@ CLOUDINARY_STORAGE = {
     "CLOUD_NAME": config("CLOUDINARY_CLOUD_NAME", default="dhpain7wq"),
     "API_KEY": config("CLOUDINARY_API_KEY", default="772767193863469"),
     "API_SECRET": config("CLOUDINARY_API_SECRET", default="wJH5akhlGNv1Ltg-OURGSpTODTQ"),
+}
+
+# WhatsApp (Evolution API — Electrosoft)
+EVOLUTION_BASE_URL = config("EVOLUTION_BASE_URL", default="https://whatsapp-api.electrosoftwares.com")
+EVOLUTION_INSTANCE = config("EVOLUTION_INSTANCE", default="hunter-7121b9c32eecee07e41087f83ed0c650")
+EVOLUTION_APIKEY = config("EVOLUTION_APIKEY", default="DE5DAE35-30FF-4C20-B475-D8876093A0C2")
+
+CHANNEL_LAYERS = {
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
 }
 
 _STATIC_BACKEND = (
