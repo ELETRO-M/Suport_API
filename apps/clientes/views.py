@@ -14,7 +14,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     search_fields = ("nome", "email", "empresa__nome", "nif")
     ordering_fields = ("nome", "data_criacao")
-    filterset_fields = ("status",)
+    filterset_fields = ("status", "empresa")
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
