@@ -14,6 +14,7 @@ class ConfiguracaoSistema(models.Model):
     sla_urgente = models.PositiveIntegerField(default=4)
     sla_alta = models.PositiveIntegerField(default=24)
     sla_baixa = models.PositiveIntegerField(default=72)
+    calendario_agt_url = models.URLField(blank=True, default="")
     taxa_hora= models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
     taxa_mensal= models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))
     taxa_anual = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("5000.00"))

@@ -64,10 +64,12 @@ class empresdatilserialazrs(serializers.ModelSerializer):
             "Email_empresa",
             "nif",
             "endereco",
+            "regime",
             "telefone",
             "status",
             "is_deleted",
             "postos",
+            "avatar_url",
             "data_criacao",
             "data_actualizacao"
         )

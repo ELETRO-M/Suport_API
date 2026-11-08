@@ -397,5 +397,21 @@ class empresaviewset(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         obj = serializer.save()
         return resposta_sucesso(data={"id": str(obj.id), "nome": obj.nome})
+
+    @action(detail=True, methods=["post"], url_path="avatar")
+    def avatar(self, request, pk=None):
+        # POST /empresas/{id}/avatar/ multipart: ficheiro
+        from apps.sistema.evolution import subir_cloudinary
+        obj = self.get_object()
+        ficheiro = request.FILES.get("ficheiro") or request.FILES.get("foto")
+        if not ficheiro:
+            return Response({"success": False, "message": "Envie 'ficheiro'."}, status=400)
+        try:
+            url = subir_cloudinary(ficheiro.read(), ficheiro.name)
+        except Exception as e:
+            return Response({"success": False, "message": f"Falha upload: {e}"}, status=502)
+        obj.avatar_url = url
+        obj.save(update_fields=["avatar_url", "data_actualizacao"])
+        return resposta_sucesso(data={"id": str(obj.id), "avatar_url": url})
     
 

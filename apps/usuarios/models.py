@@ -15,6 +15,7 @@ class empresa(ModeloUUIDComTimestamps, SoftDeleteModel):
     nome = models.CharField(max_length=255, unique=True)
     nif = models.CharField(max_length=50, unique=True)
     endereco = models.TextField()
+    regime = models.CharField(max_length=30, blank=True, default="geral")
     postos = models.JSONField(default=dict)
     telefone = models.CharField(max_length=50)
     avatar_url = models.URLField(blank=True)
