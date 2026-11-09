@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
@@ -41,7 +42,8 @@ class ObrigacaoViewSet(viewsets.ModelViewSet):
         qs = ObrigacaoFiscal.objects.select_related("cliente", "categoria", "responsavel")
         u = self.request.user
         if u.perfil == Usuario.PerfilChoices.TECNICO:
-            qs = qs.filter(responsavel=u)
+            # o tecnico ve as obrigacoes dele e as que ainda nao tem responsavel
+            qs = qs.filter(Q(responsavel=u) | Q(responsavel__isnull=True))
         elif u.perfil == Usuario.PerfilChoices.CLIENTE:
             qs = qs.filter(cliente=u)
         return qs
@@ -59,7 +61,7 @@ class TarefaViewSet(viewsets.ModelViewSet):
         qs = TarefaFiscal.objects.select_related("obrigacao", "responsavel")
         u = self.request.user
         if u.perfil == Usuario.PerfilChoices.TECNICO:
-            qs = qs.filter(responsavel=u)
+            qs = qs.filter(Q(responsavel=u) | Q(responsavel__isnull=True))
         elif u.perfil == Usuario.PerfilChoices.CLIENTE:
             qs = qs.filter(obrigacao__cliente=u)
         return qs
@@ -104,7 +106,7 @@ class CalendarioExtraViewSet(viewsets.ViewSet):
         qs = ObrigacaoFiscal.objects.select_related("cliente", "categoria", "responsavel")
         u = request.user
         if u.perfil == Usuario.PerfilChoices.TECNICO:
-            qs = qs.filter(responsavel=u)
+            qs = qs.filter(Q(responsavel=u) | Q(responsavel__isnull=True))
         elif u.perfil == Usuario.PerfilChoices.CLIENTE:
             qs = qs.filter(cliente=u)
         return qs
