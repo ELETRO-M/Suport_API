@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -48,7 +49,8 @@ class ConversaViewSet(viewsets.ModelViewSet):
         qs = Conversa.objects.select_related("tecnico", "cliente")
         u = self.request.user
         if u.perfil == Usuario.PerfilChoices.TECNICO:
-            qs = qs.filter(tecnico=u)
+            # o tecnico ve as conversas dele e as que ainda nao tem dono
+            qs = qs.filter(Q(tecnico=u) | Q(tecnico__isnull=True))
         elif u.perfil == Usuario.PerfilChoices.CLIENTE:
             qs = qs.filter(cliente=u)
         return qs
@@ -91,7 +93,7 @@ class MensagemViewSet(viewsets.ReadOnlyModelViewSet):
         qs = Mensagem.objects.select_related("conversa", "enviado_por")
         u = self.request.user
         if u.perfil == Usuario.PerfilChoices.TECNICO:
-            qs = qs.filter(conversa__tecnico=u)
+            qs = qs.filter(Q(conversa__tecnico=u) | Q(conversa__tecnico__isnull=True))
         elif u.perfil == Usuario.PerfilChoices.CLIENTE:
             qs = qs.filter(conversa__cliente=u)
         return qs
