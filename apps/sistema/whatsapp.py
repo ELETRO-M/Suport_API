@@ -17,8 +17,8 @@ def atribuir_utilizador(conversa, usuario=None):
     """Liga a conversa ao utilizador cujo telefone corresponde ao numero.
 
     - mensagem enviada por um tecnico -> a conversa passa a ser dele (se nao tiver dono)
-    - numero da conversa == telefone de um tecnico -> conversa.tecnico
-    - numero da conversa == telefone de um cliente -> conversa.cliente
+    - numero da conversa == telefone de um tecnico -> conversa.tecnico (corrige se estava errado)
+    - numero da conversa == telefone de um cliente -> conversa.cliente (corrige se estava errado)
     - nome vazio -> usa o nome do utilizador encontrado (nunca "Por identificar")
 
     Devolve o conjunto de campos alterados (ainda por gravar).
@@ -32,21 +32,35 @@ def atribuir_utilizador(conversa, usuario=None):
             conversa.tecnico = usuario
             alterados.add("tecnico")
 
-    sufixo = sufixo_numero(conversa.numero)
-    if sufixo:
-        candidatos = Usuario.objects.filter(
+    alvo = re.sub(r"\D", "", str(conversa.numero or ""))
+    if alvo:
+        # pontuacao 2 = numero completo igual, 1 = mesmos 9 digitos finais
+        candidatos = []
+        for u in Usuario.objects.filter(
             perfil__in=(Usuario.PerfilChoices.TECNICO, Usuario.PerfilChoices.CLIENTE),
-        ).only("id", "perfil", "telefone", "nome")
-        for u in candidatos:
-            if sufixo_numero(u.telefone) != sufixo:
+        ).only("id", "perfil", "telefone", "nome"):
+            tel = re.sub(r"\D", "", str(u.telefone or ""))
+            if not tel:
                 continue
-            if u.perfil == Usuario.PerfilChoices.TECNICO and conversa.tecnico_id is None:
-                conversa.tecnico = u
-                alterados.add("tecnico")
-            elif u.perfil == Usuario.PerfilChoices.CLIENTE and conversa.cliente_id is None:
-                conversa.cliente = u
-                alterados.add("cliente")
-            if conversa.tecnico_id and conversa.cliente_id:
+            if tel == alvo:
+                candidatos.append((2, u))
+            elif len(tel) >= 9 and len(alvo) >= 9 and tel[-9:] == alvo[-9:]:
+                candidatos.append((1, u))
+
+        candidatos.sort(key=lambda par: par[0], reverse=True)
+        decidido = set()
+        for _, u in candidatos:
+            if u.perfil == Usuario.PerfilChoices.TECNICO and "tecnico" not in decidido:
+                decidido.add("tecnico")
+                if conversa.tecnico_id != u.id:
+                    conversa.tecnico = u
+                    alterados.add("tecnico")
+            elif u.perfil == Usuario.PerfilChoices.CLIENTE and "cliente" not in decidido:
+                decidido.add("cliente")
+                if conversa.cliente_id != u.id:
+                    conversa.cliente = u
+                    alterados.add("cliente")
+            if len(decidido) == 2:
                 break
 
     if not conversa.nome:
