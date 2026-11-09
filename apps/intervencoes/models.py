@@ -397,6 +397,9 @@ class ComentarioIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     texto = models.TextField()
     visivel_cliente = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ["data_criacao"]
+
 
 # ── Anexos ───────────────────────────────────────────────────────────────────
 
