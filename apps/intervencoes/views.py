@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from drf_spectacular.utils import extend_schema
 from apps.usuarios.models import Usuario
-from apps.configuracoes.responses import resposta_sucesso
+from apps.configuracoes.responses import resposta_sucesso, resposta_erro
 from apps.intervencoes.models import (
     AnexoIntervencao,
     ComentarioIntervencao,
@@ -275,6 +275,69 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         return resposta_sucesso(
             data=anexos,
             status_code=status.HTTP_201_CREATED
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"anexos/(?P<anexo_id>[^/.]+)/transcrever",
+    )
+    def transcrever_anexo(self, request, pk=None, anexo_id=None):
+        """Transcreve uma nota de voz com Whisper local (faster-whisper)."""
+        instance = self.get_object()
+        if request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id != request.user.id:
+            self.permission_denied(request, message="Sem permissão para transcrever este áudio.")
+        if request.user.perfil == Usuario.PerfilChoices.CLIENTE and instance.cliente_id != request.user.id:
+            self.permission_denied(request, message="Sem permissão para transcrever este áudio.")
+
+        anexo = instance.anexos.filter(id=anexo_id).first()
+        if not anexo:
+            return resposta_erro(
+                code="NOT_FOUND",
+                message="Anexo não encontrado.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        if anexo.transcricao:
+            return resposta_sucesso(
+                data={
+                    "anexo_id": str(anexo.id),
+                    "texto": anexo.transcricao,
+                    "idioma": anexo.idioma_transcricao,
+                    "cache": True,
+                }
+            )
+
+        from apps.intervencoes.transcricao import transcrever_url
+
+        try:
+            url = anexo.url_para(request.user)
+            texto, idioma = transcrever_url(url, request.data.get("idioma") or None)
+        except Exception as exc:  # noqa: BLE001 - devolve erro legível ao frontend
+            return resposta_erro(
+                code="TRANSCRICAO_FALHOU",
+                message=f"Não foi possível transcrever o áudio: {exc}",
+                status_code=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if not texto:
+            return resposta_erro(
+                code="SEM_FALA",
+                message="Não foi detetada fala no áudio.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        anexo.transcricao = texto
+        anexo.idioma_transcricao = idioma or ""
+        anexo.save(update_fields=["transcricao", "idioma_transcricao"])
+
+        return resposta_sucesso(
+            data={
+                "anexo_id": str(anexo.id),
+                "texto": texto,
+                "idioma": idioma,
+                "cache": False,
+            }
         )
 
 @extend_schema(tags=["Relatórios Técnicos"])

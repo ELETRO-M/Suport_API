@@ -417,6 +417,8 @@ class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
     descricao = models.CharField(max_length=255, blank=True)
     tamanho = models.PositiveIntegerField(default=0)
     arquivo_marcado_url = models.URLField(blank=True, default="")
+    transcricao = models.TextField(blank=True, default="")
+    idioma_transcricao = models.CharField(max_length=20, blank=True, default="")
 
     @staticmethod
     def _extrair_public_id(url):

@@ -20,7 +20,7 @@ class AnexoIntervencaoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AnexoIntervencao
-        fields = ("id", "nome_arquivo", "url", "tamanho", "descricao", "data_criacao")
+        fields = ("id", "nome_arquivo", "url", "tamanho", "descricao", "transcricao", "idioma_transcricao", "data_criacao")
 
     @extend_schema_field(serializers.CharField())
     def get_nome_arquivo(self, obj):
