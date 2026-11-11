@@ -209,6 +209,8 @@ class InicioSessaoSerializer(serializers.Serializer):
                 "perfil": utilizador.perfil,
                 "nome": utilizador.nome,
                 "avatar_url": utilizador.avatar_url,
+                "preferencias": utilizador.preferencias or {},
+                "acesso_apchat": utilizador.acesso_apchat,
             },
         }
 
@@ -293,6 +295,7 @@ class AlterarSenhaSerializer(serializers.Serializer):
 class TecnicoListaSerializer(serializers.ModelSerializer):
     intervencoes_ativas = serializers.SerializerMethodField()
     total_horas_mes = serializers.SerializerMethodField()
+    acesso_apchat = serializers.BooleanField(read_only=True)
     #notificacao = notifySerialazrs(source="notificacoes", many=True, read_only=True)
 
     class Meta:
@@ -307,6 +310,8 @@ class TecnicoListaSerializer(serializers.ModelSerializer):
             "status",
             "intervencoes_ativas",
             "total_horas_mes",
+            "preferencias",
+            "acesso_apchat",
             #"notificacao",
 
         )
@@ -351,6 +356,7 @@ class TecnicoDetalheSerializer(TecnicoListaSerializer):
 class TecnicoEscritaSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     avatar_url = AvatarURLField(required=False)
+    acesso_apchat = serializers.BooleanField(required=False, write_only=True)
 
     class Meta:
         model = Usuario
@@ -365,6 +371,7 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
             "especialidades",
             "data_contratacao",
             "status",
+            "acesso_apchat",
         )
 
     def validate_email(self, value):
@@ -375,6 +382,12 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password", "123456")
+        acesso = validated_data.pop("acesso_apchat", None)
+        if acesso is not None:
+            validated_data["preferencias"] = {
+                **(validated_data.get("preferencias") or {}),
+                "acesso_apchat": bool(acesso),
+            }
         try:
             return Usuario.objects.create_user(
                 password=password,
@@ -386,6 +399,12 @@ class TecnicoEscritaSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        acesso = validated_data.pop("acesso_apchat", None)
+        if acesso is not None:
+            instance.preferencias = {
+                **(instance.preferencias or {}),
+                "acesso_apchat": bool(acesso),
+            }
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
@@ -400,6 +419,7 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
     contratos_ativos = serializers.SerializerMethodField()
     intervencoes_abertas = serializers.SerializerMethodField()
     avatar_url = AvatarURLField(required=False)
+    acesso_apchat = serializers.BooleanField(read_only=True)
     
 
     class Meta:
@@ -413,6 +433,7 @@ class PerfilPainelSerializer(serializers.ModelSerializer):
             "telefone",
             "avatar_url",
             "preferencias",
+            "acesso_apchat",
             "contratos_ativos",
             "intervencoes_abertas",
         )

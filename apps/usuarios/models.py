@@ -161,6 +161,19 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
 
     objects=GestorUsuario()
     all_objects = UsuarioQuerySet.as_manager()
+
+    @property
+    def acesso_apchat(self):
+        """Acesso ao chat interno (apchat).
+
+        Administradores e clientes usam sempre. Os técnicos precisam de
+        autorização do administrador (ligada na ficha do técnico).
+        """
+        if self.perfil != self.PerfilChoices.TECNICO:
+            return True
+        preferencias = self.preferencias or {}
+        return bool(preferencias.get("acesso_apchat"))
+
     def clean(self):
         if self.perfil == self.PerfilChoices.CLIENTE:
             if not self.empresa:

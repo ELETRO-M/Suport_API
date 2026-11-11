@@ -1,7 +1,7 @@
 from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.configuracoes.pagination import PaginacaoPadraoResultados
@@ -11,6 +11,21 @@ from apps.sistema.models import Conversa, Mensagem, RespostaRapida
 from apps.sistema.serializers import ConversaSerializer, MensagemSerializer, RespostaRapidaSerializer
 from apps.sistema.whatsapp import registar_mensagem
 from apps.usuarios.models import Usuario
+
+
+class PermissaoWhatsApp(BasePermission):
+    """O WhatsApp é restrito a administradores e clientes.
+
+    Os técnicos trabalham no chat interno (apchat), nunca no WhatsApp.
+    """
+
+    message = "O WhatsApp não está disponível para técnicos."
+
+    def has_permission(self, request, view):
+        utilizador = request.user
+        if not utilizador or not utilizador.is_authenticated:
+            return False
+        return utilizador.perfil != Usuario.PerfilChoices.TECNICO
 
 
 class PaginacaoConversas(PaginacaoPadraoResultados):
@@ -28,14 +43,14 @@ class PaginacaoMensagens(PaginacaoPadraoResultados):
 
 
 class RespostaRapidaViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PermissaoWhatsApp]
     serializer_class = RespostaRapidaSerializer
     filterset_fields = ("ativa",)
     search_fields = ("titulo", "texto")
 
 
 class ConversaViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PermissaoWhatsApp]
     serializer_class = ConversaSerializer
     pagination_class = PaginacaoConversas
     filterset_fields = ("numero", "tecnico", "cliente")
@@ -80,7 +95,7 @@ class ConversaViewSet(viewsets.ModelViewSet):
 
 
 class MensagemViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PermissaoWhatsApp]
     serializer_class = MensagemSerializer
     pagination_class = PaginacaoMensagens
     filterset_fields = ("conversa", "direcao", "tipo")
@@ -100,7 +115,7 @@ class MensagemViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([PermissaoWhatsApp])
 def enviar_texto(request):
     numero = (request.data.get("numero") or "").strip()
     texto = (request.data.get("texto") or "").strip()
@@ -115,7 +130,7 @@ def enviar_texto(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([PermissaoWhatsApp])
 def enviar_media(request):
     numero = (request.data.get("numero") or "").strip()
     media = request.data.get("media")
@@ -142,7 +157,7 @@ def enviar_media(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([PermissaoWhatsApp])
 def enviar_cloudinary(request):
     numero = (request.data.get("numero") or "").strip()
     ficheiro = request.FILES.get("ficheiro")
@@ -168,7 +183,7 @@ def enviar_cloudinary(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([PermissaoWhatsApp])
 def enviar_audio(request):
     """Nota de voz gravada no browser: multipart numero + ficheiro."""
     numero = (request.data.get("numero") or "").strip()

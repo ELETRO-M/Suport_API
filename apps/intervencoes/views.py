@@ -210,8 +210,13 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="comentarios")
     def comentarios(self, request, pk=None):
         instance = self.get_object()
-        if request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id != request.user.id:
-            self.permission_denied(request, message="Sem permissão para comentar esta intervenção.")
+        if request.user.perfil == Usuario.PerfilChoices.TECNICO:
+            # O chat interno (apchat) só para técnicos autorizados pelo administrador.
+            if not request.user.acesso_apchat:
+                self.permission_denied(request, message="Sem acesso autorizado ao chat interno.")
+            # Só o técnico atribuído pode intervir; os restantes apenas leem.
+            if instance.tecnico_id != request.user.id:
+                self.permission_denied(request, message="Sem permissão para comentar esta intervenção.")
         if request.user.perfil == Usuario.PerfilChoices.CLIENTE and instance.cliente_id != request.user.id:
             self.permission_denied(request, message="Sem permissão para comentar esta intervenção.")
         serializer = AdicionarComentarioSerializer(data=request.data)
@@ -245,8 +250,11 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="anexos", parser_classes=[parsers.MultiPartParser])
     def anexos(self, request, pk=None):
         instance = self.get_object()
-        if request.user.perfil == Usuario.PerfilChoices.TECNICO and instance.tecnico_id != request.user.id:
-            self.permission_denied(request, message="Sem permissão para anexar ficheiros.")
+        if request.user.perfil == Usuario.PerfilChoices.TECNICO:
+            if not request.user.acesso_apchat:
+                self.permission_denied(request, message="Sem acesso autorizado ao chat interno.")
+            if instance.tecnico_id != request.user.id:
+                self.permission_denied(request, message="Sem permissão para anexar ficheiros.")
         if request.user.perfil == Usuario.PerfilChoices.CLIENTE and instance.cliente_id != request.user.id:
             self.permission_denied(request, message="Sem permissão para anexar ficheiros.")
     
