@@ -9,3 +9,7 @@ staticfiles/
 db.sqlite3
 *.sqlite3
 docker-compose.yml
+
+# Chaves privadas (VAPID/Web Push) e backups
+config/vapid_keys.py
+*.bak
