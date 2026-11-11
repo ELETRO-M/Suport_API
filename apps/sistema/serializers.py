@@ -42,7 +42,8 @@ class MensagemSerializer(serializers.ModelSerializer):
         model = Mensagem
         fields = (
             "id", "conversa", "wa_id", "direcao", "texto", "tipo",
-            "file_name", "mimetype", "media_url", "enviado_por", "enviado_por_nome", "data_criacao",
+            "file_name", "mimetype", "media_url", "transcricao", "idioma_transcricao",
+            "enviado_por", "enviado_por_nome", "data_criacao",
         )
         read_only_fields = fields
 

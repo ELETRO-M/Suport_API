@@ -5,7 +5,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.configuracoes.pagination import PaginacaoPadraoResultados
-from apps.configuracoes.responses import resposta_sucesso
+from apps.configuracoes.responses import resposta_sucesso, resposta_erro
 from apps.sistema import evolution
 from apps.sistema.models import Conversa, Mensagem, RespostaRapida
 from apps.sistema.serializers import ConversaSerializer, MensagemSerializer, RespostaRapidaSerializer
@@ -112,6 +112,58 @@ class MensagemViewSet(viewsets.ReadOnlyModelViewSet):
         elif u.perfil == Usuario.PerfilChoices.CLIENTE:
             qs = qs.filter(conversa__cliente=u)
         return qs
+
+    @action(detail=True, methods=["post"], url_path="transcrever")
+    def transcrever(self, request, pk=None):
+        """Transcreve um áudio do WhatsApp com o Whisper local."""
+        mensagem = self.get_object()
+        if mensagem.transcricao:
+            return resposta_sucesso(
+                data={
+                    "id": str(mensagem.id),
+                    "texto": mensagem.transcricao,
+                    "idioma": mensagem.idioma_transcricao,
+                    "cache": True,
+                }
+            )
+
+        if not mensagem.media_url:
+            return resposta_erro(
+                code="SEM_MEDIA",
+                message="Esta mensagem não tem áudio para transcrever.",
+                status_code=400,
+            )
+
+        from apps.intervencoes.transcricao import transcrever_url
+
+        try:
+            texto, idioma = transcrever_url(mensagem.media_url, request.data.get("idioma") or None)
+        except Exception as exc:  # noqa: BLE001 - devolve erro legível ao frontend
+            return resposta_erro(
+                code="TRANSCRICAO_FALHOU",
+                message=f"Não foi possível transcrever o áudio: {exc}",
+                status_code=502,
+            )
+
+        if not texto:
+            return resposta_erro(
+                code="SEM_FALA",
+                message="Não foi detetada fala neste áudio.",
+                status_code=422,
+            )
+
+        mensagem.transcricao = texto
+        mensagem.idioma_transcricao = idioma or ""
+        mensagem.save(update_fields=["transcricao", "idioma_transcricao"])
+
+        return resposta_sucesso(
+            data={
+                "id": str(mensagem.id),
+                "texto": texto,
+                "idioma": idioma,
+                "cache": False,
+            }
+        )
 
 
 @api_view(["POST"])
