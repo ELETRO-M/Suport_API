@@ -16,12 +16,15 @@ from apps.intervencoes.models import (
     ComentarioIntervencao,
     HoraTrabalho,
     Intervencao,
-    HistoricoEstadoIntervencao
+    HistoricoEstadoIntervencao,
+    SolicitacaoIntervencao
 )
 from apps.intervencoes.serializers import (
     AdicionarComentarioSerializer,
     AtribuirTecnicoSerializer,
     CarregarAnexoSerializer,
+    CriarSolicitacaoSerializer,
+    SolicitacaoIntervencaoSerializer,
     TecnicoRelatorioAtualizacaoSerializer,
     TecnicoRelatorioEscritaSerializer,
     TecnicoRelatorioListaSerializer,
@@ -66,7 +69,13 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
         if params.get("modo_atribuicao"):
             queryset = queryset.filter(modo_atribuicao=params["modo_atribuicao"])
         if utilizador.perfil == Usuario.PerfilChoices.TECNICO:
-            queryset = queryset.filter(Q(tecnico=utilizador) | Q(modo_atribuicao="broadcast", tecnico__isnull=True))
+            # O técnico vê as intervenções da equipa (para poder pedir intervenção
+            # nos tickets de outro colega). Só pode escrever nos que lhe são atribuídos.
+            # ?apenas_minhas=true restringe às suas + às de broadcast sem responsável.
+            if str(params.get("apenas_minhas", "")).lower() in {"1", "true", "sim"}:
+                queryset = queryset.filter(
+                    Q(tecnico=utilizador) | Q(modo_atribuicao="broadcast", tecnico__isnull=True)
+                )
         elif utilizador.perfil == Usuario.PerfilChoices.CLIENTE:
             queryset = queryset.filter(cliente=utilizador)
         return queryset.order_by("-data_abertura")
@@ -347,6 +356,180 @@ class IntervencaoViewSet(viewsets.ModelViewSet):
                 "cache": False,
             }
         )
+
+
+@extend_schema(tags=["Solicitações de intervenção"])
+class SolicitacaoIntervencaoViewSet(viewsets.ModelViewSet):
+    """Pedidos para intervir numa intervenção.
+
+    - O técnico pede para intervir num ticket que não lhe está atribuído.
+    - O administrador aprova (o ticket passa para o técnico que pediu)
+      ou rejeita com justificação.
+    """
+
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "post", "head", "options"]
+    serializer_class = SolicitacaoIntervencaoSerializer
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SolicitacaoIntervencao.objects.none()
+        request = cast(Request, self.request)
+        queryset = SolicitacaoIntervencao.objects.select_related(
+            "intervencao", "intervencao__cliente", "intervencao__tecnico", "utilizador"
+        )
+        estado = request.query_params.get("estado")
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        if request.user.perfil == Usuario.PerfilChoices.ADMIN:
+            return queryset
+        # Só vê os próprios pedidos.
+        return queryset.filter(utilizador=request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return resposta_sucesso(data=serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = CriarSolicitacaoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        dados = serializer.validated_data
+
+        intervencao = Intervencao.objects.filter(id=dados["intervencao_id"]).first()
+        if not intervencao:
+            return resposta_erro(
+                code="NOT_FOUND", message="Intervenção não encontrada.", status_code=404
+            )
+
+        utilizador = request.user
+        if utilizador.perfil == Usuario.PerfilChoices.CLIENTE:
+            if intervencao.cliente_id != utilizador.id:
+                return resposta_erro(
+                    code="FORBIDDEN",
+                    message="Só pode pedir intervenção nos seus atendimentos.",
+                    status_code=403,
+                )
+        elif utilizador.perfil != Usuario.PerfilChoices.TECNICO:
+            return resposta_erro(
+                code="FORBIDDEN",
+                message="Pedidos de intervenção só de técnicos ou clientes.",
+                status_code=403,
+            )
+
+        if (
+            utilizador.perfil == Usuario.PerfilChoices.TECNICO
+            and intervencao.tecnico_id == utilizador.id
+        ):
+            return resposta_erro(
+                code="JA_RESPONSAVEL",
+                message="Já é o técnico responsável por esta intervenção.",
+                status_code=400,
+            )
+
+        ja_existe = SolicitacaoIntervencao.objects.filter(
+            intervencao=intervencao,
+            utilizador=utilizador,
+            estado=SolicitacaoIntervencao.EstadoChoices.PENDENTE,
+        ).first()
+        if ja_existe:
+            return resposta_erro(
+                code="JA_PENDENTE",
+                message="Já tem um pedido pendente nesta intervenção.",
+                status_code=400,
+            )
+
+        solicitacao = SolicitacaoIntervencao.objects.create(
+            intervencao=intervencao,
+            utilizador=utilizador,
+            tipo=dados.get("tipo") or SolicitacaoIntervencao.TipoChoices.INTERVENCAO,
+            justificativa=dados.get("justificativa", ""),
+        )
+
+        # Avisa os administradores.
+        for admin in Usuario.objects.filter(perfil=Usuario.PerfilChoices.ADMIN):
+            Notificacao.objects.create(
+                utilizador=admin,
+                tipo="solicitacao_intervencao",
+                titulo="Pedido de intervenção",
+                mensagem=(
+                    f"{utilizador.nome} pediu para intervir na intervenção "
+                    f"{intervencao.numero} — {intervencao.titulo}."
+                ),
+                link=f"/intervencoes/{intervencao.id}",
+            )
+
+        return resposta_sucesso(
+            data=SolicitacaoIntervencaoSerializer(solicitacao).data,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    def _responder(self, request, aprovado: bool):
+        solicitacao = self.get_object()
+        if request.user.perfil != Usuario.PerfilChoices.ADMIN:
+            self.permission_denied(request, message="Apenas administradores podem responder.")
+
+        if solicitacao.estado != SolicitacaoIntervencao.EstadoChoices.PENDENTE:
+            return resposta_erro(
+                code="JA_RESPONDIDO",
+                message="Este pedido já foi respondido.",
+                status_code=400,
+            )
+
+        solicitacao.estado = (
+            SolicitacaoIntervencao.EstadoChoices.APROVADO
+            if aprovado
+            else SolicitacaoIntervencao.EstadoChoices.REJEITADO
+        )
+        solicitacao.respondido_por = request.user
+        solicitacao.data_resposta = timezone.now()
+        solicitacao.motivo = (request.data.get("motivo") or "")[:255]
+        solicitacao.save(
+            update_fields=["estado", "respondido_por", "data_resposta", "motivo"]
+        )
+
+        # Ao aprovar, o pedido passa a ser do técnico que pediu.
+        if aprovado and solicitacao.utilizador.perfil == Usuario.PerfilChoices.TECNICO:
+            intervencao = solicitacao.intervencao
+            if intervencao.tecnico_id != solicitacao.utilizador_id:
+                anterior = intervencao.tecnico
+                intervencao.tecnico = solicitacao.utilizador
+                intervencao.save(update_fields=["tecnico"])
+                if anterior:
+                    Notificacao.objects.create(
+                        utilizador=anterior,
+                        tipo="intervencao_reatribuida",
+                        titulo="Intervenção reatribuída",
+                        mensagem=(
+                            f"A intervenção {intervencao.numero} passou para "
+                            f"{solicitacao.utilizador.nome}."
+                        ),
+                        link=f"/intervencoes/{intervencao.id}",
+                    )
+
+        Notificacao.objects.create(
+            utilizador=solicitacao.utilizador,
+            tipo="solicitacao_respondida",
+            titulo="Pedido de intervenção respondido",
+            mensagem=(
+                f"O seu pedido para intervir na intervenção "
+                f"{solicitacao.intervencao.numero} foi "
+                f"{'aprovado' if aprovado else 'rejeitado'}."
+                + (f" Motivo: {solicitacao.motivo}" if solicitacao.motivo else "")
+            ),
+            link=f"/intervencoes/{solicitacao.intervencao_id}",
+        )
+
+        return resposta_sucesso(data=SolicitacaoIntervencaoSerializer(solicitacao).data)
+
+    @action(detail=True, methods=["post"], url_path="aprovar")
+    def aprovar(self, request, pk=None):
+        return self._responder(request, aprovado=True)
+
+    @action(detail=True, methods=["post"], url_path="rejeitar")
+    def rejeitar(self, request, pk=None):
+        return self._responder(request, aprovado=False)
+
 
 @extend_schema(tags=["Relatórios Técnicos"])
 class HoraTrabalhoViewSet(viewsets.ModelViewSet):

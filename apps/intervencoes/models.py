@@ -401,6 +401,57 @@ class ComentarioIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):
         ordering = ["data_criacao"]
 
 
+# ── Solicitações de intervenção ──────────────────────────────────────────────
+
+class SolicitacaoIntervencao(ModeloUUIDComTimestamps):
+    """Pedido para intervir numa intervenção.
+
+    Um técnico pede para intervir num ticket que não lhe está atribuído
+    (ou o cliente pede intervenção). O administrador aprova (reatribui o
+    ticket) ou rejeita com justificação.
+    """
+
+    class EstadoChoices(models.TextChoices):
+        PENDENTE = "pendente", "Pendente"
+        APROVADO = "aprovado", "Aprovado"
+        REJEITADO = "rejeitado", "Rejeitado"
+
+    class TipoChoices(models.TextChoices):
+        INTERVENCAO = "intervencao", "Intervenção"
+        ACESSO = "acesso", "Acesso"
+
+    intervencao = models.ForeignKey(
+        Intervencao, related_name="solicitacoes", on_delete=models.CASCADE
+    )
+    utilizador = models.ForeignKey(
+        Usuario, related_name="solicitacoes_intervencao", on_delete=models.CASCADE
+    )
+    tipo = models.CharField(
+        max_length=20, choices=TipoChoices.choices, default=TipoChoices.INTERVENCAO
+    )
+    justificativa = models.TextField(blank=True, default="")
+    estado = models.CharField(
+        max_length=20, choices=EstadoChoices.choices, default=EstadoChoices.PENDENTE
+    )
+    respondido_por = models.ForeignKey(
+        Usuario,
+        related_name="solicitacoes_respondidas",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    data_resposta = models.DateTimeField(null=True, blank=True)
+    motivo = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        ordering = ["-data_criacao"]
+        verbose_name = "Solicitação de intervenção"
+        verbose_name_plural = "Solicitações de intervenção"
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} — {self.intervencao_id} ({self.estado})"
+
+
 # ── Anexos ───────────────────────────────────────────────────────────────────
 
 class AnexoIntervencao(ModeloUUIDComTimestamps, SoftDeleteModel):

@@ -15,7 +15,7 @@ from apps.usuarios.views import (
 )
 from apps.contratos.views import ContratoViewSet
 from apps.clientes.views import ClienteViewSet
-from apps.intervencoes.views import  IntervencaoViewSet, HistoricoViewSet
+from apps.intervencoes.views import  IntervencaoViewSet, HistoricoViewSet, SolicitacaoIntervencaoViewSet
 from apps.notificacoes.views import NotificacaoViewSet
 from apps.relatorios.views import RelatorioViewSet
 from apps.sistema.views import ConfiguracaoSistemaViewSet, WebhookWhatsApp
@@ -42,6 +42,9 @@ router.register(r"auth", AutenticacaoViewSet, basename="auth")
 router.register(r"clientes", ClienteViewSet, basename="clientes")
 router.register(r"contratos", ContratoViewSet, basename="contratos")
 router.register(r"intervencoes", IntervencaoViewSet, basename="intervencoes")
+router.register(
+    r"solicitacoes", SolicitacaoIntervencaoViewSet, basename="solicitacoes"
+)
 router.register(r"intervencoes-historicos", HistoricoViewSet, basename="historico")
 router.register(r"tecnicos", TecnicoViewSet, basename="tecnicos")
 router.register(r"relatorios", RelatorioViewSet, basename="relatorios")

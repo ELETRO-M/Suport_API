@@ -11,7 +11,67 @@ from apps.intervencoes.models import (
     HistoricoEstadoIntervencao,
     HoraTrabalho,
     Intervencao,
+    SolicitacaoIntervencao,
 )
+
+
+class SolicitacaoIntervencaoSerializer(serializers.ModelSerializer):
+    utilizador_nome = serializers.CharField(source="utilizador.nome", read_only=True)
+    respondido_por_nome = serializers.CharField(
+        source="respondido_por.nome", read_only=True, allow_null=True
+    )
+    intervencao_numero = serializers.CharField(source="intervencao.numero", read_only=True)
+    intervencao_titulo = serializers.CharField(source="intervencao.titulo", read_only=True)
+    intervencao_status = serializers.CharField(source="intervencao.status", read_only=True)
+    cliente_nome = serializers.CharField(
+        source="intervencao.cliente.nome", read_only=True, allow_null=True
+    )
+    tecnico_responsavel = serializers.CharField(
+        source="intervencao.tecnico.nome", read_only=True, allow_null=True
+    )
+
+    class Meta:
+        model = SolicitacaoIntervencao
+        fields = (
+            "id",
+            "intervencao",
+            "intervencao_numero",
+            "intervencao_titulo",
+            "intervencao_status",
+            "cliente_nome",
+            "tecnico_responsavel",
+            "utilizador",
+            "utilizador_nome",
+            "tipo",
+            "justificativa",
+            "estado",
+            "respondido_por",
+            "respondido_por_nome",
+            "data_resposta",
+            "motivo",
+            "data_criacao",
+        )
+        read_only_fields = (
+            "intervencao",
+            "utilizador",
+            "estado",
+            "respondido_por",
+            "data_resposta",
+            "motivo",
+            "data_criacao",
+        )
+
+
+class CriarSolicitacaoSerializer(serializers.Serializer):
+    """Dados do pedido de intervenção."""
+
+    intervencao_id = serializers.UUIDField()
+    tipo = serializers.ChoiceField(
+        choices=SolicitacaoIntervencao.TipoChoices.choices,
+        default=SolicitacaoIntervencao.TipoChoices.INTERVENCAO,
+        required=False,
+    )
+    justificativa = serializers.CharField(required=False, allow_blank=True, max_length=2000)
 
 
 class AnexoIntervencaoSerializer(serializers.ModelSerializer):
