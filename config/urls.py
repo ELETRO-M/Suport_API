@@ -35,6 +35,7 @@ from apps.sistema.whatsapp_api import (
     enviar_media,
     enviar_texto,
 )
+from apps.push_views import push_enviar, push_subscribe
 
 
 router = DefaultRouter()
@@ -71,6 +72,8 @@ urlpatterns = [
     path("api/v1/whatsapp/enviar-media", enviar_media, name="whatsapp-enviar-media"),
     path("api/v1/whatsapp/enviar-cloudinary", enviar_cloudinary, name="whatsapp-enviar-cloudinary"),
     path("api/v1/whatsapp/enviar-audio", enviar_audio, name="whatsapp-enviar-audio"),
+    path("api/v1/push/subscribe/", push_subscribe, name="push-subscribe"),
+    path("api/v1/push/enviar/", push_enviar, name="push-enviar"),
     path("api/v1/perfil", PerfilViewSet.as_view({"get": "list", "put": "update"}), name="perfil"),
     path("api/v1/perfil/password", PerfilViewSet.as_view({"put": "password"}), name="perfil-password"),
     path("api/v1/", include(router.urls)),

@@ -13,3 +13,14 @@ docker-compose.yml
 # Chaves privadas (VAPID/Web Push) e backups
 config/vapid_keys.py
 *.bak
+
+# Scripts auxiliares de desenvolvimento (nao fazem parte da aplicacao)
+apply_migration.py
+check_migrations.py
+check_migrations2.py
+check_model.py
+create_migrations.py
+gen_migration.py
+merge_migrations.py
+test_django_apps.py
+test_state.py

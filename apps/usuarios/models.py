@@ -153,6 +153,12 @@ class Usuario(AbstractUser, ModeloUUIDComTimestamps):
 
     preferencias = models.JSONField(default=dict, blank=True)
     especialidades = models.JSONField(default=list, blank=True)
+    push_subscription = models.JSONField(
+        blank=True,
+        null=True,
+        default=dict,
+        help_text="Dados da subscrição Web Push (endpoint, keys p256dh, auth)",
+    )
     data_contratacao = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVO)
 
